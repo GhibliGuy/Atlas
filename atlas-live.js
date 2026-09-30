@@ -1712,6 +1712,11 @@ function placeName(z,i){
   if(placeNameSnap!==snapshot){placeNameCache.clear();placeNameSnap=snapshot}
   const key=z+'|'+i;if(placeNameCache.has(key))return placeNameCache.get(key);
   const a=zoneAreas(z)[i];if(!a)return base;
+  // a floor lying at one of the game's own dungeon markers is that dungeon (Imp Tree's rooms were recorded under the
+  // Church's and the Tailor's numbers)
+  const dist=p=>Math.hypot(Math.max(a.minX-p.x,0,p.x-a.maxX),Math.max(a.minY-p.y,0,p.y-a.maxY));
+  const dg=(D.pois||[]).filter(p=>p.category==='dungeon'&&dist(p)<=12).sort((p,q)=>dist(p)-dist(q))[0];
+  if(dg){placeNameCache.set(key,dg.name);return dg.name}
   const names=new Map();for(const t of snapshot?.zoneTransitions||[])if(t.toZ===z&&t.zoneName&&t.atX!=null&&t.atY!=null&&inArea(a,{x:t.atX,y:t.atY}))names.set(t.zoneName,(names.get(t.zoneName)||0)+1);
   const region=[...names].sort((p,q)=>q[1]-p[1])[0]?.[0]||null;
   const types=new Set();for(const o of snapshot?.worldObjects||[])if(o.position?.z===z&&!isGroundItem(o)&&inArea(a,o.position))types.add(o.typeId);
@@ -1721,6 +1726,9 @@ function placeName(z,i){
   placeNameCache.set(key,name);return name;
 }
 // the place of zone z a point is in (or nearest to): where a door from another zone comes out
+globalThis.bxcPlaceAt=(z,x,y)=>state.zones?.has(Number(z))?placeName(Number(z),placeIndexAt(Number(z),{x:Number(x),y:Number(y)})):null;
+// every place (zone, area) going by a name - for an official marker's "Open the layout"
+function placesNamed(name){const out=[];for(const z of state.zones?.keys()||[]){if(!z)continue;const n=Math.max(1,zoneAreas(z).length);for(let i=0;i<n;i++)if(placeName(z,i)===name)out.push({z,i})}return out}
 function placeIndexAt(z,p){const as=zoneAreas(z);if(as.length<2||!p)return 0;let best=0,bd=Infinity;as.forEach((a,i)=>{const d=Math.hypot(Math.max(a.minX-p.x,0,p.x-a.maxX),Math.max(a.minY-p.y,0,p.y-a.maxY));if(d<bd){bd=d;best=i}});return best}
 function zoneAreaPickerHtml(z){
   const areas=zoneAreas(z);
@@ -3945,7 +3953,8 @@ function newsHtml(){
       const p=(D.pois||[]).find(x=>x.name===id);if(!p)return '<p class="muted">Unknown place.</p>';
       const mons=monsterTypesNear(p,70).filter(t=>!ROAMING_NPC_TYPES.has(t));
       const res=markersNear(state.resourceMarkersByType,p,70);
-      return `<p class="map-panel-kind">Place · ${esc(prettyId(p.category||''))}</p><div class="card"><div class="name">${esc(p.name)}</div><div class="s muted">World ${esc(p.x)}, ${esc(p.y)}</div></div>`+
+      const inside=placesNamed(p.name);
+      return `<p class="map-panel-kind">Place · ${esc(prettyId(p.category||''))}</p><div class="card"><div class="name">${esc(p.name)}</div><div class="s muted">World ${esc(p.x)}, ${esc(p.y)}</div>${inside.map((q,n)=>`<button type="button" class="open-zone" data-zone="${q.z}" data-area="${q.i}">${inside.length>1?'Room '+(n+1)+' layout':'Open the layout'}</button>`).join(' ')}</div>`+
         (mons.length?`<h4 class="map-panel-h">Monsters around it</h4><div class="map-panel-picks">${mons.slice(0,10).map(t=>panelLink('monster',t,monsterNameFor(t),monsterLevelOf(t)!=null?'Lv '+monsterLevelOf(t):'')).join('')}</div>`:'<p class="muted">No monsters seen right around it yet.</p>')+
         (res.length?`<h4 class="map-panel-h">Resources around it</h4><div class="map-panel-picks">${res.slice(0,8).map(k=>panelLink('resource',k,resourceDisplayName(state.resourceCatalog?.get(k)||{key:k,name:k}))).join('')}</div>`:'');
     }
@@ -4132,7 +4141,7 @@ function newsHtml(){
     if(!btn.classList.contains('on')){pageNow=null;clickTab(btn)}
     setTimeout(()=>{map.invalidateSize({pan:false});openMapPanel(kind,id,{fit:true,quality,level})},60);
   }
-  document.addEventListener('click',e=>{const z=e.target.closest('.open-zone');if(!z)return;e.preventDefault();openZoneOverlay(Number(z.dataset.zone))});
+  document.addEventListener('click',e=>{const z=e.target.closest('.open-zone');if(!z)return;e.preventDefault();if(z.dataset.area!=null){if(!state.zoneArea)state.zoneArea=new Map();state.zoneArea.set(Number(z.dataset.zone),+z.dataset.area);lastRenderedZoneOverlayZ=null}openZoneOverlay(Number(z.dataset.zone))});
   document.addEventListener('click',e=>{const b=e.target.closest('.show-on-map');if(!b)return;e.preventDefault();e.stopPropagation();showOnMap(b.dataset.mapKind,b.dataset.mapId,b.dataset.mapQuality||null,b.dataset.mapLevel||null)},true);
   // Leaving the map page hides the panel (the selection stays for the pages that still show the map).
   document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.tab!=='map')closeMapPanel(false)}));
