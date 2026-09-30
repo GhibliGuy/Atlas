@@ -295,12 +295,7 @@ a.map-panel-open:hover{border-color:var(--accent);background:var(--panel2)}
 .g-toc{margin:0;padding-left:20px;font-size:13px}.g-toc li{margin:3px 0}
 .wp-guides{margin-top:18px;padding-top:10px;border-top:1px solid var(--edge);font-size:13px}
 
-/* World map focus: while the side panel shows something, the rest of the map fades so its circles stand out;
-   you can still click anything faded to switch to it. */
-#map .leaflet-marker-pane,#map .leaflet-overlay-pane,#map .leaflet-tooltip-pane{transition:opacity .25s}
-#map.bxc-focus .leaflet-marker-pane,#map.bxc-focus .leaflet-overlay-pane{opacity:.28}
-#map.bxc-focus .leaflet-tooltip-pane{opacity:.2}
-#map.bxc-focus .leaflet-marker-pane:hover,#map.bxc-focus .leaflet-overlay-pane:hover{opacity:.6}
+/* Everything drawn on the map is solid (the user's rule): nothing fades while the side panel is open. */
 .map-panel-best{margin:0 26px 10px 0;padding:7px 10px;border-left:3px solid #ffe08a;background:rgba(255,224,138,.08);font-size:12.5px;color:#f3e3b4}
 
 /* Tool pages (Crafting planner, Quality & enchanting, Gem combiner): wiki layout with a small "Your numbers" box. */

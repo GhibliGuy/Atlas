@@ -89,7 +89,7 @@
       const ll=latlng(pos,true);
       let m=bossTimerMarkers.get(t.name);
       if(!m){
-        m=L.circleMarker(ll,{radius:7,weight:2,color:'#ffd54a',fillColor:'#7a1f1f',fillOpacity:.9});
+        m=L.circleMarker(ll,{radius:7,weight:2,color:'#ffd54a',fillColor:'#7a1f1f',fillOpacity:1});
         m.bindTooltip(bossCountdownText(t),{permanent:true,direction:'top',className:'bxc-boss-timer-tip'});
         m.addTo(bossTimerLayer);
         bossTimerMarkers.set(t.name,m);
@@ -2348,7 +2348,7 @@ function newsHtml(){
     for(const {m,tip} of staticSources){
       const fam=m.family||catalogFamily.get(m.typeId)||'unclassified';
       const ll=latlng(m,true),icon=monsterLocIcon(m.typeId,m.name,fam,false);
-      const cm=icon?L.marker(ll,{icon}):L.circleMarker(ll,{radius:4,weight:1,color:'#140b05',fillColor:familyColor(fam),fillOpacity:.9});
+      const cm=icon?L.marker(ll,{icon}):L.circleMarker(ll,{radius:4,weight:1,color:'#140b05',fillColor:familyColor(fam),fillOpacity:1});
       cm.bindTooltip(tip+CLICK_HINT,{sticky:true});
       cm.on('click',ev=>{if(armedPassthrough(ev))return;goToMonsterCard(m.typeId)});
       famGroups(fam).stat.addLayer(cm);famStat(fam).stat++;
@@ -2490,7 +2490,7 @@ function newsHtml(){
       // reads at a glance as "this is the monster you'll find here" instead of just a floating label.
       const fam=familyOf(bestType);
       const areaIcon=monsterAreaIcon(bestType,label,fam,eliteSeen,bestN);
-      const anchor=areaIcon?L.marker(latlng({x:winner.x,y:winner.y},true),{icon:areaIcon}):L.circleMarker(latlng({x:winner.x,y:winner.y},true),{radius:7,weight:2,color:'#0d1a10',fillColor:familyColor(fam),fillOpacity:.9});
+      const anchor=areaIcon?L.marker(latlng({x:winner.x,y:winner.y},true),{icon:areaIcon}):L.circleMarker(latlng({x:winner.x,y:winner.y},true),{radius:7,weight:2,color:'#0d1a10',fillColor:familyColor(fam),fillOpacity:1});
       const extra=[weak?`Weak: ${esc(weak)}`:'',resist?`Resists: ${esc(resist)}`:''].filter(Boolean).join(' · ');
       // Name + level always visible, permanent - that's the one thing worth reading at a glance while deciding
       // whether a zone is worth fighting in. Weak/resist and the region name/seen-count are more supplementary,
@@ -2516,7 +2516,7 @@ function newsHtml(){
   // The game's own named map regions (towns, biomes, and the monster-spawn areas the map makers
   // labelled such as "WL: Vultures"), as captured from the game. Drawn under the markers, off by
   // default in the legend; hovering shows the name, PvP mode and what scatters there.
-  const AREA_STYLE_BASE={weight:1.5,dashArray:'5 5',opacity:.8,fillOpacity:.05};
+  const AREA_STYLE_BASE={weight:1.5,dashArray:'5 5',opacity:1,fillOpacity:.05};   // outline solid; the faint fill only tints the ground under it
   const AREA_STYLE_SELECTED={weight:3,dashArray:null,opacity:1,fillOpacity:.22};
   let selectedAreaPoly=null;
   function drawGameAreas(){
@@ -2791,7 +2791,7 @@ function newsHtml(){
       }
       if(n.originPosition&&num(n.originPosition.x)!==null&&num(n.originPosition.y)!==null&&!staleReworkPoint(n.originPosition.x,n.originPosition.y,n.lastSeen)){
         const locIcon=monsterLocIcon(n.typeId,n.name,fam,!!n.elite);
-        const originMarker=locIcon?L.marker(latlng(n.originPosition,true),{icon:locIcon}):L.circleMarker(latlng(n.originPosition,true),n.elite?{radius:roams?7:5,weight:2,color:'#ffd54a',fillColor:famFill,fillOpacity:.9}:{radius:roams?6:4,weight:1,color:'#0d1a10',fillColor:famFill,fillOpacity:.9});
+        const originMarker=locIcon?L.marker(latlng(n.originPosition,true),{icon:locIcon}):L.circleMarker(latlng(n.originPosition,true),n.elite?{radius:roams?7:5,weight:2,color:'#ffd54a',fillColor:famFill,fillOpacity:1}:{radius:roams?6:4,weight:1,color:'#0d1a10',fillColor:famFill,fillOpacity:1});
         originMarker.bindTooltip(`<b>${esc(n.name||n.typeId)}</b>${n.elite?'<br><b style="color:#ffd54a">⭐ Elite seen</b>':''}<br>${roams?'Roams — shown at its fixed reference position instead of a live-tracked dot':'Captured originPosition'}<br>${esc(n.originPosition.x)}, ${esc(n.originPosition.y)}${CLICK_HINT}`,{sticky:true});
         originMarker.addTo(famGroups(fam).orig);famStat(fam).orig++;
         originMarker.on('click',ev=>{if(armedPassthrough(ev))return;goToMonsterCard(n.typeId)});
@@ -2813,7 +2813,7 @@ function newsHtml(){
       for(const c of clusterPoints(s.pts,SEEN_LINK)){
         const mid={x:median(c.map(p=>p.x)),y:median(c.map(p=>p.y))};
         const ic=monsterAreaIcon(typeId,s.name,fam,s.elite,c.length);
-        const am=ic?L.marker(latlng(mid,true),{icon:ic}):L.circleMarker(latlng(mid,true),{radius:5,weight:1,color:'#0d1a10',fillColor:familyColor(fam),fillOpacity:.9});
+        const am=ic?L.marker(latlng(mid,true),{icon:ic}):L.circleMarker(latlng(mid,true),{radius:5,weight:1,color:'#0d1a10',fillColor:familyColor(fam),fillOpacity:1});
         am.bindTooltip(`<b>${esc(s.name||typeId)}</b> · seen ${c.length} time${c.length===1?'':'s'}<br>Somewhere in the outlined area (exact spawn points not captured)${CLICK_HINT}`,{sticky:true});
         am.addTo(famGroups(fam).orig);famStat(fam).orig++;
         am.on('click',ev=>{if(armedPassthrough(ev))return;goToMonsterCard(typeId)});
@@ -2837,7 +2837,7 @@ function newsHtml(){
         cm=L.marker(latlng(at,true),{icon});
       }else{
         const style=resourceMarkerStyle(o.typeId);
-        cm=L.circleMarker(latlng(at,true),{radius:4,weight:1,color:style.color,fillColor:style.fillColor,fillOpacity:.78});
+        cm=L.circleMarker(latlng(at,true),{radius:4,weight:1,color:style.color,fillColor:style.fillColor,fillOpacity:1});
       }
       cm.bindTooltip(tooltipObject(o),{sticky:true});cm.addTo(layer);
       cm.on('click',ev=>{if(armedPassthrough(ev))return;goToCard('resources','r',key)});
@@ -2853,7 +2853,7 @@ function newsHtml(){
       const icon=typedResourceIcon(m.itemSlug,m.itemSlug,m.item);
       let cm;
       if(icon)cm=L.marker(pos,{icon});
-      else{const st=manualMarkerStyle(m.skill);cm=L.circleMarker(pos,{radius:5,weight:2,color:st.color,fillColor:st.fillColor,fillOpacity:.85})}
+      else{const st=manualMarkerStyle(m.skill);cm=L.circleMarker(pos,{radius:5,weight:2,color:st.color,fillColor:st.fillColor,fillOpacity:1})}
       cm.bindTooltip(tooltipManualResource(m),{sticky:true});
       cm.on('click',ev=>{if(armedPassthrough(ev))return;goToCard('resources','r',m.key)});
       if(!PUBLIC_MODE)cm.on('contextmenu',ev=>{if(ev.originalEvent)L.DomEvent.preventDefault(ev.originalEvent);removeManualResource(m)});
@@ -2868,7 +2868,7 @@ function newsHtml(){
     if(typeof poiMarkersByName!=='undefined')for(const cm of poiMarkersByName.values())if(!poiLayer.hasLayer(cm))cm.addTo(poiLayer);
     for(const ae of state.areaEntrances||[]){
       const meta=state.zones.get(ae.z);if(!meta)continue;
-      const m=L.circleMarker(latlng({x:ae.x,y:ae.y},true),{radius:7,weight:2,color:'#1a1208',fillColor:'#3ad1ff',fillOpacity:.9});
+      const m=L.circleMarker(latlng({x:ae.x,y:ae.y},true),{radius:7,weight:2,color:'#1a1208',fillColor:'#3ad1ff',fillOpacity:1});
       m.bindTooltip(`${esc(meta.name||('Zone '+ae.z))} (place ${ae.area+1}) entrance — click to view layout`,{direction:'top'});
       m.on('click',()=>{if(!state.zoneArea)state.zoneArea=new Map();state.zoneArea.set(ae.z,ae.area);lastRenderedZoneOverlayZ=null;openZoneOverlay(ae.z)});
       m.addTo(zoneLayer);
@@ -2888,12 +2888,12 @@ function newsHtml(){
       if(top){
         const typeId=top[0].includes('::')?top[0].split('::')[0]:top[0];
         const icon=typedResourceIcon(typeId,top[1].yieldItem,top[1].name);
-        marker=icon?L.marker(pos,{icon}):L.circleMarker(pos,{radius:7,weight:2,color:'#1a1208',fillColor:'#3ad1ff',fillOpacity:.9});
+        marker=icon?L.marker(pos,{icon}):L.circleMarker(pos,{radius:7,weight:2,color:'#1a1208',fillColor:'#3ad1ff',fillOpacity:1});
         const label=typedResourceLabel(typeId,top[1].yieldItem,top[1].name);
         const extra=sorted.length>1?` (+${sorted.length-1} more resource type${sorted.length>2?'s':''})`:'';
         marker.bindTooltip(`${esc(meta.name||('Zone '+z))} entrance — has ${esc(label)}${extra}<br>Click to view layout`,{direction:'top'});
       }else{
-        marker=L.circleMarker(pos,{radius:7,weight:2,color:'#1a1208',fillColor:'#3ad1ff',fillOpacity:.9});
+        marker=L.circleMarker(pos,{radius:7,weight:2,color:'#1a1208',fillColor:'#3ad1ff',fillOpacity:1});
         marker.bindTooltip(`${esc(meta.name||('Zone '+z))} entrance — click to view layout`,{direction:'top'});
       }
       marker.on('click',()=>openZoneOverlay(z));
@@ -3712,7 +3712,7 @@ function newsHtml(){
   let panelSelLayer=null,panelSelRenderer=null;
   function circlePoints(pts,fit){
     if(!panelSelLayer){
-      // their own pane above the markers, so they stay bright while the rest of the map fades (see .bxc-focus)
+      // their own pane above the markers
       if(!map.getPane('bxcSel')){const p=map.createPane('bxcSel');p.style.zIndex=650;p.style.pointerEvents='none'}
       panelSelRenderer=L.svg({pane:'bxcSel'});panelSelLayer=L.layerGroup().addTo(map);
     }
@@ -3787,7 +3787,7 @@ function newsHtml(){
     const name=monsterNameFor(type),fam=familyOf(type),rings=[];
     for(const a of areas){
       const icon=monsterAreaIcon(type,name,fam,false,a.n);
-      const mk=icon?L.marker(latlng(a,true),{icon,pane:'bxcSelIcons',interactive:false}):L.circleMarker(latlng(a,true),{radius:7,weight:2,color:'#0d1a10',fillColor:familyColor(fam),fillOpacity:.95,pane:'bxcSel',renderer:panelSelRenderer,interactive:false});
+      const mk=icon?L.marker(latlng(a,true),{icon,pane:'bxcSelIcons',interactive:false}):L.circleMarker(latlng(a,true),{radius:7,weight:2,color:'#0d1a10',fillColor:familyColor(fam),fillOpacity:1,pane:'bxcSel',renderer:panelSelRenderer,interactive:false});
       mk.addTo(panelIconLayer);rings.push(a);
     }
     return rings;
@@ -3806,8 +3806,13 @@ function newsHtml(){
     const cells=new Map();for(const q of pts){const k=Math.floor(q.x/40)+','+Math.floor(q.y/40);(cells.get(k)||cells.set(k,[]).get(k)).push(q)}
     const core=[...cells.values()].sort((x,y)=>y.length-x.length)[0]||pts;
     const b=L.latLngBounds(core.map(q=>latlng(q,true)));
-    // a hidden window cannot animate (the fly would never finish), so it jumps there instead
-    if(document.hidden)map.fitBounds(b.pad(.6),{maxZoom:0,animate:false});else map.flyToBounds(b.pad(.6),{maxZoom:0,duration:.7});
+    // A fly (flyToBounds) was cancelled on its first frame by the map's own keep-inside-the-edges pan (maxBounds), so
+    // "Show on map" stayed where it was. A plain zoom-and-move is not; and if anything still stops it, it lands there
+    // without animating. A hidden window cannot animate at all, so it always jumps.
+    const jump=()=>map.fitBounds(b.pad(.6),{maxZoom:0,animate:false});
+    if(document.hidden){jump();return}
+    map.fitBounds(b.pad(.6),{maxZoom:0,animate:true});
+    setTimeout(()=>{if(!map.getBounds().contains(b.getCenter()))jump()},650);
   }
   const nearText=pt=>{const a=placesFor([pt])[0];return a&&a.poi?'near '+a.poi.name:'around '+Math.round(pt.x)+', '+Math.round(pt.y)};
   // Caves, mines, dungeons and buildings that hold something, by their outdoor entrance: most ore is only found

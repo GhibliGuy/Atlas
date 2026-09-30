@@ -14,7 +14,7 @@ const OfficialTiles=L.TileLayer.extend({getTileUrl:function(c){let level=T.maxLe
 new OfficialTiles('',{tileSize:T.tileSize,minNativeZoom:-6,maxNativeZoom:0,minZoom:-3,maxZoom:2,bounds,noWrap:true,keepBuffer:1,opacity:1,errorTileUrl:'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='}).addTo(map);
 const monsterLayer=L.layerGroup(),selectedMonsterLayer=L.layerGroup().addTo(map),poiLayer=L.layerGroup(),byType=new Map(),meta=new Map(D.catalog.map(x=>[x.typeId,x]));
 let selectedMonsterType=null;
-for(const m of D.markers){let info=meta.get(m.typeId)||m,ll=latlng(m,true),cm=L.circleMarker(ll,{radius:4,weight:1,color:'#140b05',fillColor:'#f0a33b',fillOpacity:.9});
+for(const m of D.markers){let info=meta.get(m.typeId)||m,ll=latlng(m,true),cm=L.circleMarker(ll,{radius:4,weight:1,color:'#140b05',fillColor:'#f0a33b',fillOpacity:1});
 cm.bindTooltip(`<b>${m.name}</b><br>Observed Lv ${m.liveLevel??'—'} · ${m.family||'—'}<br>Weak: ${m.weakTo||'None'}<br>Resists: ${m.resists||'None'}<br>World: ${m.x}, ${m.y}`,{sticky:true});
 cm.addTo(monsterLayer);if(!byType.has(m.typeId))byType.set(m.typeId,[]);byType.get(m.typeId).push(cm)}
 // Keyed by name (POIs carry no id) so atlas-live.js can hide a POI's plain marker once it recognizes the POI is
