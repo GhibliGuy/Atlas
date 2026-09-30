@@ -758,3 +758,30 @@ html.bxm .m-dps{display:flex;align-items:center;gap:6px;position:fixed;left:50%;
 html.bxm .m-dps b{color:var(--accent);font-size:16px}
 html.bxm .m-dps[hidden],html.bxm .m-dps.m-away{opacity:0;pointer-events:none}
 html.bxm .m-dps[hidden]{display:none}
+/* Quests guide */
+.q-card{margin:14px 0 18px;padding:12px 16px;background:var(--panel);border:1px solid var(--edge);border-left:3px solid var(--accent-soft);border-radius:4px}
+.q-card h3{margin:0 0 4px}
+.q-meta{margin:0 0 6px;color:var(--muted)}
+.q-meta .show-on-map{margin-left:4px;padding:1px 8px;font-size:12px}
+.q-lore{margin:6px 0;font-style:italic}
+.q-rew{margin:4px 0}
+.q-steps{margin:8px 0 6px;padding-left:22px}
+.q-steps li{margin:4px 0}
+.q-talk{margin:8px 0 4px}
+.q-talk summary{cursor:pointer;color:var(--accent)}
+.q-conv{margin:6px 0 10px;padding-left:10px;border-left:2px solid var(--edge)}
+.q-conv p{margin:3px 0}
+.q-end{margin:6px 0 0;color:var(--muted)}
+.q-card.q-flash{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-soft)}
+.q-facts td:first-child,.q-rewards td:first-child{color:var(--muted);white-space:nowrap;width:1%}
+.q-facts thead,.q-rewards thead{display:none}
+.bxc-questgiver span{display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#ffd24a;color:#2a1d05;font:800 14px/1 var(--sans);border:2px solid #7a5a12;box-sizing:border-box;box-shadow:0 1px 4px rgba(0,0,0,.6)}
+.zone-quest-note{margin:4px 0 6px;padding:5px 10px;border-left:3px solid #ffd24a;background:rgba(255,210,74,.1);font-size:13px}
+.zone-quest-note a{font-weight:600}
+.q-needs{margin:6px 0;padding-left:20px}.q-needs li{margin:3px 0}
+/* quests not fully written yet: an alert on the card, a banner on the page */
+.q-alert{display:inline-flex;align-items:center;gap:5px;width:max-content;margin-bottom:4px;padding:2px 8px 2px 6px;border-radius:4px;background:rgba(245,197,66,.16);color:#f5c542;font:600 11.5px/1.4 var(--sans)}
+.q-alert-ico{width:14px;height:14px;flex:none;color:#f5c542}
+.q-alert-banner{display:flex;gap:10px;align-items:center;margin:0 0 12px;padding:10px 14px;border:1px solid #b88a1c;border-left:4px solid #f5c542;border-radius:4px;background:rgba(245,197,66,.1);font-size:14px;font-style:normal}
+.q-alert-banner .q-alert-ico{width:22px;height:22px}
+html[data-theme="light"] .q-alert,html[data-theme="light"] .q-alert-ico{color:#8a5f00}

@@ -10,6 +10,7 @@
   const LAST_SEEN_KEY='binxoniaAtlasCollectorLastSeenV2';
   const ROAMING_NPC_TYPES=new Set(['human']);
   let trainerLayer=null;
+  let questGiverLayer=null,giverCache={key:null,list:[]};   // quest-givers on the map (see questGiverList); up here so the first map draw can use them
   let gameAreaLayer=null, zoneLayer=null, selfLayer=null, resourceRoot=null, legendControl=null;
   // Named-boss respawn countdowns (background.js tracks these in memory from kill events - see get-boss-timers /
   // noteBossKill). Polled rather than pushed since a kill is a rare event, not worth a dedicated live channel;
@@ -39,6 +40,8 @@
   }
   // Walks up from a room's zone to whichever ancestor actually has a captured outdoor entrance point (a
   // sub-room's own entry is often only recorded on its parent dungeon zone - see deriveZones/zoneEntrances).
+  // where you walk into a zone from outside: the game's dungeon marker when one matches, else a recorded entrance
+  function zoneEntrancePoint(z){const poi=dungeonPoiForZone(z);if(poi)return {x:poi.x,y:poi.y};const e=entranceForZone(z);return e?{x:num(e.x),y:num(e.y)}:null}
   function entranceForZone(z){
     let cur=z,guard=0;
     while(cur!=null&&guard++<50){
@@ -903,6 +906,95 @@ function deriveZones(){
     }
     internalExits.set(fromZ,exits);
   }
+  // A way between two places recorded in one direction only (down Midland Mine's pit into Agauton Mine, never back up
+  // its ladder): on the far side it is the door, ladder or pit right where you arrive; on this side, the one door,
+  // ladder or pit that no arrival from anywhere else sits beside. Needs two crossings, and a real object on each side.
+  const portalsByZ=new Map();for(const o of snapshot?.worldObjects||[]){const z=o.position?.z;if(z==null||!PORTAL_OBJ_RE.test(o.typeId||'')||isGroundItem(o))continue;(portalsByZ.get(z)||portalsByZ.set(z,[]).get(z)).push(o)}
+  const portalsIn=z=>portalsByZ.get(z)||[];
+  for(const [fromZ,byTo] of internalTransitionsByFromThenTo)for(const [toZ,list] of byTo){
+    if(list.length<2||internalTransitionsByFromThenTo.get(toZ)?.has(fromZ))continue;
+    const lastSeen=list.reduce((m,t)=>Math.max(m,num(t.time)||0),0);
+    const there=internalExits.get(toZ)||[];
+    if(!there.some(ex=>ex.toZ===fromZ)){
+      const door=portalsIn(toZ).map(o=>({o,d:Math.min(...list.map(t=>Math.hypot(t.atX-o.position.x,t.atY-o.position.y)))})).filter(x=>x.d<=6).sort((a,b)=>a.d-b.d)[0];
+      if(door){there.push({toZ:fromZ,x:door.o.position.x,y:door.o.position.y,samples:list.length,lastSeen});internalExits.set(toZ,there)}
+    }
+    const here=internalExits.get(fromZ)||[];
+    if(!here.some(ex=>ex.toZ===toZ)){
+      const arrivals=allTrans.filter(t=>t.toZ===fromZ&&t.fromZ!==toZ&&t.atX!=null&&t.atY!=null);
+      const free=portalsIn(fromZ).filter(o=>!arrivals.some(t=>Math.hypot(t.atX-o.position.x,t.atY-o.position.y)<=6)&&!here.some(ex=>Math.hypot(ex.x-o.position.x,ex.y-o.position.y)<=2));
+      if(free.length===1){here.push({toZ,x:free[0].position.x,y:free[0].position.y,samples:list.length,lastSeen});internalExits.set(fromZ,here)}
+    }
+  }
+  // Which door is which, room by room (checked against every dungeon on 2026-09-30):
+  // 1) Rooms of one dungeon share one map, so a door and the door it leads to stand one each side of the wall: a
+  //    plain door and a dark doorway (or a ladder, hatch or pit) 2-3 tiles apart. Two plain doors that close are
+  //    stacked levels of a mine (Rustpick), not a pair.
+  // 2) You arrive right beside the door that leads back: arrivals from one room that keep landing on a still-free
+  //    door settle it (unless arrivals from elsewhere land there too - then it is the room's spawn spot).
+  // 3) Facing doors set further apart (Moonfang's Lair: up to 12 tiles), only ways walked twice or more.
+  // Each door is one way only, and the door you come in by from outdoors is never taken.
+  {
+    const setExit=(z,toZ,o,samples,lastSeen)=>{const list=internalExits.get(z)||[];const ex=list.find(e=>e.toZ===toZ);if(ex){if(ex.faced)return false;ex.x=o.position.x;ex.y=o.position.y;ex.faced=true}else list.push({toZ,x:o.position.x,y:o.position.y,samples,lastSeen,faced:true});internalExits.set(z,list);return true};
+    const isFaced=(z,toZ)=>!!(internalExits.get(z)||[]).find(e=>e.toZ===toZ&&e.faced);
+    const pairSeen=new Map();
+    for(const [a,byTo] of internalTransitionsByFromThenTo)for(const [b,list] of byTo){if(a===b)continue;const k=a<b?a+'|'+b:b+'|'+a,p=pairSeen.get(k)||{n:0,lastSeen:0};p.n+=list.length;p.lastSeen=Math.max(p.lastSeen,...list.map(t=>num(t.time)||0));pairSeen.set(k,p)}
+    const outdoorDoor=new Set();
+    // doors you walk in by from outdoors (a login, with no zone before it, lands anywhere and does not count)
+    for(const t of allTrans){if(t.fromZ!==0||t.atX==null||t.atY==null||!t.toZ)continue;
+      for(const o of portalsIn(t.toZ))if(Math.hypot(o.position.x-t.atX,o.position.y-t.atY)<=4)outdoorDoor.add(o)}
+    const used=new Set(),done=new Set();
+    const free=o=>!used.has(o)&&!outdoorDoor.has(o);
+    const pairUp=list=>{for(const c of list.sort((p,q)=>p.d-q.d)){
+      if(done.has(c.k)||(used.has(c.pa)&&!onIt(c.a,c.b,c.pa))||(used.has(c.pb)&&!onIt(c.b,c.a,c.pb))||(isFaced(c.a,c.b)&&isFaced(c.b,c.a)))continue;
+      const p=pairSeen.get(c.k);setExit(c.a,c.b,c.pa,p.n,p.lastSeen);setExit(c.b,c.a,c.pb,p.n,p.lastSeen);used.add(c.pa);used.add(c.pb);done.add(c.k);
+    }};
+    // a side already settled offers only its own door; an unsettled side, its free doors
+    const onIt=(z,toZ,o)=>!!(internalExits.get(z)||[]).find(e=>e.toZ===toZ&&e.faced&&e.x===o.position.x&&e.y===o.position.y);
+    const doorsFor=(z,toZ)=>{const ex=(internalExits.get(z)||[]).find(e=>e.toZ===toZ&&e.faced);return ex?portalsIn(z).filter(o=>o.position.x===ex.x&&o.position.y===ex.y):portalsIn(z).filter(free)};
+    const facing=(maxD,minN,ok)=>{const out=[];for(const [k,p] of pairSeen){if(done.has(k)||p.n<minN)continue;const [a,b]=k.split('|').map(Number);for(const pa of doorsFor(a,b))for(const pb of doorsFor(b,a)){const d=Math.hypot(pa.position.x-pb.position.x,pa.position.y-pb.position.y);if(d<=maxD&&ok(pa,pb))out.push({a,b,pa,pb,d,k})}}return out};
+    pairUp(facing(3.5,1,(pa,pb)=>pa.typeId!==pb.typeId));
+    const claims=[];
+    for(const [a,byTo] of internalTransitionsByFromThenTo)for(const [b,list] of byTo){
+      if(a===b||isFaced(b,a))continue;const pts=list.filter(t=>t.atX!=null&&t.atY!=null);if(!pts.length)continue;
+      const p=commonSpot(pts);let best=null;for(const o of portalsIn(b)){const d=Math.hypot(o.position.x-p.x,o.position.y-p.y);if(d<=5&&(!best||d<best.d))best={o,d}}
+      if(best)claims.push({z:b,toZ:a,o:best.o,n:pts.length,lastSeen:pts.reduce((m,t)=>Math.max(m,num(t.time)||0),0)});
+    }
+    const claimedBy=new Map();for(const c of claims)(claimedBy.get(c.o)||claimedBy.set(c.o,[]).get(c.o)).push(c);
+    for(const [o,cs] of claimedBy){if(cs.length!==1||!free(o))continue;const c=cs[0];if(setExit(c.z,c.toZ,o,c.n,c.lastSeen))used.add(o)}
+    pairUp(facing(12,2,()=>true));
+    // A way still off any door goes to the nearest free door in its room (10 tiles at most, nearest first).
+    const offs=[];
+    for(const [z,list] of internalExits)for(const ex of list){
+      if(ex.faced||portalsIn(z).some(o=>Math.hypot(o.position.x-ex.x,o.position.y-ex.y)<=1))continue;
+      for(const o of portalsIn(z).filter(free)){const d=Math.hypot(o.position.x-ex.x,o.position.y-ex.y);if(d<=10)offs.push({ex,o,d})}
+    }
+    const moved=new Set();
+    for(const c of offs.sort((p,q)=>p.d-q.d)){if(moved.has(c.ex)||used.has(c.o))continue;c.ex.x=c.o.position.x;c.ex.y=c.o.position.y;moved.add(c.ex);used.add(c.o)}
+    // A room whose every door is spoken for has no room for a stray way off the doors crossed once (Ogre Cove's
+    // "door" to a room it has no door to).
+    for(const [z,list] of internalExits){
+      const ports=portalsIn(z);if(!ports.length||ports.some(o=>!used.has(o)&&!outdoorDoor.has(o)&&!list.some(ex=>Math.hypot(o.position.x-ex.x,o.position.y-ex.y)<=1)))continue;
+      const keep=list.filter(ex=>(ex.samples||0)>1||ports.some(o=>Math.hypot(o.position.x-ex.x,o.position.y-ex.y)<=1)||(internalExits.get(ex.toZ)||[]).some(e=>e.toZ===z));
+      if(keep.length!==list.length)internalExits.set(z,keep);
+    }
+    // One door, one way: a door claimed by facing another keeps only that way. Otherwise, when several ways land on
+    // one door, one walked three times as often as the rest keeps it; the rest are warps, logins or deaths on the way
+    // (Binxonia Bank's door "leading" to a dozen places).
+    for(const [z,list] of internalExits){
+      const onDoor=ex=>portalsIn(z).find(o=>Math.hypot(o.position.x-ex.x,o.position.y-ex.y)<=1);
+      const byDoor=new Map();for(const ex of list){const o=onDoor(ex);if(o)(byDoor.get(o)||byDoor.set(o,[]).get(o)).push(ex)}
+      const drop=new Set();
+      for(const group of byDoor.values()){
+        if(group.length<2)continue;
+        const faced=group.filter(e=>e.faced);
+        if(faced.length){for(const e of group)if(!e.faced)drop.add(e);continue}
+        const top=Math.max(...group.map(e=>e.samples||0));
+        for(const e of group)if((e.samples||0)*3<=top)drop.add(e);
+      }
+      if(drop.size)internalExits.set(z,list.filter(e=>!drop.has(e)));
+    }
+  }
   const MIN_PARENT_SAMPLES=2;
   const parentByZone=new Map([...parentCandidateByZone].filter(([,v])=>v.samples>=MIN_PARENT_SAMPLES).map(([toZ,v])=>[toZ,v.z]));
   for(const [z,meta] of zones){
@@ -1287,7 +1379,7 @@ function zoneAreas(z){
 // Where you arrive through a door is a step or two inside the room, not the door itself - drawing it there left doors
 // floating in the middle of the floor. An exit is snapped onto the actual door/ladder/cave-mouth object when one is
 // within reach, otherwise onto the nearest tile at the edge of the floor (the wall it's in).
-const PORTAL_OBJ_RE=/door|ladder|stair|entrance|exit|portal|hatch|gate|trapdoor|tunnel/i;
+const PORTAL_OBJ_RE=/^(?!.*(cookfire|fire-pit|nest)).*(door|ladder|stair|entrance|exit|portal|(^|-)(hatch|trapdoor)($|-)|gate|tunnel|(^|-)(pit|hole)($|-))/i;
 const floorEdgeCache=new Map();let floorEdgeSnap=null;
 function floorEdges(z){
   if(floorEdgeSnap!==snapshot){floorEdgeCache.clear();floorEdgeSnap=snapshot;}
@@ -1360,7 +1452,9 @@ function exitObjectNear(ex,objs){
 function exitKind(ex,near){
   const t=String(near?.typeId||'').toLowerCase();
   if(/ladder/.test(t))return 'ladder';
-  if(/door|gate|hatch|trapdoor/.test(t))return 'door';
+  if(/(^|-)(pit|hole)($|-)/.test(t))return 'hole';
+  if(/hatch|trapdoor/.test(t))return 'hatch';
+  if(/door|gate/.test(t))return 'door';
   if(/cave|entrance|tunnel|cavern|stair/.test(t))return 'cave';
   return ex.toZ===0?'cave':'door';
 }
@@ -1368,7 +1462,7 @@ function exitMarkup(ex,objs,cx,cy,shadow){
   const targetName=state.zones.get(ex.toZ)?.name||('Zone '+ex.toZ);
   const near=exitObjectNear(ex,objs);
   const kind=exitKind(ex,near);
-  const label=kind==='ladder'?'Ladder':kind==='cave'?'Cave entrance':'Door';
+  const label=kind==='ladder'?'Ladder':kind==='hole'?'Hole':kind==='hatch'?'Hatch':kind==='cave'?'Cave entrance':'Door';
   const verb=ex.isParentExit?'leads back to':'leads to';
   const title=`<title>${escXml(label+' — '+verb+' '+targetName+' — click to open')}</title>`;
   const url=near?objectIconUrl(near.typeId,near.name):null;
@@ -1377,6 +1471,12 @@ function exitMarkup(ex,objs,cx,cy,shadow){
   if(url)return `${ring}<image href="${url}" x="${cx-.9}" y="${cy-.9}" width="1.8" height="1.8" preserveAspectRatio="xMidYMid meet" ${attrs}>${title}</image>`;
   if(kind==='ladder'){
     return `${ring}<g transform="translate(${cx},${cy})" ${attrs}><line x1="-0.5" y1="-0.9" x2="-0.5" y2="0.9" stroke="#c9a15a" stroke-width="0.16"/><line x1="0.5" y1="-0.9" x2="0.5" y2="0.9" stroke="#c9a15a" stroke-width="0.16"/><line x1="-0.5" y1="-0.55" x2="0.5" y2="-0.55" stroke="#c9a15a" stroke-width="0.14"/><line x1="-0.5" y1="-0.05" x2="0.5" y2="-0.05" stroke="#c9a15a" stroke-width="0.14"/><line x1="-0.5" y1="0.45" x2="0.5" y2="0.45" stroke="#c9a15a" stroke-width="0.14"/>${title}</g>`;
+  }
+  if(kind==='hatch'){
+    return `${ring}<g transform="translate(${cx},${cy})" ${attrs}><path d="M 0 -0.6 L 1 0 L 0 0.6 L -1 0 Z" fill="#8a5a30" stroke="#2c1c0f" stroke-width="0.12"/><path d="M -0.5 -0.3 L 0.5 0.3 M 0 -0.6 L 0 0.6" stroke="#2c1c0f" stroke-width="0.08"/><circle cx="0.35" cy="-0.05" r="0.09" fill="#f0d18a"/>${title}</g>`;
+  }
+  if(kind==='hole'){
+    return `${ring}<g transform="translate(${cx},${cy})" ${attrs}><ellipse rx="0.95" ry="0.55" fill="#0b0806" stroke="#6b4e28" stroke-width="0.14"/>${title}</g>`;
   }
   if(kind==='cave'){
     return `${ring}<g transform="translate(${cx},${cy})" ${attrs}><path d="M -0.9 0.9 L -0.9 -0.15 A 0.9 0.9 0 0 1 0.9 -0.15 L 0.9 0.9 Z" fill="#241b12" stroke="#6b4e28" stroke-width="0.14"/>${title}</g>`;
@@ -1540,7 +1640,7 @@ function zonesHtml(search=''){
     const parentName=r.parentZ!=null?(state.zones.get(r.parentZ)?.name||('Zone '+r.parentZ)):null;
     const statusLine=parentName?`Inside ${esc(parentName)}`:(r.entrance?.manual?'Manually placed entrance':r.entrance?`Entrance located from ${fmt(r.entrance.samples)} visit${r.entrance.samples===1?'':'s'}`:'Entrance location not yet observed');
     const writeButtons=PUBLIC_MODE?'':` <button type="button" class="zonerename-btn" data-zone="${r.z}">Rename</button> <button type="button" class="zonemoveentrance-btn" data-zone="${r.z}">Move entrance</button> ${state.zones.get(r.z)?.manual?`<button type="button" class="zonelink-btn" data-zone="${r.z}" title="This marker has nothing recorded inside it. Link it to a zone you already have.">Link to existing zone</button> `:''}<button type="button" class="zonedelete-btn" data-zone="${r.z}">Delete</button> <button type="button" class="zoneassociate-btn" data-zone="${r.z}">Set parent</button> <button type="button" class="zonedisassociate-btn" data-zone="${r.z}">Clear parent</button>`;
-    return `<div class="card zonecard" data-zone="${r.z}"><div class="name">${esc(r.name)}</div><div class="s">${r.pvpMode?esc(prettyId(r.pvpMode))+' · ':''}${fmt(r.monsterCount)} monster types · ${fmt(r.objectCount)} resource/object types</div><div class="s muted">${statusLine} · last seen ${when(r.lastSeen)}</div><div class="s muted">${tilesByZ.get(r.z)||objsByZ.get(r.z)?'Layout captured: '+fmt(tilesByZ.get(r.z)||0)+' floor tiles · '+fmt(objsByZ.get(r.z)||0)+' objects — walk around inside to fill in the rest':'Layout not captured yet — walk around inside and it fills in automatically'}</div><button type="button" class="zoneview-btn" data-zone="${r.z}">View layout</button>${writeButtons}</div>`;
+    return `<div class="card zonecard" data-zone="${r.z}"><div class="name">${esc(r.name)}</div>${zoneQuestNote(r.z)}<div class="s">${r.pvpMode?esc(prettyId(r.pvpMode))+' · ':''}${fmt(r.monsterCount)} monster types · ${fmt(r.objectCount)} resource/object types</div><div class="s muted">${statusLine} · last seen ${when(r.lastSeen)}</div><div class="s muted">${tilesByZ.get(r.z)||objsByZ.get(r.z)?'Layout captured: '+fmt(tilesByZ.get(r.z)||0)+' floor tiles · '+fmt(objsByZ.get(r.z)||0)+' objects — walk around inside to fill in the rest':'Layout not captured yet — walk around inside and it fills in automatically'}</div><button type="button" class="zoneview-btn" data-zone="${r.z}">View layout</button>${writeButtons}</div>`;
   }).join('')
   :(dungeonCards.length?'':'<div class="note">No interior zones captured yet. Walk into a cave, dungeon, or building with the collector running and it will appear here automatically.</div>'));
 }
@@ -1554,6 +1654,9 @@ function zoneAreaPickerHtml(z){
   const cur=zoneAreaIndex(z);
   return `<div class="zonearea-pick" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px"><span class="muted" style="font-size:11px">The game uses this zone number for ${areas.length} separate places:</span>${areas.map((a,i)=>`<button type="button" class="zonearea-btn${i===cur?' on':''}" data-area="${i}" title="Near ${Math.round((a.minX+a.maxX)/2)}, ${Math.round((a.minY+a.maxY)/2)} · ${fmt(a.tiles)} floor tiles${a.arrivals?' · entered '+fmt(a.arrivals)+'×':''}">Place ${i+1}</button>`).join('')}</div>`;
 }
+// "You need the quest ... to get in" (Agauton Mine and the like: see QUEST_UNLOCKS in atlas-guides.js)
+function zoneQuestNote(z){const qs=globalThis.bxcZoneQuests?globalThis.bxcZoneQuests(z):[];if(!qs.length)return '';
+  return `<div class="zone-quest-note">Locked until you finish ${qs.map(q=>`<a href="${q.href}">${esc(q.name)}</a>${q.giver?' ('+esc(q.giver)+')':''}`).join(' and ')}.</div>`}
 function zoneOverlayContent(z){
   const r=zoneSummaryRow(z);
   const {monsterRows,objectRows}=zoneRowsHere(z);
@@ -1566,6 +1669,7 @@ function zoneOverlayContent(z){
   <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">${PUBLIC_MODE?'':`<button type="button" id="zoneOverlayRename" title="Rename this zone">Rename</button><button type="button" id="zoneOverlayMoveEntrance" title="Reposition this zone's entrance on the main map">Move entrance</button><button type="button" id="zoneOverlayAssociate" title="Make this a sub-level of another zone">Set parent</button><button type="button" id="zoneOverlayDisassociate" title="Remove any parent zone association">Clear parent</button>${state.zones.get(z)?.manual?'<button type="button" id="zoneOverlayLink" title="Link this hand-placed marker to a zone you already have">Link to existing zone</button>':''}<button type="button" id="zoneOverlayDelete" title="Delete this zone">Delete</button>`}<button type="button" id="zoneOverlayClose" title="Close">✕</button></div>
   </div>
   ${roomBannerHtml(z)}
+  ${zoneQuestNote(z)}
   ${parentName?`<div class="muted" style="margin:-4px 0 6px">Inside <a href="#" id="zoneOverlayParentLink" data-parent-zone="${r.parentZ}" style="color:#7fd0ff;text-decoration:underline;cursor:pointer">${esc(parentName)}</a> — click to go back</div>`:''}
   ${childExitNames.length?`<div class="muted" style="margin:-4px 0 6px">Leads to: ${childExitNames.map(esc).join(', ')} — click the blue dot on the layout below to open</div>`:''}
   ${!PUBLIC_MODE&&state.setEntranceForChildZ!=null?`<div class="s good" style="margin:-4px 0 6px">Click a spot below to place ${esc(state.zones.get(state.setEntranceForChildZ)?.name||('Zone '+state.setEntranceForChildZ))}'s entrance.</div>`:''}
@@ -2253,7 +2357,7 @@ function newsHtml(){
     // applyLegendVisibility) - with a large enough history that was thousands of persistent map markers at
     // once, which is what made panning the map so slow. drawRegionStats' 'regionLabels' icon above is the
     // replacement - one icon per game-defined area instead of one marker per sighting.
-    const d={master:{self:true,areas:false,resources:false,entrances:true,pois:true,trainers:true,regionLabels:false,bossTimers:true},hiddenResources:new Set(),collapsed:false,open:{}};
+    const d={master:{self:true,areas:false,resources:false,entrances:true,pois:true,trainers:true,questGivers:true,regionLabels:false,bossTimers:true},hiddenResources:new Set(),collapsed:false,open:{}};
     try{
       const s=JSON.parse(localStorage.getItem(LEGEND_KEY)||'null');
       if(s){
@@ -2577,6 +2681,7 @@ function newsHtml(){
     for(const [key,lg] of state.resourceLayerByKey)setIn(resourceRoot,lg,!legendState.hiddenResources.has(key));
     setOn(gameAreaLayer,legendState.master.areas);
     setOn(trainerLayer,legendState.master.trainers);
+    setOn(questGiverLayer,legendState.master.questGivers);
   }
 
   function getResourceLayer(key){
@@ -2618,6 +2723,7 @@ function newsHtml(){
       ${chip('pois','Places','#ffffff','Towns, dungeons and areas from the official map')}
       ${chip('entrances','Entrances','#3ad1ff','Cave, dungeon and building entrances (click one for its layout)')}
       ${chip('trainers','Trainers','#e6c34a','Skill trainers: where they stand, or the door of the building they are in')}
+      ${chip('questGivers','Quests','#ffd24a','Quest-givers: people with a quest to give (click one for their quests)')}
       ${PUBLIC_MODE?'':chip('bossTimers','Bosses','#b8453a','Boss respawn timers')}
       ${PUBLIC_MODE?'':chip('self','You','#ffd54a','Your position')}
       ${chip('areas','Areas','#9db4d8','The game’s own named areas, outlined')}
@@ -2911,6 +3017,7 @@ function newsHtml(){
     drawRegionStats();
     console.timeEnd('drawMap:drawRegionStats');
     try{drawTrainers()}catch(err){console.debug('[atlas] trainers',err)}
+    try{drawQuestGivers()}catch(err){console.debug('[atlas] quest-givers',err)}
     console.time('drawMap:drawGameAreas');
     drawGameAreas();
     console.timeEnd('drawMap:drawGameAreas');
@@ -3756,6 +3863,10 @@ function newsHtml(){
       const lv=[...e.levels.keys()].sort((a,b)=>a-b);
       return `<p class="map-panel-kind">Named ${esc(prettyId(e.typeId))}</p><div class="card"><div class="name">${esc(e.name)}</div><div class="s muted">${lv.length?'Level '+(lv.length>1?lv[0]+'–'+lv[lv.length-1]:lv[0])+' · ':''}seen ${fmt(e.seen)}×</div></div><a class="map-panel-open" href="${pageHref('npc',id)}">Open the full page →</a>`;
     }
+    if(kind==='zone'){
+      const z=Number(id),nm=state.zones?.get(z)?.name||('Zone '+z),pt=zoneEntrancePoint(z);
+      return `<p class="map-panel-kind">Cave, mine or building</p><div class="card"><div class="name">${esc(nm)}</div><div class="s muted">${pt?'The way in is circled on the map.':'Its entrance has not been recorded yet.'}</div>${typeof zoneQuestNote==='function'?zoneQuestNote(z):''}<button type="button" class="open-zone" data-zone="${z}">Open the layout</button></div>`;
+    }
     if(kind==='place'){
       const p=(D.pois||[]).find(x=>x.name===id);if(!p)return '<p class="muted">Unknown place.</p>';
       const mons=monsterTypesNear(p,70).filter(t=>!ROAMING_NPC_TYPES.has(t));
@@ -3811,8 +3922,10 @@ function newsHtml(){
     // without animating. A hidden window cannot animate at all, so it always jumps.
     const jump=()=>map.fitBounds(b.pad(.6),{maxZoom:0,animate:false});
     if(document.hidden){jump();return}
+    const want=Math.min(0,map.getBoundsZoom(b.pad(.6)));
     map.fitBounds(b.pad(.6),{maxZoom:0,animate:true});
-    setTimeout(()=>{if(!map.getBounds().contains(b.getCenter()))jump()},650);
+    // not there, or not zoomed in (a zoom animation that never finished): jump
+    setTimeout(()=>{if(!map.getBounds().contains(b.getCenter())||Math.abs(map.getZoom()-want)>.25)jump()},650);
   }
   const nearText=pt=>{const a=placesFor([pt])[0];return a&&a.poi?'near '+a.poi.name:'around '+Math.round(pt.x)+', '+Math.round(pt.y)};
   // Caves, mines, dungeons and buildings that hold something, by their outdoor entrance: most ore is only found
@@ -3905,6 +4018,11 @@ function newsHtml(){
       if(caves.length&&caves[0].count>=e.pts.length){goCave(caves[0]);return caveText(caves[0],'sightings')}
       if(fit)flyToCluster(e.pts);
       return {text:`Seen ${nearText(e.pts[0])}`};
+    }
+    if(kind==='zone'){
+      const pt=zoneEntrancePoint(Number(id));if(!pt){focus(false);return null}
+      circlePoints([pt],false);focus(true);if(fit)flyToCluster([pt]);   // the move that the map's edge rule cannot cancel
+      return {text:'Entrance to '+(state.zones?.get(Number(id))?.name||'this place')+' '+nearText(pt)};
     }
     if(kind==='place'){
       const p=(D.pois||[]).find(x=>x.name===id);
@@ -4325,6 +4443,7 @@ function newsHtml(){
     return `<article class="wp"><div class="wp-main">
       <p class="wp-lede">${esc(e.name)} is ${role?'a '+esc(role)+' — ':''}a named <a href="${pageHref('monster',e.typeId)}">${esc(typeLabel)}</a>${lv.length?` seen at level ${lv.length>1?lv[0]+'–'+lv[lv.length-1]:lv[0]}`:''}${e.cls.size?' ('+[...e.cls].map(esc).join(', ')+')':''}.</p>
       ${(()=>{const eq=npcGear(slug);if(!eq)return '';const o=outfitFor(eq);return `<h2>Wearing</h2><p>${o?`The <a href="#/guide/outfits">${esc(o.name)}</a> outfit${eq.mainHand||eq.offHand?', and':''}`:''}</p><div class="gear-line">${gearLine(eq)}</div>`})()}
+      ${(()=>{const g=questGiverList().find(x=>x.slug===slug);if(!g)return '';return `<h2>Quests</h2>${g.quests.length?`<ul class="wp-list">${g.quests.map(q=>`<li><a href="${questHref(q)}">${esc(q.name)}</a> <span class="muted">· level ${q.recommendedLevel||'?'}</span></li>`).join('')}</ul>`:'<p class="muted">'+esc(e.name)+' has quests to give; none has been recorded yet.</p>'}`})()}
       <h2>Where to find ${esc(e.name)}</h2>
       ${places.length?`<ul class="wp-list">${places.map(p=>`<li>Inside <b>${esc(p.name)}</b> <span class="muted">· seen ${fmt(p.n)}×</span> <button type="button" class="open-zone" data-zone="${esc(p.z)}">Layout</button></li>`).join('')}</ul>`:''}
       ${outdoors.length?`<ul class="wp-list">${outdoors.slice(0,5).map(a=>`<li>${placeLine(a)}</li>`).join('')}</ul>`:''}
@@ -4397,10 +4516,17 @@ function newsHtml(){
       if(!TRAINER_RE.test(e.name))continue;
       const skillName=e.name.replace(TRAINER_RE,'').replace(/\s+/g,' ').trim();
       const guide=skillName&&globalThis.bxcGuides?.forSkill?globalThis.bxcGuides.forSkill(skillName):null;
-      const t={slug:e.slug,name:e.name,skill:skillName||null,guide,spots:[],e,inside:new Map()};
+      const t={slug:e.slug,name:e.name,skill:skillName||null,guide,e};
       byName.set(e.name,t);list.push(t);
     }
-    // indoors: where in the zone they were seen picks the building (one pass over the sightings for all trainers)
+    placePeople(list,byName);
+    list.sort((a,b)=>String(a.skill||a.name).localeCompare(String(b.skill||b.name)));
+    trainerCache={key,list};return list;
+  }
+  // Where named people are: indoors at the entrance of their building (the right building when one zone number is
+  // several, see zoneAreas), outdoors at the middle of where they stand. list: [{name,e (a namedNpcs entry),...}].
+  function placePeople(list,byName){
+    for(const t of list){t.spots=[];t.inside=new Map()}
     if(byName.size)for(const arr of [snapshot?.npcs,snapshot?.npcObservations])for(const o of arr||[]){
       const p=o.position;if(!p||!p.z||!Number.isFinite(p.x))continue;
       const t=byName.get(String(o.name||'').trim());if(!t)continue;
@@ -4420,9 +4546,41 @@ function newsHtml(){
       t.spots.sort((a,b)=>b.n-a.n);
       delete t.e;delete t.inside;
     }
-    list.sort((a,b)=>String(a.skill||a.name).localeCompare(String(b.skill||b.name)));
-    trainerCache={key,list};return list;
   }
+  // ---- Quest-givers: people the game marks as quest-givers (action "quest-giver"), people who ever had a quest
+  // marker over their head (recorded in the quests store's "__givers" record), and whoever handed out a recorded quest.
+  function questGiverList(){
+    const key=[snapshot?.npcs,snapshot?.npcObservations,snapshot?.quests,state.zoneEntrances,state.areaEntrances];
+    if(giverCache.key&&key.every((k,i)=>k===giverCache.key[i]))return giverCache.list;
+    const quests=(snapshot?.quests||[]).filter(q=>q&&q.name),marked=((snapshot?.quests||[]).find(q=>q&&q.questId==='__givers')||{}).givers||{};
+    const names=new Set();
+    for(const n of snapshot?.npcs||[]){if(!n||!n.name)continue;if(n.action==='quest-giver'||marked[n.id])names.add(String(n.name).trim())}
+    for(const q of quests)if(q.giverName)names.add(String(q.giverName).trim());
+    const list=[],byName=new Map(),all=namedNpcs();
+    for(const name of names){const e=all.get(npcSlug(name));if(!e)continue;
+      const t={slug:e.slug,name:e.name,e,quests:quests.filter(q=>String(q.giverName||'').trim()===e.name).sort((a,b)=>(a.recommendedLevel||0)-(b.recommendedLevel||0))};byName.set(e.name,t);list.push(t)}
+    placePeople(list,byName);
+    list.sort((a,b)=>a.name.localeCompare(b.name));
+    giverCache={key,list};return list;
+  }
+  const questHref=q=>'#/guide/quest-'+npcSlug(q.questId||q.name);
+  function drawQuestGivers(){
+    if(!questGiverLayer)questGiverLayer=L.layerGroup();else questGiverLayer.clearLayers();
+    for(const t of questGiverList()){
+      for(const s of t.spots){
+        if(!s.pt)continue;
+        const icon=L.divIcon({className:'bxc-questgiver',html:'<span>!</span>',iconSize:[22,22],iconAnchor:[11,11]});
+        const m=L.marker(latlng(s.pt,true),{icon,zIndexOffset:520});
+        m.bindTooltip(`<b>${esc(t.name)}</b>${t.quests.length?'<br>'+t.quests.map(q=>esc(q.name)).join('<br>'):'<br><span style="opacity:.8">Has quests (none recorded yet)</span>'}<br>${esc(trainerWhere(s))}`,{direction:'top'});
+        m.on('click',ev=>{if(armedPassthrough(ev))return;
+          if(s.indoors){if(!state.zoneArea)state.zoneArea=new Map();state.zoneArea.set(s.z,s.area);lastRenderedZoneOverlayZ=null}
+          if(onMapPage())openMapPanel('npc',t.slug,{});else location.hash=pageHref('npc',t.slug)});
+        m.addTo(questGiverLayer);
+      }
+    }
+  }
+  // for the Quests guide: every quest-giver, where they are and what they give
+  globalThis.bxcQuestGivers=()=>questGiverList().map(t=>({slug:t.slug,name:t.name,href:pageHref('npc',t.slug),onMap:t.spots.some(x=>x.pt),where:t.spots.map(trainerWhere),quests:t.quests.map(q=>({name:q.name,href:questHref(q),level:q.recommendedLevel}))}));
   const trainerWhere=s=>s.indoors?`inside ${s.name}${s.pt?' ('+nearText(s.pt)+')':''}`:`outdoors ${s.pt?nearText(s.pt):''}`;
   const trainerImg=t=>namedNpcImgUrl('human',t.name)||monsterImg({typeId:'human',name:t.name});
   function drawTrainers(){
@@ -4442,6 +4600,8 @@ function newsHtml(){
     }
   }
   // for the guides: every trainer, and (filtered there) the ones for one skill guide
+  // a person's page by name (the Quests guide links its quest-givers): null when nobody by that name was recorded
+  globalThis.bxcNpcByName=name=>{const e=namedNpcs().get(npcSlug(name));return e?{slug:e.slug,href:pageHref('npc',e.slug),onMap:e.pts.length>0}:null};
   globalThis.bxcTrainers=()=>trainerList().map(t=>({...t,href:pageHref('npc',t.slug),img:trainerImg(t),where:t.spots.map(trainerWhere)}));
   // the named ones of a type, on the type's page
   function namedListHtml(type){
@@ -4721,7 +4881,10 @@ function newsHtml(){
     if(!snapshot)return;
     // the first time the data is in: draw the address's page, unless it was already drawn before the data came and
     // the reader has started using it (then it is left alone - the tab's own live refresh fills in the rest)
-    if(!routedOnce){routedOnce=true;if(location.hash&&!(routedEarly&&touchedEarly))handleRoute(true);return}
+    // the quest pages and lists are built from the data alone and have nothing to type into, so they are always
+    // drawn again once it is in (they were showing "Nothing recorded yet" when drawn before it arrived)
+    const dataPage=/^#\/(guide\/quests?|guide\/quest-|guides-quests|npc\/)/.test(location.hash);
+    if(!routedOnce){routedOnce=true;if(location.hash&&(dataPage||!(routedEarly&&touchedEarly)))handleRoute(true);return}
     handleRoute(false);
   }
   // On a load or Reload panels, pages that do not need the collector's data (guides, calculators, lists) open at once

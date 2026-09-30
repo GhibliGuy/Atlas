@@ -38,7 +38,7 @@
 
   const G=[],byslug=new Map();
   function reg(g){G.push(g);byslug.set(g.slug,g)}
-  const GROUPS=['Start here','Combat','Melee','Ranged','Magic','Gathering skills','Crafting skills','Gear, gems & enchanting','World'];
+  const GROUPS=['Start here','Combat','Melee','Ranged','Magic','Gathering skills','Crafting skills','Gear, gems & enchanting','World','Quests'];
 
   // ---- shared pieces --------------------------------------------------------------------------------------------
   const gatherTiers=skill=>(typeof GATHERABLES!=='undefined'?GATHERABLES:[]).filter(g=>g.skill===skill).map(g=>({...g,id:slug(g.item)})).sort((a,b)=>a.level-b.level);
@@ -430,6 +430,161 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     ['guild','Guilds',table(['',''],[['Founding','20,000 platinum at a Guildmaster; a unique name and a 3-letter tag'],['Ranks','Member, Officer (invites, kicks), Leader (everything)'],['Upkeep','Every 30 days: 250 platinum per member, at least 2,500. Unpaid: the vault is sealed; 14 days late: the guild is disbanded'],['Vault','Tabs of 60 slots; the first is free, more cost 5,000 platinum each (up to 10)'],['Hall','Level 1: 25 members. Level 2 (25,000): 50. Level 3 (75,000): 100']],'g-kv')]
   ],related:['economy']})});
 
+  // Quests, from what the collector recorded (store "quests": one record per quest, see background.js recordQuest):
+  // who gives it, the level, length, quest points, the game's blurb and the exact rewards; the steps and their map
+  // spots, what the quest-giver says and the closing line fill in as quests are played with the collector running.
+  // "All quests" lists them; every quest has its own page, #/guide/quest-<quest id>, made on the fly from its record.
+  const questList=()=>((globalThis.BINXONIA_COLLECTOR_SNAPSHOT||{}).quests||[]).filter(q=>q&&q.name).sort((a,b)=>(a.recommendedLevel||0)-(b.recommendedLevel||0)||String(a.name).localeCompare(b.name));
+  const questSlug=q=>'quest-'+slug(q.questId||q.name);
+  const questBySlug=s=>String(s||'').startsWith('quest-')?questList().find(q=>questSlug(q)===s)||null:null;
+  // Quest guides the user has confirmed as fully written (quest ids). Every other quest gets an alert: on its card on
+  // the Quests page, and a banner on its own page.
+  const QUEST_COMPLETE=new Set([]);
+  const questDone=q=>QUEST_COMPLETE.has(q.questId);
+  const ALERT_SVG='<svg class="q-alert-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20z" fill="currentColor"/><path d="M12 10v5M12 17.6v.4" stroke="#1b1300" stroke-width="2.2" stroke-linecap="round"/></svg>';
+  const questLink=q=>`<a href="#/guide/${enc(questSlug(q))}">${esc(q.name)}</a>`;
+  const Q_CATS=[['story','Story'],['side','Side quests'],['skill','Skill quests']];
+  const questCat=q=>Q_CATS.some(c=>c[0]===q.category)?q.category:'side';
+  const qn=v=>Math.round(+v||0).toLocaleString('en-US');
+  const questZone=z=>{const r=((globalThis.BINXONIA_COLLECTOR_SNAPSHOT||{}).zones||[]).find(x=>Number(x.z)===Number(z));return r&&(r.name||r.label)||null};
+  function questGiver(q){
+    if(!q.giverName)return '<span class="muted">unknown</span>';
+    const p=globalThis.bxcNpcByName&&globalThis.bxcNpcByName(q.giverName);
+    return p?`<a href="${esc(p.href)}">${esc(q.giverName)}</a>${p.onMap?` <button type="button" class="show-on-map" data-map-kind="npc" data-map-id="${esc(p.slug)}">Show on map</button>`:''}`:esc(q.giverName);
+  }
+  // the quest-giver's name as a link to their page (plain text when nobody by that name has been recorded)
+  const giverLink=q=>{if(!q.giverName)return '';const p=globalThis.bxcNpcByName&&globalThis.bxcNpcByName(q.giverName);return p?`<a href="${esc(p.href)}">${esc(q.giverName)}</a>`:esc(q.giverName)};
+  const questSkill=s=>pretty(s.skill||s.skillId||s.id||s);
+  function questRewards(q){
+    const r=q.rewards||{},rows=[];
+    if(r.gold)rows.push(['Gold',qn(r.gold)]);
+    if(r.characterXp)rows.push(['Character XP',qn(r.characterXp)]);
+    for(const s of [...(r.skillXp||[]),...(r.combatSkillXp||[])])rows.push([esc(questSkill(s))+' XP',qn(s.amount)]);
+    if(q.questPoints)rows.push(['Quest points',String(q.questPoints)]);
+    const items=(r.items||[]).map(i=>item(i.typeId)+(i.quantity>1?' ×'+qn(i.quantity):''));
+    if(items.length)rows.push(['Items',items.join('<br>')]);
+    const choice=(r.choice||[]).map(i=>item(i.typeId)+(i.quantity>1?' ×'+qn(i.quantity):''));
+    if(choice.length)rows.push(['Choose one',choice.join('<br><span class="muted">or</span> ')]);
+    const unlocks=[...(r.skills||[]).map(x=>'the '+pretty(x.skill||x)+' skill'),...(r.weaponSkills||[]).map(x=>pretty(x.skill||x)+' (weapon skill)'),...(r.spellSchools||[]).map(x=>pretty(x.school||x)+' magic'),...(r.spells||[]).map(x=>pretty(x.spell||x)),...(r.unlockPackMule?['a pack mule']:[]),...(r.unlockMounts||[]).map(x=>pretty(x))];
+    if(unlocks.length)rows.push(['Unlocks',esc(unlocks.join(', '))]);
+    return rows.length?table(['Reward',''],rows,'q-rewards'):'<p class="muted">No rewards recorded.</p>';
+  }
+  const questRewardLine=q=>{const r=q.rewards||{},b=[];if(r.gold)b.push(qn(r.gold)+' gold');if(r.characterXp)b.push(qn(r.characterXp)+' XP');if((r.items||[]).length||(r.choice||[]).length)b.push('items');if(q.questPoints)b.push(q.questPoints+' QP');return b.join(' · ')};
+  // The steps: 1 is always "talk to the quest-giver" (where they are, with a map button); then the stages the game sent
+  // while someone was on the quest (numbered after it); with none recorded, what players reported (QUEST_REQUIRES).
+  function questSteps(q){
+    const st=(q.stages||[]).filter(s=>s.objectives&&s.objectives.length);
+    const where=w=>w?(w.z&&w.z!==0?` <span class="muted">inside ${esc(questZone(w.z)||'a cave or building')}${questZone(w.z)?'':` (${Math.round(w.x)}, ${Math.round(w.y)})`}</span>`:` <span class="muted">at ${Math.round(w.x)}, ${Math.round(w.y)}</span>`):'';
+    const g=q.giverName?(globalThis.bxcQuestGivers?globalThis.bxcQuestGivers():[]).find(x=>x.name===q.giverName):null;
+    const p=!g&&q.giverName&&globalThis.bxcNpcByName?globalThis.bxcNpcByName(q.giverName):null;
+    const who=q.giverName?(g||p?`<a href="${esc((g||p).href)}">${esc(q.giverName)}</a>`:esc(q.giverName)):'the quest-giver';
+    const whereGiver=g&&g.where&&g.where[0]?` <span class="muted">(${esc(g.where[0])})</span>`:'';
+    const mapBtn=(g&&g.onMap)||(p&&p.onMap)?` <button type="button" class="show-on-map" data-map-kind="npc" data-map-id="${esc((g||p).slug)}">Show on map</button>`:'';
+    const steps=[`<li value="1">Talk to ${who}${whereGiver} to get the quest.${mapBtn}</li>`];
+    if(st.length){
+      for(const s of st)steps.push(`<li value="${(s.n||0)+2}">${s.text&&!s.objectives.some(o=>o.text===s.text)?`<b>${esc(s.text)}</b><br>`:''}${s.objectives.map(o=>`${esc(o.text)}${o.required>1?` <span class="muted">(${qn(o.required)})</span>`:''}${o.itemTypeId?' - '+item(o.itemTypeId):''}${where((o.waypoints||[])[0])}`).join('<br>')}</li>`);
+      return '<ol class="q-steps">'+steps.join('')+'</ol>'+((st[0].n||0)>0?note('Some steps in between were not recorded.'):'');
+    }
+    const r=QUEST_REQUIRES[q.questId];
+    if(r&&r.oneOf){
+      {const names=r.oneOf.map(o=>item(o.id)),list=names.length>1?names.slice(0,-1).join(', ')+' or '+names[names.length-1]:names[0];
+        steps.push(`<li value="2">Get ${list}${r.quality?`, <span class="q-name q-${esc(r.quality)}">${esc(pretty(r.quality))}</span> quality or better`:''}.</li>`)}
+      steps.push(`<li value="3">Bring it back to ${who} to finish the quest.</li>`);
+      return '<ol class="q-steps">'+steps.join('')+'</ol>'+note('Steps 2 and 3 are as reported by players who finished it.');
+    }
+    return '<ol class="q-steps">'+steps.join('')+'</ol>'+note('The rest of the steps are not recorded yet. They fill in when someone plays this quest with the collector running.');
+  }
+  const questTalk=q=>(q.dialogue||[]).map(d=>'<div class="q-conv">'+d.lines.map(x=>`<p class="${x.speaker==='npc'?'q-npc':'q-you'}"><b>${x.speaker==='npc'?esc(d.npcName||q.giverName||'NPC'):'You'}:</b> ${esc(x.text)}</p>`).join('')+'</div>').join('');
+  // What finishing a quest opens up, from the game's news (the quest log does not say). The contents and the ways in
+  // come from what the collector recorded inside (zone z).
+  const QUEST_UNLOCKS={
+    'wasteland-nothing-gets-through':{z:-101,name:'Agauton Mine',questName:'Nothing Gets Through',
+      text:'Finishing this quest opens the old gold mine in the Wastelands: a slide shut it, and both ways into it stay closed until you have helped Wilson Barthrone.',
+      source:{title:'Update: Three Ladders and a Furnace',date:'12 Sep 2026',url:'https://binxonia.com/news/update-three-ladders-and-a-furnace'}}
+  };
+  // for the zone pages and layouts: the quests needed to get into a zone
+  globalThis.bxcZoneQuests=z=>Object.entries(QUEST_UNLOCKS).filter(([,u])=>Number(u.z)===Number(z)).map(([id,u])=>{const q=questList().find(x=>x.questId===id);return {name:q?q.name:u.questName,href:'#/guide/quest-'+slug(id),giver:q&&q.giverName||null}});
+  function questUnlocks(q){
+    const u=QUEST_UNLOCKS[q.questId];if(!u)return '';
+    const S=globalThis.BINXONIA_COLLECTOR_SNAPSHOT||{},z=Number(u.z);
+    const rocks=new Map();for(const o of S.worldObjects||[]){const p=o&&o.position;if(!p||Number(p.z)!==z||!/-rock$/.test(o.typeId||''))continue;rocks.set(o.typeId,(rocks.get(o.typeId)||0)+1)}
+    const res=[...rocks].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).map(([t,n])=>`${n} ${esc(pretty(t.replace(/-rock$/,'')))} rock${n===1?'':'s'}`);
+    // places you walk in from: only ways seen more than once (a single odd crossing - a warp, a death - is not a way in)
+    const near=new Map();for(const t of S.zoneTransitions||[]){if(Number(t.toZ)===z&&t.fromZ!=null&&Number(t.fromZ)!==z)near.set(Number(t.fromZ),(near.get(Number(t.fromZ))||0)+1)}
+    const nearNames=[...near].filter(([,n])=>n>=2).map(([k])=>questZone(k)).filter(Boolean);
+    return `<p><b>${esc(u.name)}</b> <button type="button" class="show-on-map" data-map-kind="zone" data-map-id="${z}">Show on map</button> <button type="button" class="open-zone" data-zone="${z}">Open the layout</button></p><p>${esc(u.text)}</p>`
+      +(res.length?`<p>Inside: ${res.join(', ')}.</p>`:'')
+      +(nearNames.length?`<p>You can also get in from ${nearNames.map(esc).join(' and ')}.</p>`:'')
+      +note(`From the Binxonia news, <a href="${esc(u.source.url)}" target="_blank" rel="noopener">${esc(u.source.title)}</a> (${esc(u.source.date)}); what is inside is what players have recorded there.`);
+  }
+  // What you have to bring to finish a quest: the items the game names for its steps (collect / deliver), items named
+  // in the steps' own words (matched to real item names), and items the collector saw collected for it. How many is
+  // the most any step asked for.
+  // What a quest needs that the game does not send, as reported by players who finished it. oneOf: hand in any one of
+  // these; quality: the least quality it must be.
+  const QUEST_REQUIRES={
+    'wasteland-nothing-gets-through':{kind:'gold items',oneOf:[{id:'gold-arms',also:'gauntlets'},{id:'gold-sword',also:'short sword'},{id:'gold-scribing-quill'}],quality:'excellent',
+      text:'Bring Wilson Barthrone one of these gold items:',who:'Any character on your account, or anyone in your guild, can make it.'}
+  };
+  function questRequiresHtml(q){
+    const r=QUEST_REQUIRES[q.questId];if(!r)return '';
+    const QT=typeof QUALITY_TIERS!=='undefined'?QUALITY_TIERS:[],qi=QT.indexOf(r.quality),ok=qi>=0?QT.slice(qi):[r.quality];
+    const rec=id=>(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);
+    return `<p>${esc(r.text)}</p><ul class="q-needs">${r.oneOf.map(o=>{const x=rec(o.id);return `<li>${item(o.id)}${o.also?' <span class="muted">('+esc(o.also)+')</span>':''}${x?` <span class="muted">· ${esc(x.skill)} ${x.level}</span>`:''}</li>`}).join('')}</ul>`
+      +(r.quality?`<p>It must be <span class="q-name q-${esc(r.quality)}">${esc(pretty(r.quality))}</span> quality or better (${ok.map(t=>`<span class="q-name q-${esc(t)}">${esc(pretty(t))}</span>`).join(', ')}).</p>`:'')
+      +(r.who?note(esc(r.who)):'')
+      +note('Reported by players who finished it; the game does not list it until you are on the quest. The <a href="#/calc-quality">Quality & enchanting</a> calculator shows your chance of that quality.');
+  }
+  function questNeeds(q){
+    const S=globalThis.BINXONIA_COLLECTOR_SNAPSHOT||{},need=new Map(),pre=questRequiresHtml(q);
+    const add=(id,n)=>{if(!id)return;id=String(id);const cur=need.get(id);need.set(id,Math.max(cur||0,Number(n)||0))};
+    for(const id of q.collectItemTypes||[])add(id,0);
+    // item names in the step text ("Bring 5 cooked trout"): exact matches against known items only
+    const names=new Map();for(const t of [...(S.inventoryTypes||[]).map(x=>x.typeId),...(typeof RECIPES!=='undefined'?RECIPES.map(r=>r.id):[])])if(t)names.set(pretty(t).toLowerCase(),t);
+    for(const st of q.stages||[]){
+      if(st.collectItemType)add(st.collectItemType,st.requiredCount);
+      for(const o of st.objectives||[]){
+        if(o.itemTypeId){add(o.itemTypeId,o.required);continue}
+        const txt=String(o.text||'');
+        // longest names first, whole words only, and a stretch of text counts once ("cooked trout" is not also "trout")
+        const low=txt.toLowerCase(),taken=[];
+        for(const [nm,id] of [...names].sort((a,b)=>b[0].length-a[0].length)){
+          const re=new RegExp('(^|[^a-z])'+nm.replace(/[.*+?^$(){}|[\]\\]/g,'\\$&')+'(?![a-z])');const m=re.exec(low);if(!m)continue;
+          const st=m.index+m[1].length,en=st+nm.length;if(taken.some(([a,b])=>st<b&&en>a))continue;taken.push([st,en]);
+          const before=txt.slice(0,st).match(/(\d+)\s*$/);
+          if(o.collectDeliver||/\b(bring|deliver|collect|gather|fetch|hand|give|find|get)\b/i.test(txt))add(id,before?before[1]:o.required);
+        }
+      }
+    }
+    for(const r of S.questItems||[])if((r.quests||[]).includes(q.name))add(r.itemTypeId,0);
+    const stepsKnown=(q.stages||[]).some(st=>(st.objectives||[]).length);
+    if(!need.size)return pre||(stepsKnown?'<p>Nothing to bring in the steps recorded so far.</p>':note('Not recorded yet. The items fill in when someone plays this quest with the collector running.'));
+    return pre+'<ul class="q-needs">'+[...need].map(([id,n])=>`<li>${item(id)}${n>0?' <b>×'+qn(n)+'</b>':''}</li>`).join('')+'</ul>'
+      +(stepsKnown&&!(q.stages||[]).every(st=>(st.objectives||[]).length)?note('From the steps recorded so far.'):'');
+  }
+  // one quest's page
+  function questGuide(s){
+    const q=questBySlug(s);if(!q)return null;
+    return {slug:s,group:'Quests',title:q.name,blurb:q.lore||'',build:()=>{
+      const facts=table(['',''],[['Given by',questGiver(q)],['Level',String(q.recommendedLevel||'?')],['Length',esc(pretty(q.lengthTag||'?'))],['Kind',esc((Q_CATS.find(c=>c[0]===questCat(q))||[])[1]||'Side quests').replace(/ quests$/,'')],['Quest points',String(q.questPoints||0)]],'q-facts');
+      return {lede:(questDone(q)?'':`<span class="q-alert-banner" role="alert">${ALERT_SVG}<span><b>This quest is not fully written yet.</b> Steps, items or dialogue may be missing.</span></span>`)+(q.lore?esc(q.lore):''),sections:[
+        ['about','About',facts],
+        ['needs','What you need',questNeeds(q)],
+        ['steps','Steps',questSteps(q)],
+        ['rewards','Rewards',questRewards(q)+(questUnlocks(q)?'<h3>Unlocks</h3>'+questUnlocks(q):'')],   // what finishing it opens up is a reward too
+        ['talk',`What ${q.giverName?esc(q.giverName)+' says':'they say'}`,questTalk(q)],
+        ['end','Handing it in',q.completionMessage?`<p class="q-end"><i>"${esc(q.completionMessage)}"</i></p>`:'']
+      ],related:['quests','travel']};
+    }};
+  }
+  reg({slug:'quests',group:'Quests',title:'All quests',blurb:'Every quest players have done: who gives it, the level, what it pays, and the steps.',build:()=>{
+    const Q=questList();
+    if(!Q.length)return {lede:'The quests players have done, with who gives them and what they pay.',sections:[['none','Nothing recorded yet','<p class="muted">Quests appear here as they are played with the collector running.</p>']],related:['travel']};
+    const totalQp=Q.reduce((a,q)=>a+(q.questPoints||0),0);
+    const rows=qs=>table(['Quest','Level','Length','Given by','Rewards'],qs.map(q=>[questLink(q),String(q.recommendedLevel||'?'),esc(pretty(q.lengthTag||'')),giverLink(q),esc(questRewardLine(q))]));
+    return {lede:`The ${Q.length} quests players have done so far (${totalQp} quest points in all). Each has its own page with who gives it, what it pays and, where someone played it with the collector running, the steps and what the quest-giver says.`,
+      sections:[...Q_CATS.map(([k,t])=>[k,t,Q.some(q=>questCat(q)===k)?rows(Q.filter(q=>questCat(q)===k)):'']).filter(x=>x[2])],related:['travel','getting-started']};
+  }});
   reg({slug:'travel',group:'World',title:'Travel & quests',blurb:'Horses, warp scrolls, keys, and how quests work.',build:()=>({lede:'Getting around faster, and the basics of quests.',sections:[
     ['horse','Horses',`<p>A horse costs <b>2,500 gold</b> at a stable and makes you <b>50% faster on roads</b>. Press <b>H</b> to mount or dismount; you get off by yourself to gather. Being overloaded slows you even on a horse.</p>`],
     ['warps','Warp scrolls',`<p>Scribes make warp scrolls to places like the Mage Tower, Plymouth Wharf, Underleaf, Appleseed Farm, Mirewick and Wispmeyer. Reading one takes about 1.5 s and is broken by moving, damage or a stun, and it is refused within 10 s of a fight. See ${guide('scribing')}.</p>`],
@@ -442,16 +597,18 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   // reading order within each group (anything not listed goes after these)
   const ORDER=['getting-started','attributes-and-classes','levels-and-xp','death-and-banking','using-the-atlas','combat','special-attacks','armor','magic','monsters-by-level','monster-families','mining','lumberjack','fishing','herblore','shearing','smelting','weapon-smithing','armor-smithing','tool-smithing','bowyer','tailoring','leatherworking','cooking','scribing','quality-and-enchanting','gems','outfits','places','trainers','travel','economy','playing-together'];
   const orderOf=s=>{const i=ORDER.indexOf(s);return i<0?999:i};
+  // one card per recorded quest (the Quests section of the guide index), each opening its own page
+  function questCards(){return questList().map(q=>`<a class="g-card" href="#/guide/${enc(questSlug(q))}">${questDone(q)?'':`<span class="q-alert" role="note">${ALERT_SVG}Not fully written yet</span>`}<b>${esc(q.name)}</b><span>Level ${q.recommendedLevel||'?'} · ${esc(pretty(q.lengthTag||''))}${q.giverName?' · '+esc(q.giverName):''}</span></a>`).join('')}
   function indexHtml(only){
     const groups=only?GROUPS.filter(gr=>slug(gr)===only):GROUPS;
     // All guides: a row of links to each group first, and each heading links to its own page
     const jump=only?`<p class="g-groups"><a href="#/guides">All guides</a>${GROUPS.filter(gr=>slug(gr)!==only).map(gr=>` · <a href="#/guides-${slug(gr)}">${esc(gr)}</a>`).join('')}</p>`
       :`<p class="g-groups">${GROUPS.filter(gr=>G.some(g=>g.group===gr)).map(gr=>`<a href="#/guides-${slug(gr)}">${esc(gr)}</a>`).join(' · ')}</p>`;
     return `<div class="g-index">`+jump+groups.map(gr=>{const list=G.filter(g=>g.group===gr).sort((a,b)=>orderOf(a.slug)-orderOf(b.slug));if(!list.length)return '';
-      return `<section><h2>${only?esc(gr):`<a href="#/guides-${slug(gr)}">${esc(gr)}</a>`}</h2><div class="g-cards">${list.map(g=>`<a class="g-card" href="#/guide/${enc(g.slug)}"><b>${esc(g.title)}</b><span>${esc(g.blurb)}</span></a>`).join('')}</div></section>`}).join('')+`</div>`;
+      return `<section><h2>${only?esc(gr):`<a href="#/guides-${slug(gr)}">${esc(gr)}</a>`}</h2><div class="g-cards">${list.map(g=>`<a class="g-card" href="#/guide/${enc(g.slug)}"><b>${esc(g.title)}</b><span>${esc(g.blurb)}</span></a>`).join('')}${gr==='Quests'?questCards():''}</div></section>`}).join('')+`</div>`;
   }
   function pageHtml(s){
-    const g=byslug.get(s);if(!g)return '<p class="muted">No such guide.</p>';
+    const g=byslug.get(s)||questGuide(s);if(!g)return '<p class="muted">No such guide.</p>';   // quest pages are made from their records
     let d;try{d=g.build()}catch(e){console.error('[guides]',s,e);return '<p class="muted">This guide could not be built.</p>'}
     // a skill's guide opens with who teaches it, when a trainer has been seen
     const tr=s==='trainers'?[]:(globalThis.bxcTrainers?globalThis.bxcTrainers():[]).filter(t=>t.guide===s);
@@ -469,8 +626,8 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   document.addEventListener('click',e=>{const a=e.target.closest('[data-g-jump]');if(!a)return;e.preventDefault();document.getElementById(a.dataset.gJump)?.scrollIntoView({behavior:'smooth',block:'start'})});
   globalThis.bxcGuides={
     list:G,indexHtml,pageHtml,
-    title:s=>byslug.get(s)?.title||pretty(s),
-    has:s=>byslug.has(s),
+    title:s=>(byslug.get(s)||questGuide(s))?.title||pretty(s),
+    has:s=>byslug.has(s)||!!questBySlug(s),
     // the guide for a skill name as the game or a recipe spells it ("Armor Smithing", "mining")
     forSkill:skill=>{const s=skillGuideSlug(skill);return byslug.has(s)?s:null},
     link:(s,label)=>byslug.has(s)?guide(s,label):''
