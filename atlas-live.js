@@ -1282,16 +1282,36 @@ function roomContents(r){
   return {monsters,objects};
 }
 const roomAttrs=(r,attr)=>`${attr}="${r.z}"${r.area!=null?` data-room-area="${r.area}"`:''}`;
-function dungeonCardHtml(g){
+// Who is in a place (whole zones, or areas of one): the level range of its monsters, and - when it has none, a
+// building - the people in it. idx is built once per page (observations and NPCs by zone).
+function placeLifeIndex(){
+  const obs=new Map(),people=new Map(),friendly=new Set();
+  for(const n of snapshot?.npcs||[]){if(n.faction==='friendly'){friendly.add(String(n.id));const z=n.position?.z;if(z!=null&&n.name)(people.get(z)||people.set(z,[]).get(z)).push(n)}}
+  for(const o of snapshot?.npcObservations||[]){const z=o.position?.z;if(z==null||friendly.has(String(o.id)))continue;(obs.get(z)||obs.set(z,[]).get(z)).push(o)}
+  return {obs,people};
+}
+function placeLife(idx,rooms){
+  let lo=Infinity,hi=-Infinity;const names=new Set();
+  for(const r of rooms){
+    for(const o of idx.obs.get(r.z)||[]){if(!roomHas(r,o.position))continue;const lv=num(o.level);if(lv!=null){lo=Math.min(lo,lv);hi=Math.max(hi,lv)}}
+    for(const n of idx.people.get(r.z)||[])if(roomHas(r,n.position))names.add(n.name);
+  }
+  if(Number.isFinite(lo))return 'Monsters Lv '+(lo===hi?lo:lo+'–'+hi);
+  const p=[...names].sort();return p.length?p.slice(0,3).map(esc).join(', ')+(p.length>3?' and '+(p.length-3)+' more':''):'';
+}
+function dungeonCardHtml(g,idx){
   const entered=g.rooms.filter(r=>r.entered).length;
   const last=g.rooms.reduce((m,r)=>Math.max(m,num(state.zones.get(r.z)?.lastSeen)||0),0);
   const mon=new Set(),res=new Set();
   for(const r of g.rooms){const c=roomContents(r);if(c){for(const k of c.monsters.keys())mon.add(k);for(const k of c.objects.keys())res.add(k)}}
-  return `<div class="card dungeoncard" data-dungeon="${esc(g.key)}"><div class="name">${esc(g.name)} <span class="pill">dungeon</span></div>`
-   +`<div class="s">${fmt(g.rooms.length)} rooms · ${fmt(entered)} entered${entered<g.rooms.length?' · '+fmt(g.rooms.length-entered)+' seen from a doorway':''} · ${fmt(g.doors.length)} door${g.doors.length===1?'':'s'} between rooms · ${fmt(mon.size)} monster types · ${fmt(res.size)} resource types</div>`
-   +`<div class="s muted">last seen ${when(last)}</div>`
-   +`<div class="s" style="margin:6px 0">${g.rooms.map(r=>`<button type="button" class="roomlink-btn" ${roomAttrs(r,'data-zone')} title="Zone ${r.z}${r.entered?'':' - not entered yet'}">${esc(r.label)}${r.entered?'':' (not entered)'}</button>`).join(' ')}</div>`
-   +`<button type="button" class="dungeonview-btn" data-dungeon="${esc(g.key)}">View dungeon map</button></div>`;
+  const meta=[fmt(g.rooms.length)+' room'+(g.rooms.length===1?'':'s'),placeLife(idx||placeLifeIndex(),g.rooms),res.size?fmt(res.size)+' resource'+(res.size===1?'':'s'):''].filter(Boolean).join(' · ');
+  // the card itself goes to the dungeon on the map: the game's marker, else its entrance room
+  const poi=(D.pois||[]).find(p=>p.category==='dungeon'&&String(p.name).toLowerCase()===String(g.name).toLowerCase());
+  const entRoom=g.rooms.find(r=>state.zoneEntrances?.has(r.z))||g.rooms[0];
+  const mapAt=poi?`data-card-map="place" data-card-map-id="${esc(poi.name)}"`:`data-card-map="zone" data-card-map-id="${entRoom.z}"`;
+  return `<div class="card zn-card dungeoncard" ${mapAt} title="Show it on the map"><div class="zn-kicker">Dungeon</div><div class="zn-name">${esc(g.name)}</div><div class="zn-meta">${meta}${PUBLIC_MODE?'':' · last seen '+when(last)}</div>`
+   +`<div class="zn-rooms">${g.rooms.map(r=>`<button type="button" class="roomlink-btn zn-room" ${roomAttrs(r,'data-zone')} title="${esc(r.label)}${r.entered?'':' - only seen from a doorway so far'}">${esc(r.label.replace(/^Room /,''))}${r.entered?'':'?'}</button>`).join('')}</div>`
+   +`<div class="zn-actions"><button type="button" class="dungeonview-btn zn-open" data-dungeon="${esc(g.key)}">Dungeon map</button></div></div>`;
 }
 const DUNGEON_ZOOM_MIN=2,DUNGEON_ZOOM_MAX=60,DUNGEON_FIT_WIDTH=820;
 // The map starts sized to fit the panel's width (so the whole dungeon is in view); zoom is relative to that.
@@ -1349,16 +1369,15 @@ function dungeonOverlayContent(g){
   const roomRows=g.rooms.map(r=>{
     const c=roomContents(r);
     const doors=g.doors.filter(d=>d.a===r.z||d.b===r.z).map(d=>{const o=d.a===r.z?d.b:d.a;return esc(roomLabelFor(o)||('Zone '+o))}).join(', ');
-    return `<tr><td><b>${esc(r.label)}</b> <span class="muted">zone ${r.z}</span></td><td>${r.entered?'entered '+fmt(r.visits)+' time'+(r.visits===1?'':'s'):'<span class="muted">seen from a doorway</span>'}</td><td>${fmt(c.monsters.size)}</td><td>${fmt(c.objects.size)}</td><td>${doors||'<span class="muted">none seen</span>'}</td><td><button type="button" ${roomAttrs(r,'data-room-zone')}>View room</button></td></tr>`;
+    return `<tr><td><b>${esc(r.label)}</b>${r.entered?'':' <span class="muted">(seen from a doorway)</span>'}</td><td>${fmt(c.monsters.size)}</td><td>${fmt(c.objects.size)}</td><td>${doors||'<span class="muted">—</span>'}</td><td><button type="button" class="zn-open" ${roomAttrs(r,'data-room-zone')}>Open</button></td></tr>`;
   }).join('');
   const doorRows=g.doors.sort((p,q)=>q.samples-p.samples).map(d=>`<li>${esc(roomLabelFor(d.a)||('Zone '+d.a))} ⇄ ${esc(roomLabelFor(d.b)||('Zone '+d.b))} <span class="muted">- door near (${Math.round(d.x)}, ${Math.round(d.y)}), crossed ${fmt(d.samples)} time${d.samples===1?'':'s'}</span></li>`).join('');
-  return `<div id="zoneOverlayDragHandle" style="display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:move" title="Drag to move this panel"><div class="collector-title" style="margin:0">${esc(g.name)} <span class="muted" style="font-weight:400">- dungeon map</span></div><button type="button" id="zoneOverlayClose" title="Close">×</button></div>`
-   +`<div class="statline"><span>${fmt(g.rooms.length)} rooms</span><span>${fmt(entered)} entered</span><span>${fmt(g.doors.length)} doors seen</span></div>`
-   +`<div style="display:flex;align-items:center;gap:6px;margin:2px 0 8px"><button type="button" id="dungeonZoomOut" title="Zoom out">−</button><span class="muted" style="min-width:44px;text-align:center">${Math.round(zoom*100/dungeonFitZoom(g))}%</span><button type="button" id="dungeonZoomIn" title="Zoom in">+</button><span class="muted" style="font-size:11px">Click a room to open its own layout. Blue dots are doors between rooms, red dots are monsters seen, dashed rooms were only seen from a doorway.</span></div>`
+  return `<div id="zoneOverlayDragHandle" class="zn-ov-head" title="Drag to move this panel"><div><div class="zn-kicker">Dungeon map</div><div class="zn-ov-title">${esc(g.name)}</div></div><button type="button" id="zoneOverlayClose" class="zn-ov-close" title="Close">×</button></div>`
+   +`<div class="zn-meta">${fmt(g.rooms.length)} room${g.rooms.length===1?'':'s'}${g.doors.length?' · '+fmt(g.doors.length)+' door'+(g.doors.length===1?'':'s')+' between them':''}${entered<g.rooms.length?' · '+fmt(g.rooms.length-entered)+' only seen from a doorway':''}</div>`
+   +`<div class="zn-zoom"><button type="button" id="dungeonZoomOut" title="Zoom out">−</button><span>${Math.round(zoom*100/dungeonFitZoom(g))}%</span><button type="button" id="dungeonZoomIn" title="Zoom in">+</button><span class="zn-legend">Click a room to open it. <i class="zn-dot" style="background:#7fd0ff"></i>doors between rooms <i class="zn-dot" style="background:#e2574c"></i>monsters · dashed rooms were only seen from a doorway.</span></div>`
    +dungeonSvg(g)
-   +`<div class="muted" style="margin:6px 0 10px">Rooms are numbered in the order you first entered them; rooms you have only glimpsed come last. Doors are placed where you were standing when the game moved you between two rooms.</div>`
-   +`<details open><summary class="collector-title">Rooms (${g.rooms.length})</summary><table class="research-table"><thead><tr><th>Room</th><th>Visits</th><th>Monster types</th><th>Resource types</th><th>Doors to</th><th></th></tr></thead><tbody>${roomRows}</tbody></table></details>`
-   +(doorRows?`<details open><summary class="collector-title">Doors (${g.doors.length})</summary><ul style="margin:4px 0 0 18px;padding:0">${doorRows}</ul></details>`:'');
+   +`<h3 class="zn-h3">Rooms</h3><div class="g-scroll"><table class="g-table"><thead><tr><th>Room</th><th>Monster types</th><th>Resources</th><th>Doors to</th><th></th></tr></thead><tbody>${roomRows}</tbody></table></div>`
+   +`<p class="g-note">Rooms are numbered in the order they were first entered; rooms only seen from a doorway come last.</p>`;
 }
 function openDungeonOverlay(key){
   const g=state.dungeons?.get(key);if(!g)return;
@@ -1379,8 +1398,8 @@ function roomBannerHtml(z){
   const key=state.dungeonOfZone?.get(z);if(key==null)return '';
   const g=state.dungeons.get(key);if(!g)return '';
   const label=roomLabelFor(z);
-  const doors=g.doors.filter(d=>d.a===z||d.b===z).map(d=>{const o=d.a===z?d.b:d.a;return `<a href="#" data-room-zone="${o}" style="color:#7fd0ff;text-decoration:underline;cursor:pointer">${esc(roomLabelFor(o)||('Zone '+o))}</a>`}).join(', ');
-  return `<div class="muted" style="margin:-4px 0 6px">${esc(label)} of <a href="#" data-dungeon="${esc(key)}" style="color:#7fd0ff;text-decoration:underline;cursor:pointer">${esc(g.name)}</a> (${fmt(g.rooms.length)} rooms) - <a href="#" data-dungeon="${esc(key)}" style="color:#7fd0ff;text-decoration:underline;cursor:pointer">view the whole dungeon map</a>${doors?'<br>Doors to: '+doors:''}</div>`;
+  const doors=g.doors.filter(d=>d.a===z||d.b===z).map(d=>{const o=d.a===z?d.b:d.a;return `<a href="#" data-room-zone="${o}">${esc(roomLabelFor(o)||('Zone '+o))}</a>`}).join(', ');
+  return `<div class="muted" style="margin:-4px 0 6px">${esc(label)} of <a href="#" data-dungeon="${esc(key)}">${esc(g.name)}</a> (${fmt(g.rooms.length)} rooms) - <a href="#" data-dungeon="${esc(key)}">view the whole dungeon map</a>${doors?'<br>Doors to: '+doors:''}</div>`;
 }
 function zoneSummaryRow(z){
   const meta=state.zones.get(z)||{};
@@ -1726,16 +1745,29 @@ function zonesHtml(search=''){
   const inPart=(z,p)=>(partBoxes.get(z)||[]).some(b=>inArea(b,p));
   for(const r of snapshot?.terrain||[])if(!inPart(r.z,{x:r.xStart,y:r.y}))tilesByZ.set(r.z,(tilesByZ.get(r.z)||0)+(num(r.length)||0));
   for(const o of snapshot?.worldObjects||[]){const oz=o.position?.z;if(oz&&!isGroundItem(o)&&!inPart(oz,o.position))objsByZ.set(oz,(objsByZ.get(oz)||0)+1)}
-  const dungeonCards=[...(state.dungeons?.values()||[])].filter(g=>!s||JSON.stringify(g).toLowerCase().includes(s)||g.rooms.some(r=>JSON.stringify(zoneSummaryRow(r.z)).toLowerCase().includes(s))).map(dungeonCardHtml);
+  const life=placeLifeIndex();
+  const dungeonCards=[...(state.dungeons?.values()||[])].filter(g=>!s||JSON.stringify(g).toLowerCase().includes(s)||g.rooms.some(r=>JSON.stringify(zoneSummaryRow(r.z)).toLowerCase().includes(s))).map(g=>dungeonCardHtml(g,life));
   const rows=[...state.zones.keys()].filter(z=>z!==0&&!state.dungeonOfZone?.has(z)).map(zoneSummaryRow).filter(r=>!s||JSON.stringify(r).toLowerCase().includes(s)).sort((a,b)=>b.lastSeen-a.lastSeen);
-  return `<div class="collector-panel"><div class="collector-title">Known zones & caves</div><div class="statline"><span>${fmt(rows.length+dungeonCards.length)} zones observed</span>${dungeonCards.length?`<span>${fmt(dungeonCards.length)} dungeon${dungeonCards.length===1?"":"s"} with rooms</span>`:""}</div><div class="muted">Interiors are identified by the server's own zone/floor id. Monsters and resources shown here are only what your collector has actually observed inside each one.</div></div>` +
-  dungeonCards.join('')+(rows.length?rows.map(r=>{
+  const zoneCard=r=>{
     const parentName=r.parentZ!=null?(state.zones.get(r.parentZ)?.name||('Zone '+r.parentZ)):null;
     const statusLine=parentName?`Inside ${esc(parentName)}`:(r.entrance?.manual?'Manually placed entrance':r.entrance?`Entrance located from ${fmt(r.entrance.samples)} visit${r.entrance.samples===1?'':'s'}`:'Entrance location not yet observed');
-    const writeButtons=PUBLIC_MODE?'':` <button type="button" class="zonerename-btn" data-zone="${r.z}">Rename</button> <button type="button" class="zonemoveentrance-btn" data-zone="${r.z}">Move entrance</button> ${state.zones.get(r.z)?.manual?`<button type="button" class="zonelink-btn" data-zone="${r.z}" title="This marker has nothing recorded inside it. Link it to a zone you already have.">Link to existing zone</button> `:''}<button type="button" class="zonedelete-btn" data-zone="${r.z}">Delete</button> <button type="button" class="zoneassociate-btn" data-zone="${r.z}">Set parent</button> <button type="button" class="zonedisassociate-btn" data-zone="${r.z}">Clear parent</button>`;
-    return `<div class="card zonecard" data-zone="${r.z}"><div class="name">${esc(r.name)}</div>${(()=>{const o=zoneAreas(r.z).map((a,i)=>i).filter(i=>i>0&&!state.partsOf?.has(r.z+"|"+i));return o.length?`<div class="s muted">The game also uses this number for: ${o.map(i=>esc(placeName(r.z,i))).join(", ")}</div>`:""})()}${zoneQuestNote(r.z)}<div class="s">${r.pvpMode?esc(prettyId(r.pvpMode))+' · ':''}${fmt(r.monsterCount)} monster types · ${fmt(r.objectCount)} resource/object types</div><div class="s muted">${statusLine} · last seen ${when(r.lastSeen)}</div><div class="s muted">${tilesByZ.get(r.z)||objsByZ.get(r.z)?'Layout captured: '+fmt(tilesByZ.get(r.z)||0)+' floor tiles · '+fmt(objsByZ.get(r.z)||0)+' objects — walk around inside to fill in the rest':'Layout not captured yet — walk around inside and it fills in automatically'}</div><button type="button" class="zoneview-btn" data-zone="${r.z}">View layout</button>${writeButtons}</div>`;
-  }).join('')
-  :(dungeonCards.length?'':'<div class="note">No caves, dungeons or buildings recorded yet. They appear here as data for them comes in.</div>'));
+    const writeButtons=PUBLIC_MODE?'':`<button type="button" class="zonerename-btn" data-zone="${r.z}">Rename</button><button type="button" class="zonemoveentrance-btn" data-zone="${r.z}">Move entrance</button>${state.zones.get(r.z)?.manual?`<button type="button" class="zonelink-btn" data-zone="${r.z}" title="This marker has nothing recorded inside it. Link it to a zone you already have.">Link to existing zone</button>`:''}<button type="button" class="zonedelete-btn" data-zone="${r.z}">Delete</button><button type="button" class="zoneassociate-btn" data-zone="${r.z}">Set parent</button><button type="button" class="zonedisassociate-btn" data-zone="${r.z}">Clear parent</button>`;
+    const also=zoneAreas(r.z).map((a,i)=>i).filter(i=>i>0&&!state.partsOf?.has(r.z+'|'+i));
+    const own=[{z:r.z,area:zoneAreas(r.z).length>1?0:null}];   // this place only (not other places or dungeon rooms sharing its number)
+    const meta=[r.pvpMode&&r.pvpMode!=='none'?esc(prettyId(r.pvpMode)):'',placeLife(life,own),r.objectCount?fmt(r.objectCount)+' resource'+(r.objectCount===1?'':'s'):''].filter(Boolean).join(' · ');
+    const hasLayout=tilesByZ.get(r.z)||objsByZ.get(r.z);
+    return `<div class="card zn-card zonecard" data-card-map="zone" data-card-map-id="${r.z}" title="Show it on the map"><div class="zn-kicker">${parentName?'Inside '+esc(parentName):'Cave, mine or building'}</div><div class="zn-name">${esc(r.name)}</div>`
+      +(also.length?`<div class="zn-meta">Also here: ${also.map(i=>esc(placeName(r.z,i))).join(', ')}</div>`:'')
+      +zoneQuestNote(r.z)
+      +(meta?`<div class="zn-meta">${meta}</div>`:'')
+      +(PUBLIC_MODE?'':`<div class="zn-meta">${statusLine} · last seen ${when(r.lastSeen)}</div>`)
+      +`<div class="zn-actions"><button type="button" class="zoneview-btn zn-open" data-zone="${r.z}">${hasLayout?'Layout':'No layout yet'}</button>${writeButtons}</div></div>`;
+  };
+  const total=rows.length+dungeonCards.length;
+  return `<p class="zn-summary">${fmt(total)} place${total===1?'':'s'}${dungeonCards.length?` · ${fmt(dungeonCards.length)} dungeon${dungeonCards.length===1?'':'s'}`:''}. Open one to see its layout, doors and what lives there.</p>`
+    +(dungeonCards.length?`<h2 class="zn-h">Dungeons</h2><div class="zn-list">${dungeonCards.join('')}</div>`:'')
+    +(rows.length?`<h2 class="zn-h">Caves, mines & buildings</h2><div class="zn-list">${rows.map(zoneCard).join('')}</div>`:'')
+    +(total?'':'<div class="note">No caves, dungeons or buildings recorded yet. They appear here as data for them comes in.</div>');
 }
 function zoneHasLayout(z){
   const inZ=a=>(a||[]).some(o=>(o.z!==undefined?o.z:o.position?.z)===z);
@@ -1778,7 +1810,7 @@ function zoneAreaPickerHtml(z){
   const cur=zoneAreaIndex(z);
   // a room of another dungeon recorded under this number (Imp Tree under the Church's) belongs to that dungeon
   const part=state.partsOf?.get(z+'|'+cur);
-  if(part)return `<div class="muted" style="margin:-4px 0 8px">${esc(part.label)} of <a href="#" data-dungeon="${esc(part.key)}" style="color:#7fd0ff;text-decoration:underline;cursor:pointer">${esc(part.name)}</a> - <a href="#" data-dungeon="${esc(part.key)}" style="color:#7fd0ff;text-decoration:underline;cursor:pointer">view the whole dungeon map</a></div>`;
+  if(part)return `<div class="muted" style="margin:-4px 0 8px">${esc(part.label)} of <a href="#" data-dungeon="${esc(part.key)}">${esc(part.name)}</a> - <a href="#" data-dungeon="${esc(part.key)}">view the whole dungeon map</a></div>`;
   const own=areas.map((a,i)=>i).filter(i=>!state.partsOf?.has(z+'|'+i));
   if(own.length<2)return '';
   return `<div class="zonearea-pick" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px"><span class="muted" style="font-size:11px">The game uses this zone number for ${own.length} separate places:</span>${own.map(i=>[areas[i],i]).map(([a,i])=>`<button type="button" class="zonearea-btn${i===cur?' on':''}" data-area="${i}" title="Near ${Math.round((a.minX+a.maxX)/2)}, ${Math.round((a.minY+a.maxY)/2)} · ${fmt(a.tiles)} floor tiles${a.arrivals?' · entered '+fmt(a.arrivals)+'×':''}">${esc(placeName(z,i))}</button>`).join('')}</div>`;
@@ -1792,28 +1824,31 @@ function zoneOverlayContent(z){
   const parentName=r.parentZ!=null?(state.zones.get(r.parentZ)?.name||('Zone '+r.parentZ)):null;
   const autoChildExits=(state.zoneInternalExits?.get(z)||[]).filter(ex=>ex.toZ!==r.parentZ);
   const manualChildZones=[...state.zones.values()].filter(m=>state.zoneParent?.get(m.z)===z&&m.z!==r.parentZ&&!autoChildExits.some(ex=>ex.toZ===m.z));
-  const childExitNames=[...new Set([...autoChildExits.map(ex=>placeName(ex.toZ,placeIndexAt(ex.toZ,ex))),...manualChildZones.map(m=>m.name||('Zone '+m.z))])];
-  return `<div id="zoneOverlayDragHandle" style="display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:move" title="Drag to move this panel">
-  <div class="collector-title" style="margin:0">${esc(placeName(z,zoneAreaIndex(z)))}</div>
-  <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">${PUBLIC_MODE?'':`<button type="button" id="zoneOverlayRename" title="Rename this zone">Rename</button><button type="button" id="zoneOverlayMoveEntrance" title="Reposition this zone's entrance on the main map">Move entrance</button><button type="button" id="zoneOverlayAssociate" title="Make this a sub-level of another zone">Set parent</button><button type="button" id="zoneOverlayDisassociate" title="Remove any parent zone association">Clear parent</button>${state.zones.get(z)?.manual?'<button type="button" id="zoneOverlayLink" title="Link this hand-placed marker to a zone you already have">Link to existing zone</button>':''}<button type="button" id="zoneOverlayDelete" title="Delete this zone">Delete</button>`}<button type="button" id="zoneOverlayClose" title="Close">✕</button></div>
+  const sameDungeon=tz=>state.dungeonOfZone?.has(z)&&state.dungeonOfZone.get(z)===state.dungeonOfZone.get(tz);
+  const childExitNames=[...new Set([...autoChildExits.filter(ex=>!sameDungeon(ex.toZ)).map(ex=>placeName(ex.toZ,placeIndexAt(ex.toZ,ex))),   // rooms of the same dungeon are already under Doors to
+...manualChildZones.map(m=>m.name||('Zone '+m.z))])];
+  const part=state.partsOf?.get(z+'|'+zoneAreaIndex(z));
+  return `<div id="zoneOverlayDragHandle" class="zn-ov-head" title="Drag to move this panel">
+  <div><div class="zn-kicker">${part||state.dungeonOfZone?.has(z)?'Dungeon room':parentName?'Inside '+esc(parentName):'Cave, mine or building'}</div><div class="zn-ov-title">${esc(placeName(z,zoneAreaIndex(z)))}</div></div>
+  <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">${PUBLIC_MODE?'':`<button type="button" id="zoneOverlayRename" title="Rename this zone">Rename</button><button type="button" id="zoneOverlayMoveEntrance" title="Reposition this zone's entrance on the main map">Move entrance</button><button type="button" id="zoneOverlayAssociate" title="Make this a sub-level of another zone">Set parent</button><button type="button" id="zoneOverlayDisassociate" title="Remove any parent zone association">Clear parent</button>${state.zones.get(z)?.manual?'<button type="button" id="zoneOverlayLink" title="Link this hand-placed marker to a zone you already have">Link to existing zone</button>':''}<button type="button" id="zoneOverlayDelete" title="Delete this zone">Delete</button>`}<button type="button" id="zoneOverlayClose" class="zn-ov-close" title="Close">×</button></div>
   </div>
   ${roomBannerHtml(z)}
   ${zoneQuestNote(z)}
-  ${parentName?`<div class="muted" style="margin:-4px 0 6px">Inside <a href="#" id="zoneOverlayParentLink" data-parent-zone="${r.parentZ}" style="color:#7fd0ff;text-decoration:underline;cursor:pointer">${esc(parentName)}</a> — click to go back</div>`:''}
-  ${childExitNames.length?`<div class="muted" style="margin:-4px 0 6px">Leads to: ${childExitNames.map(esc).join(', ')} — click the blue dot on the layout below to open</div>`:''}
+  ${parentName&&!(state.dungeonOfZone?.has(z)&&state.dungeonOfZone.get(z)===state.dungeonOfZone.get(r.parentZ))?`<div class="muted" style="margin:-4px 0 6px">Inside <a href="#" id="zoneOverlayParentLink" data-parent-zone="${r.parentZ}">${esc(parentName)}</a> — click to go back</div>`:''}
+  ${childExitNames.length?`<div class="muted" style="margin:-4px 0 6px">Leads to: ${childExitNames.map(esc).join(', ')} — click its door on the layout to go there</div>`:''}
   ${!PUBLIC_MODE&&state.setEntranceForChildZ!=null?`<div class="s good" style="margin:-4px 0 6px">Click a spot below to place ${esc(state.zones.get(state.setEntranceForChildZ)?.name||('Zone '+state.setEntranceForChildZ))}'s entrance.</div>`:''}
   ${PUBLIC_MODE?'':`<div style="margin:2px 0 8px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
   <span><button type="button" id="zoneOverlayAddSub">Add sub-level here</button> <span class="muted" style="font-size:11px">Click, then click a spot in the layout below to mark a door/staircase to a new zone.</span></span>
   ${parentName?`<span><button type="button" id="zoneOverlayMarkExit" title="Mark where in this zone's own layout the way back to ${esc(parentName)} is">Mark door to parent here</button> <span class="muted" style="font-size:11px">Click, then click a spot below to place a door back to ${esc(parentName)}.</span></span>`:''}
   </div>`}
-  <div class="statline"><span>${r.pvpMode?esc(prettyId(r.pvpMode)):'—'}</span><span>${fmt(monsterRows.length)} monster types seen</span><span>${fmt(objectRows.length)} gatherable resource types seen</span></div>
-  <div style="display:flex;align-items:center;gap:6px;margin:2px 0 8px"><button type="button" id="zoneDetailZoomOut" title="Zoom out">−</button><button type="button" id="zoneDetailZoomReset" title="Reset zoom">${Math.round(getZoneZoom(z)*100)}%</button><button type="button" id="zoneDetailZoomIn" title="Zoom in">+</button><span class="muted" style="font-size:11px">Scroll the wheel over the layout to zoom, drag the scrollbars to pan.</span></div>
+  <div class="zn-meta">${[r.pvpMode&&r.pvpMode!=='none'?esc(prettyId(r.pvpMode)):'',fmt(monsterRows.length)+' monster type'+(monsterRows.length===1?'':'s'),fmt(objectRows.length)+' resource'+(objectRows.length===1?'':'s')].filter(Boolean).join(' · ')}</div>
+  <div class="zn-zoom"><button type="button" id="zoneDetailZoomOut" title="Zoom out">−</button><button type="button" id="zoneDetailZoomReset" title="Reset zoom">${Math.round(getZoneZoom(z)*100)}%</button><button type="button" id="zoneDetailZoomIn" title="Zoom in">+</button><span class="zn-legend">Scroll over the layout to zoom, drag to pan. <i class="zn-dot" style="background:#5fd38a"></i>way outside <i class="zn-dot" style="background:#ffd54a"></i>way back</span></div>
   ${zoneAreaPickerHtml(z)}
   ${zoneHasLayout(z)?'':`<div class="note" style="margin:0 0 8px"><b>Nothing recorded inside this one yet.</b> ${r.entrance?.manual||state.zones.get(z)?.manual?'You placed this entrance by hand, so it has no layout of its own. Walk inside with the collector running and it fills in automatically. If this place is already recorded under another zone, press <b>Link to existing zone</b> above to attach this entrance to it (nothing recorded is deleted).':'The layout will appear as data for it comes in.'}</div>`}
   ${zoneDetailSvg(z)}
-  <div class="muted" style="margin:6px 0 10px">Floors use the game's own colours. Walls are drawn from the wall pieces recorded so far, and counters, doors and furniture with their captured art. Items lying on the ground aren't shown. Anything not recorded yet is missing. Red = monsters, gold = you; only confirmed-gatherable resources are shown as resources.</div>
-  <details open><summary class="collector-title">Monsters seen here (${monsterRows.length})</summary><table class="research-table"><thead><tr><th>Monster</th><th>Observations</th><th>Last seen</th></tr></thead><tbody>${monsterRows.map(m=>`<tr><td><span class="monsterlink" data-monster="${esc(m.typeId||m.id)}"${m.npc?` data-npc="${esc(m.npc)}"`:''} title="${m.npc?'Open their page':'Show in Bestiary'}" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><img class="thumb monsterthumb" src="${esc(monsterImg({typeId:m.typeId||m.id,name:m.name}))}" alt="" style="width:22px;height:22px;flex:none;border-radius:5px"><span>${esc(prettyId(m.name||m.id))}</span></span></td><td>${fmt(m.count)}</td><td>${when(m.lastSeen)}</td></tr>`).join('')||'<tr><td colspan="3">None observed yet.</td></tr>'}</tbody></table></details>
-  <details open><summary class="collector-title">Gatherable resources seen here (${objectRows.length})</summary><table class="research-table"><thead><tr><th>Resource</th><th>Distinct seen</th><th>Last seen</th></tr></thead><tbody>${objectRows.map(o=>`<tr><td>${o.yieldItem?`<span class="dropicon-link" data-item="${esc(o.yieldItem)}" title="Show in Items tab" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><img class="thumb itemthumb" src="${esc(itemImgFor(o.yieldItem))}" alt="" style="width:22px;height:22px;flex:none;border-radius:5px"><span>${esc(prettyId(o.name))} (${esc(prettyId(o.yieldItem))})</span></span>`:esc(prettyId(o.name))}</td><td>${fmt(o.count)}</td><td>${when(o.lastSeen)}</td></tr>`).join('')||'<tr><td colspan="3">None observed yet.</td></tr>'}</tbody></table></details>`;
+  <div class="g-note">Floors use the game's own colours. Walls are drawn from the wall pieces recorded so far, and counters, doors and furniture with their captured art. Items lying on the ground aren't shown. Anything not recorded yet is missing. Red = monsters, gold = you; only confirmed-gatherable resources are shown as resources.</div>
+  <details open class="zn-details"><summary>Monsters seen here (${monsterRows.length})</summary><table class="g-table"><thead><tr><th>Monster</th><th>Observations</th><th>Last seen</th></tr></thead><tbody>${monsterRows.map(m=>`<tr><td><span class="monsterlink" data-monster="${esc(m.typeId||m.id)}"${m.npc?` data-npc="${esc(m.npc)}"`:''} title="${m.npc?'Open their page':'Show in Bestiary'}" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><img class="thumb monsterthumb" src="${esc(monsterImg({typeId:m.typeId||m.id,name:m.name}))}" alt="" style="width:22px;height:22px;flex:none;border-radius:5px"><span>${esc(prettyId(m.name||m.id))}</span></span></td><td>${fmt(m.count)}</td><td>${when(m.lastSeen)}</td></tr>`).join('')||'<tr><td colspan="3">None observed yet.</td></tr>'}</tbody></table></details>
+  <details open class="zn-details"><summary>Resources seen here (${objectRows.length})</summary><table class="g-table"><thead><tr><th>Resource</th><th>Distinct seen</th><th>Last seen</th></tr></thead><tbody>${objectRows.map(o=>`<tr><td>${o.yieldItem?`<span class="dropicon-link" data-item="${esc(o.yieldItem)}" title="Show in Items tab" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><img class="thumb itemthumb" src="${esc(itemImgFor(o.yieldItem))}" alt="" style="width:22px;height:22px;flex:none;border-radius:5px"><span>${esc(prettyId(o.name))} (${esc(prettyId(o.yieldItem))})</span></span>`:esc(prettyId(o.name))}</td><td>${fmt(o.count)}</td><td>${when(o.lastSeen)}</td></tr>`).join('')||'<tr><td colspan="3">None observed yet.</td></tr>'}</tbody></table></details>`;
 }
 let zoneOverlayEl=null;
 // The layout panel sits on the map; on a page (Banker, a cave's resource) the map is hidden, so it floats over the
@@ -1830,7 +1865,7 @@ function ensureZoneOverlay(){
   if(!mapEl)return null;
   zoneOverlayEl=document.createElement('div');
   zoneOverlayEl.id='zoneOverlay';
-  zoneOverlayEl.style.cssText='position:absolute;top:12px;right:12px;width:min(900px,94%);max-width:98%;height:auto;max-height:calc(100% - 24px);min-width:340px;min-height:240px;overflow:auto;resize:both;background:rgba(15,12,9,.97);border:1px solid #7a5c30;border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.55);z-index:4000;padding:14px;color:#eee;display:none';
+  zoneOverlayEl.style.cssText='position:absolute;top:12px;right:12px;width:min(900px,94%);max-width:98%;height:auto;max-height:calc(100% - 24px);min-width:340px;min-height:240px;overflow:auto;resize:both;z-index:4000;display:none';
   mapEl.appendChild(zoneOverlayEl);placeZoneOverlay(zoneOverlayEl);
   if(typeof L!=='undefined'&&L.DomEvent){L.DomEvent.disableClickPropagation(zoneOverlayEl);if(L.DomEvent.disableScrollPropagation)L.DomEvent.disableScrollPropagation(zoneOverlayEl);}
   zoneOverlayEl.addEventListener('click',e=>{
@@ -4190,6 +4225,8 @@ function newsHtml(){
   }
   document.addEventListener('click',e=>{const z=e.target.closest('.open-zone');if(!z)return;e.preventDefault();if(z.dataset.area!=null){if(!state.zoneArea)state.zoneArea=new Map();state.zoneArea.set(Number(z.dataset.zone),+z.dataset.area);lastRenderedZoneOverlayZ=null}openZoneOverlay(Number(z.dataset.zone))});
   document.addEventListener('click',e=>{const b=e.target.closest('.show-on-map');if(!b)return;e.preventDefault();e.stopPropagation();showOnMap(b.dataset.mapKind,b.dataset.mapId,b.dataset.mapQuality||null,b.dataset.mapLevel||null)},true);
+  // a Zones & caves card: the card goes to the place on the map, its buttons do their own thing
+  document.addEventListener('click',e=>{const c=e.target.closest('[data-card-map]');if(!c||e.target.closest('button,a'))return;e.preventDefault();showOnMap(c.dataset.cardMap,c.dataset.cardMapId)});
   // Leaving the map page hides the panel (the selection stays for the pages that still show the map).
   document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{if(b.dataset.tab!=='map')closeMapPanel(false)}));
   // Official places: a click opens the panel on the map page (they used to open a small popup, kept elsewhere).
