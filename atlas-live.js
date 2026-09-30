@@ -41,6 +41,9 @@
   // Walks up from a room's zone to whichever ancestor actually has a captured outdoor entrance point (a
   // sub-room's own entry is often only recorded on its parent dungeon zone - see deriveZones/zoneEntrances).
   // where you walk into a zone from outside: the game's dungeon marker when one matches, else a recorded entrance
+  // "z" or "z:i" (the i-th place under zone number z) and where its way in is
+  function zonePlaceId(id){const [a,b]=String(id).split(':');return [Number(a),Number(b)||0]}
+  function placeEntrancePoint(z,i){if(i){const ae=(state.areaEntrances||[]).find(a=>a.z===z&&a.area===i);return ae?{x:ae.x,y:ae.y}:null}return zoneEntrancePoint(z)}
   function zoneEntrancePoint(z){const poi=dungeonPoiForZone(z);if(poi)return {x:poi.x,y:poi.y};const e=entranceForZone(z);return e?{x:num(e.x),y:num(e.y)}:null}
   function entranceForZone(z){
     let cur=z,guard=0;
@@ -264,9 +267,9 @@
         if(state.moveEntranceArmed){
           const z=state.moveEntranceForZone;
           state.moveEntranceArmed=false;state.moveEntranceForZone=null;
-          updatePlacementCursor(false);
+          updatePlacementCursor(false);mapPlacementBanner(null);
           const pos=unprojectLatLng(e.latlng);
-          bridgeRequest('set-zone-entrance',{z,x:pos.x,y:pos.y}).then(syncNow).catch(err=>setCollectorStatus('Collector: '+err.message));
+          bridgeRequest('set-zone-entrance',{z,x:pos.x,y:pos.y}).then(syncNow).then(()=>openZoneOverlay(z)).catch(err=>setCollectorStatus('Collector: '+err.message));
           return;
         }
         if(!state.addZoneArmed)return;
@@ -314,6 +317,8 @@
     if(addZoneBtn){addZoneBtn.textContent='Add zone';addZoneBtn.style.background='';}
     const meta=state.zones.get(z);
     setCollectorStatus(`Collector: click the map to place the entrance for "${meta?.name||('Zone '+z)}"`);
+    const cur=state.zoneEntrances?.get(z);if(cur&&typeof map!=='undefined')map.setView(latlng({x:cur.x,y:cur.y},true),Math.max(map.getZoom(),0));
+    mapPlacementBanner(`Click the map where the way into <b>${esc(meta?.name||('Zone '+z))}</b> is.`,()=>{state.moveEntranceArmed=false;state.moveEntranceForZone=null;updatePlacementCursor(false);openZoneOverlay(z)});
     setTimeout(()=>{
       state.moveEntranceForZone=z;
       state.moveEntranceArmed=true;
@@ -321,6 +326,19 @@
     },0);
   }
   function setCollectorStatus(t){const el=document.getElementById('collectorStatus');if(el)el.textContent=t}
+  // A bar on the map while a click there is awaited (the layout panel is out of the way), with Cancel and Esc.
+  let placementBannerEl=null,placementBannerCancel=null;
+  function mapPlacementBanner(html,onCancel){
+    const mapEl=document.getElementById('map');
+    if(!html){if(placementBannerEl)placementBannerEl.remove();placementBannerEl=null;placementBannerCancel=null;return}
+    if(!mapEl)return;
+    if(!placementBannerEl){placementBannerEl=document.createElement('div');placementBannerEl.className='zn-mode zn-mode-map';if(typeof L!=='undefined'&&L.DomEvent)L.DomEvent.disableClickPropagation(placementBannerEl)}
+    placementBannerCancel=onCancel||null;
+    placementBannerEl.innerHTML=`<span>${html}</span><button type="button">Cancel</button>`;
+    placementBannerEl.querySelector('button').onclick=()=>{const c=placementBannerCancel;mapPlacementBanner(null);if(c)c()};
+    mapEl.appendChild(placementBannerEl);
+  }
+  document.addEventListener('keydown',e=>{if(e.key==='Escape'&&placementBannerEl&&state.moveEntranceArmed){const c=placementBannerCancel;mapPlacementBanner(null);if(c)c()}});
   function loadBaseline(){
     try{const x=JSON.parse(localStorage.getItem(LAST_SEEN_KEY)||'null');if(x&&x.stats)state.visitBaseline=x.stats;}catch{}
   }
@@ -1131,6 +1149,18 @@ function deriveZones(){
     }
   }
   state.zoneSurfaceExits=surfaceExits;
+  // In a dungeon, "back" means toward the way in: each room's parent is the room before it on the shortest walk from
+  // the entrance room (the one with the way outside), not a guess from where people arrived - that had Ogre Cove's
+  // entrance room leading "back" deeper in. A parent you set by hand still wins.
+  for(const g of state.dungeons?.values()||[]){
+    if(g.parts)continue;
+    const members=new Set(g.rooms.map(r=>r.z)),start=g.rooms.find(r=>surfaceExits.has(r.z))||g.rooms.find(r=>entrances.has(r.z));
+    if(!start)continue;
+    const byHand=z=>zones.get(z)?.parentOverride!==undefined;
+    if(!byHand(start.z))parentByZone.delete(start.z);
+    const seen=new Set([start.z]),queue=[start.z];
+    while(queue.length){const a=queue.shift();for(const ex of internalExits.get(a)||[]){if(!members.has(ex.toZ)||seen.has(ex.toZ))continue;seen.add(ex.toZ);if(!byHand(ex.toZ))parentByZone.set(ex.toZ,a);queue.push(ex.toZ)}}
+  }
   const contents=new Map();
   const ensure=z=>{if(!contents.has(z))contents.set(z,{monsters:new Map(),objects:new Map()});return contents.get(z)};
   for(const o of snapshot?.npcObservations||[]){
@@ -1567,7 +1597,9 @@ function exitKind(ex,near){
   return ex.toZ===0?'cave':'door';
 }
 function exitMarkup(ex,objs,cx,cy,shadow){
-  const toArea=ex.surface?0:placeIndexAt(ex.toZ,ex),part=!ex.surface&&state.partsOf?.get(ex.toZ+'|'+toArea),targetName=ex.surface?'outside':part?part.name+' '+part.label:placeName(ex.toZ,toArea);
+  const toArea=ex.surface?0:placeIndexAt(ex.toZ,ex),part=!ex.surface&&state.partsOf?.get(ex.toZ+'|'+toArea);
+  const from=state.openZone,dg=state.dungeonOfZone,sameDg=!ex.surface&&from!=null&&dg?.has(from)&&dg.get(from)===dg.get(ex.toZ);
+  const targetName=ex.surface?'outside':part?(state.partsOf?.get(from+'|'+zoneAreaIndex(from))?.key===part.key?part.label:part.name+' '+part.label):sameDg?roomLabelFor(ex.toZ):placeName(ex.toZ,toArea);
   const near=exitObjectNear(ex,objs);
   const kind=exitKind(ex,near);
   const label=kind==='ladder'?'Ladder':kind==='hole'?'Hole':kind==='hatch'?'Hatch':kind==='cave'?'Cave entrance':'Door';
@@ -1747,21 +1779,26 @@ function zonesHtml(search=''){
   for(const o of snapshot?.worldObjects||[]){const oz=o.position?.z;if(oz&&!isGroundItem(o)&&!inPart(oz,o.position))objsByZ.set(oz,(objsByZ.get(oz)||0)+1)}
   const life=placeLifeIndex();
   const dungeonCards=[...(state.dungeons?.values()||[])].filter(g=>!s||JSON.stringify(g).toLowerCase().includes(s)||g.rooms.some(r=>JSON.stringify(zoneSummaryRow(r.z)).toLowerCase().includes(s))).map(g=>dungeonCardHtml(g,life));
-  const rows=[...state.zones.keys()].filter(z=>z!==0&&!state.dungeonOfZone?.has(z)).map(zoneSummaryRow).filter(r=>!s||JSON.stringify(r).toLowerCase().includes(s)).sort((a,b)=>b.lastSeen-a.lastSeen);
+  const rows=[...state.zones.keys()].filter(z=>z!==0&&!state.dungeonOfZone?.has(z)).flatMap(z=>{
+    // the other places the game recorded under this number, each a card of its own (not a dungeon's rooms)
+    const main=zoneSummaryRow(z),n=zoneAreas(z).length;
+    const extra=[];for(let i=1;i<n;i++)if(!state.partsOf?.has(z+'|'+i))extra.push({...main,area:i,name:placeName(z,i),parentZ:null,entrance:(state.areaEntrances||[]).find(a=>a.z===z&&a.area===i)||null,objectCount:0});
+    return [main,...extra];
+  }).filter(r=>!s||JSON.stringify(r).toLowerCase().includes(s)).sort((a,b)=>b.lastSeen-a.lastSeen);
   const zoneCard=r=>{
     const parentName=r.parentZ!=null?(state.zones.get(r.parentZ)?.name||('Zone '+r.parentZ)):null;
     const statusLine=parentName?`Inside ${esc(parentName)}`:(r.entrance?.manual?'Manually placed entrance':r.entrance?`Entrance located from ${fmt(r.entrance.samples)} visit${r.entrance.samples===1?'':'s'}`:'Entrance location not yet observed');
-    const writeButtons=PUBLIC_MODE?'':`<button type="button" class="zonerename-btn" data-zone="${r.z}">Rename</button><button type="button" class="zonemoveentrance-btn" data-zone="${r.z}">Move entrance</button>${state.zones.get(r.z)?.manual?`<button type="button" class="zonelink-btn" data-zone="${r.z}" title="This marker has nothing recorded inside it. Link it to a zone you already have.">Link to existing zone</button>`:''}<button type="button" class="zonedelete-btn" data-zone="${r.z}">Delete</button><button type="button" class="zoneassociate-btn" data-zone="${r.z}">Set parent</button><button type="button" class="zonedisassociate-btn" data-zone="${r.z}">Clear parent</button>`;
-    const also=zoneAreas(r.z).map((a,i)=>i).filter(i=>i>0&&!state.partsOf?.has(r.z+'|'+i));
-    const own=[{z:r.z,area:zoneAreas(r.z).length>1?0:null}];   // this place only (not other places or dungeon rooms sharing its number)
+    const writeButtons=PUBLIC_MODE?'':`<button type="button" class="zoneedit-btn" data-zone="${r.z}">Edit</button>`;
+    const ai=r.area||0;
+    const own=[{z:r.z,area:zoneAreas(r.z).length>1?ai:null}];   // this place only (not other places or dungeon rooms sharing its number)
     const meta=[r.pvpMode&&r.pvpMode!=='none'?esc(prettyId(r.pvpMode)):'',placeLife(life,own),r.objectCount?fmt(r.objectCount)+' resource'+(r.objectCount===1?'':'s'):''].filter(Boolean).join(' · ');
     const hasLayout=tilesByZ.get(r.z)||objsByZ.get(r.z);
-    return `<div class="card zn-card zonecard" data-card-map="zone" data-card-map-id="${r.z}" title="Show it on the map"><div class="zn-kicker">${parentName?'Inside '+esc(parentName):'Cave, mine or building'}</div><div class="zn-name">${esc(r.name)}</div>`
-      +(also.length?`<div class="zn-meta">Also here: ${also.map(i=>esc(placeName(r.z,i))).join(', ')}</div>`:'')
-      +zoneQuestNote(r.z)
+    const floorOf=/ \(another floor\)$/.test(r.name)?r.name.replace(/ \(another floor\)$/,''):null;
+    return `<div class="card zn-card zonecard" data-card-map="zone" data-card-map-id="${r.z}${ai?':'+ai:''}" title="Show it on the map"><div class="zn-kicker">${floorOf?'A floor of '+esc(floorOf):parentName?'Inside '+esc(parentName):'Cave, mine or building'}</div><div class="zn-name">${esc(floorOf||r.name)}</div>`
+      +(ai?'':zoneQuestNote(r.z))
       +(meta?`<div class="zn-meta">${meta}</div>`:'')
       +(PUBLIC_MODE?'':`<div class="zn-meta">${statusLine} · last seen ${when(r.lastSeen)}</div>`)
-      +`<div class="zn-actions"><button type="button" class="zoneview-btn zn-open" data-zone="${r.z}">${hasLayout?'Layout':'No layout yet'}</button>${writeButtons}</div></div>`;
+      +`<div class="zn-actions"><button type="button" class="zoneview-btn zn-open" data-zone="${r.z}"${ai?` data-room-area="${ai}"`:''}>${hasLayout||ai?'Layout':'No layout yet'}</button>${ai?'':writeButtons}</div></div>`;
   };
   const total=rows.length+dungeonCards.length;
   return `<p class="zn-summary">${fmt(total)} place${total===1?'':'s'}${dungeonCards.length?` · ${fmt(dungeonCards.length)} dungeon${dungeonCards.length===1?'':'s'}`:''}. Open one to see its layout, doors and what lives there.</p>`
@@ -1811,6 +1848,9 @@ function zoneAreaPickerHtml(z){
   // a room of another dungeon recorded under this number (Imp Tree under the Church's) belongs to that dungeon
   const part=state.partsOf?.get(z+'|'+cur);
   if(part)return `<div class="muted" style="margin:-4px 0 8px">${esc(part.label)} of <a href="#" data-dungeon="${esc(part.key)}">${esc(part.name)}</a> - <a href="#" data-dungeon="${esc(part.key)}">view the whole dungeon map</a></div>`;
+  // other places under the same number are unrelated buildings (the Plymouth Wharf bank and a Binxonia shop): each
+  // has its own card and layout, so there is nothing to pick between
+  return '';
   const own=areas.map((a,i)=>i).filter(i=>!state.partsOf?.has(z+'|'+i));
   if(own.length<2)return '';
   return `<div class="zonearea-pick" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px"><span class="muted" style="font-size:11px">The game uses this zone number for ${own.length} separate places:</span>${own.map(i=>[areas[i],i]).map(([a,i])=>`<button type="button" class="zonearea-btn${i===cur?' on':''}" data-area="${i}" title="Near ${Math.round((a.minX+a.maxX)/2)}, ${Math.round((a.minY+a.maxY)/2)} · ${fmt(a.tiles)} floor tiles${a.arrivals?' · entered '+fmt(a.arrivals)+'×':''}">${esc(placeName(z,i))}</button>`).join('')}</div>`;
@@ -1818,37 +1858,65 @@ function zoneAreaPickerHtml(z){
 // "You need the quest ... to get in" (Agauton Mine and the like: see QUEST_UNLOCKS in atlas-guides.js)
 function zoneQuestNote(z){const qs=globalThis.bxcZoneQuests?globalThis.bxcZoneQuests(z):[];if(!qs.length)return '';
   return `<div class="zone-quest-note">Locked until you finish ${qs.map(q=>`<a href="${q.href}">${esc(q.name)}</a>${q.giver?' ('+esc(q.giver)+')':''}`).join(' and ')}.</div>`}
+// The app's own tools for a place (hidden on the public Atlas), in one menu: each says what it does, only the ones
+// that apply are offered, and deleting sits apart at the bottom.
+function zoneEditMenuHtml(z,r,parentName){
+  const meta=state.zones.get(z)||{},item=(id,label,hint,cls='')=>`<button type="button" id="${id}" class="zn-edit-item${cls}" role="menuitem"><b>${label}</b><span>${hint}</span></button>`;
+  return `<div class="zn-edit"><button type="button" id="zoneOverlayEditBtn" class="zn-edit-btn" aria-haspopup="menu" aria-expanded="${state.zoneEditOpen?'true':'false'}">Edit ▾</button><div class="zn-edit-menu" role="menu"${state.zoneEditOpen?'':' hidden'}>`
+    +item('zoneOverlayRename','Rename…','Change the name shown everywhere')
+    +item('zoneOverlayMoveEntrance','Move the entrance','Then click the map where the way in is')
+    +item('zoneOverlayAddSub','Add a door to a new area','Then click the layout where the door is')
+    +(parentName?item('zoneOverlayMarkExit','Mark the way back','Then click the layout where the door to '+esc(parentName)+' is'):'')
+    +item('zoneOverlayAssociate','Put it inside another place…','For a floor or room you reach from inside another place')
+    +(parentName?item('zoneOverlayDisassociate','Take it out of '+esc(parentName),'It becomes a place of its own again'):'')
+    +(meta.manual?item('zoneOverlayLink','Link to a recorded place…','This marker has nothing inside yet: attach it to a place already recorded'):'')
+    +'<hr>'+item('zoneOverlayDelete','Delete this place…','Removes it and everything recorded inside',' zn-danger')
+    +'</div></div>';
+}
+// While a tool waits for a click on the layout: say exactly what to click, with a way out.
+function zoneModeBarHtml(z,parentName){
+  const child=state.setEntranceForChildZ;
+  const msg=state.addSubLevelArmed?'Click the layout where the door to the new area is.'
+    :state.markExitArmed?'Click the layout where the way back'+(parentName?' to <b>'+esc(parentName)+'</b>':'')+' is.'
+    :child!=null?'Click the layout where the way into <b>'+esc(state.zones.get(child)?.name||('Zone '+child))+'</b> is.':'';
+  return msg?`<div class="zn-mode"><span>${msg}</span><button type="button" id="zoneOverlayCancelMode">Cancel</button></div>`:'';
+}
 function zoneOverlayContent(z){
   const r=zoneSummaryRow(z);
-  const {monsterRows,objectRows}=zoneRowsHere(z);
+  const {monsterRows:allRows,objectRows}=zoneRowsHere(z);
+  // friendly people (a vendor, a banker) are not monsters
+  const friendlyNames=new Set((snapshot?.npcs||[]).filter(n=>n.faction==='friendly'&&n.name).map(n=>n.name));
+  const peopleRows=allRows.filter(m=>friendlyNames.has(m.name)),monsterRows=allRows.filter(m=>!friendlyNames.has(m.name));
   const parentName=r.parentZ!=null?(state.zones.get(r.parentZ)?.name||('Zone '+r.parentZ)):null;
-  const autoChildExits=(state.zoneInternalExits?.get(z)||[]).filter(ex=>ex.toZ!==r.parentZ);
+  const hereArea=zoneAreas(z).length>1?zoneAreas(z)[zoneAreaIndex(z)]:null;
+  const autoChildExits=(state.zoneInternalExits?.get(z)||[]).filter(ex=>ex.toZ!==r.parentZ&&(!hereArea||inArea(hereArea,ex)));
   const manualChildZones=[...state.zones.values()].filter(m=>state.zoneParent?.get(m.z)===z&&m.z!==r.parentZ&&!autoChildExits.some(ex=>ex.toZ===m.z));
-  const sameDungeon=tz=>state.dungeonOfZone?.has(z)&&state.dungeonOfZone.get(z)===state.dungeonOfZone.get(tz);
+  const myPart=state.partsOf?.get(z+'|'+zoneAreaIndex(z));
+  const sameDungeon=tz=>(state.dungeonOfZone?.has(z)&&state.dungeonOfZone.get(z)===state.dungeonOfZone.get(tz))||(myPart&&[...(state.partsOf?.entries()||[])].some(([k,v])=>v.key===myPart.key&&k.startsWith(tz+'|')));
   const childExitNames=[...new Set([...autoChildExits.filter(ex=>!sameDungeon(ex.toZ)).map(ex=>placeName(ex.toZ,placeIndexAt(ex.toZ,ex))),   // rooms of the same dungeon are already under Doors to
 ...manualChildZones.map(m=>m.name||('Zone '+m.z))])];
   const part=state.partsOf?.get(z+'|'+zoneAreaIndex(z));
   return `<div id="zoneOverlayDragHandle" class="zn-ov-head" title="Drag to move this panel">
-  <div><div class="zn-kicker">${part||state.dungeonOfZone?.has(z)?'Dungeon room':parentName?'Inside '+esc(parentName):'Cave, mine or building'}</div><div class="zn-ov-title">${esc(placeName(z,zoneAreaIndex(z)))}</div></div>
-  <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end">${PUBLIC_MODE?'':`<button type="button" id="zoneOverlayRename" title="Rename this zone">Rename</button><button type="button" id="zoneOverlayMoveEntrance" title="Reposition this zone's entrance on the main map">Move entrance</button><button type="button" id="zoneOverlayAssociate" title="Make this a sub-level of another zone">Set parent</button><button type="button" id="zoneOverlayDisassociate" title="Remove any parent zone association">Clear parent</button>${state.zones.get(z)?.manual?'<button type="button" id="zoneOverlayLink" title="Link this hand-placed marker to a zone you already have">Link to existing zone</button>':''}<button type="button" id="zoneOverlayDelete" title="Delete this zone">Delete</button>`}<button type="button" id="zoneOverlayClose" class="zn-ov-close" title="Close">×</button></div>
+  <div>${(()=>{const nm=placeName(z,zoneAreaIndex(z)),dgKey=state.dungeonOfZone?.get(z),floor=/ \(another floor\)$/.test(nm)?nm.replace(/ \(another floor\)$/,''):null;
+    const kick=part?'Dungeon room':dgKey!=null?'Dungeon room':floor?'A floor of '+esc(floor):parentName?'Inside '+esc(parentName):'Cave, mine or building';
+    const title=part?part.name+' · '+part.label:dgKey!=null?nm+' · '+(roomLabelFor(z)||''):floor||nm;
+    return `<div class="zn-kicker">${kick}</div><div class="zn-ov-title">${esc(title)}</div>`})()}</div>
+  <div class="zn-ov-tools">${PUBLIC_MODE?'':zoneEditMenuHtml(z,r,parentName)}<button type="button" id="zoneOverlayClose" class="zn-ov-close" title="Close">×</button></div>
   </div>
   ${roomBannerHtml(z)}
   ${zoneQuestNote(z)}
   ${parentName&&!(state.dungeonOfZone?.has(z)&&state.dungeonOfZone.get(z)===state.dungeonOfZone.get(r.parentZ))?`<div class="muted" style="margin:-4px 0 6px">Inside <a href="#" id="zoneOverlayParentLink" data-parent-zone="${r.parentZ}">${esc(parentName)}</a> — click to go back</div>`:''}
   ${childExitNames.length?`<div class="muted" style="margin:-4px 0 6px">Leads to: ${childExitNames.map(esc).join(', ')} — click its door on the layout to go there</div>`:''}
-  ${!PUBLIC_MODE&&state.setEntranceForChildZ!=null?`<div class="s good" style="margin:-4px 0 6px">Click a spot below to place ${esc(state.zones.get(state.setEntranceForChildZ)?.name||('Zone '+state.setEntranceForChildZ))}'s entrance.</div>`:''}
-  ${PUBLIC_MODE?'':`<div style="margin:2px 0 8px;display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-  <span><button type="button" id="zoneOverlayAddSub">Add sub-level here</button> <span class="muted" style="font-size:11px">Click, then click a spot in the layout below to mark a door/staircase to a new zone.</span></span>
-  ${parentName?`<span><button type="button" id="zoneOverlayMarkExit" title="Mark where in this zone's own layout the way back to ${esc(parentName)} is">Mark door to parent here</button> <span class="muted" style="font-size:11px">Click, then click a spot below to place a door back to ${esc(parentName)}.</span></span>`:''}
-  </div>`}
-  <div class="zn-meta">${[r.pvpMode&&r.pvpMode!=='none'?esc(prettyId(r.pvpMode)):'',fmt(monsterRows.length)+' monster type'+(monsterRows.length===1?'':'s'),fmt(objectRows.length)+' resource'+(objectRows.length===1?'':'s')].filter(Boolean).join(' · ')}</div>
+  ${PUBLIC_MODE?'':zoneModeBarHtml(z,parentName)}
+  <div class="zn-meta">${[r.pvpMode&&r.pvpMode!=='none'?esc(prettyId(r.pvpMode)):'',monsterRows.length?fmt(monsterRows.length)+' monster type'+(monsterRows.length===1?'':'s'):'',peopleRows.length?fmt(peopleRows.length)+(peopleRows.length===1?' person':' people'):'',objectRows.length?fmt(objectRows.length)+' resource'+(objectRows.length===1?'':'s'):'',!monsterRows.length&&!peopleRows.length&&!objectRows.length?'Nothing seen inside yet':''].filter(Boolean).join(' · ')}</div>
   <div class="zn-zoom"><button type="button" id="zoneDetailZoomOut" title="Zoom out">−</button><button type="button" id="zoneDetailZoomReset" title="Reset zoom">${Math.round(getZoneZoom(z)*100)}%</button><button type="button" id="zoneDetailZoomIn" title="Zoom in">+</button><span class="zn-legend">Scroll over the layout to zoom, drag to pan. <i class="zn-dot" style="background:#5fd38a"></i>way outside <i class="zn-dot" style="background:#ffd54a"></i>way back</span></div>
   ${zoneAreaPickerHtml(z)}
-  ${zoneHasLayout(z)?'':`<div class="note" style="margin:0 0 8px"><b>Nothing recorded inside this one yet.</b> ${r.entrance?.manual||state.zones.get(z)?.manual?'You placed this entrance by hand, so it has no layout of its own. Walk inside with the collector running and it fills in automatically. If this place is already recorded under another zone, press <b>Link to existing zone</b> above to attach this entrance to it (nothing recorded is deleted).':'The layout will appear as data for it comes in.'}</div>`}
+  ${zoneHasLayout(z)?'':`<div class="note" style="margin:0 0 8px"><b>Nothing recorded inside this one yet.</b> ${r.entrance?.manual||state.zones.get(z)?.manual?'You placed this entrance by hand, so it has no layout of its own. Walk inside with the collector running and it fills in automatically. If this place is already recorded under another zone, use <b>Edit ▾ → Link to a recorded place</b> to attach this entrance to it (nothing recorded is deleted).':'The layout will appear as data for it comes in.'}</div>`}
   ${zoneDetailSvg(z)}
   <div class="g-note">Floors use the game's own colours. Walls are drawn from the wall pieces recorded so far, and counters, doors and furniture with their captured art. Items lying on the ground aren't shown. Anything not recorded yet is missing. Red = monsters, gold = you; only confirmed-gatherable resources are shown as resources.</div>
-  <details open class="zn-details"><summary>Monsters seen here (${monsterRows.length})</summary><table class="g-table"><thead><tr><th>Monster</th><th>Observations</th><th>Last seen</th></tr></thead><tbody>${monsterRows.map(m=>`<tr><td><span class="monsterlink" data-monster="${esc(m.typeId||m.id)}"${m.npc?` data-npc="${esc(m.npc)}"`:''} title="${m.npc?'Open their page':'Show in Bestiary'}" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><img class="thumb monsterthumb" src="${esc(monsterImg({typeId:m.typeId||m.id,name:m.name}))}" alt="" style="width:22px;height:22px;flex:none;border-radius:5px"><span>${esc(prettyId(m.name||m.id))}</span></span></td><td>${fmt(m.count)}</td><td>${when(m.lastSeen)}</td></tr>`).join('')||'<tr><td colspan="3">None observed yet.</td></tr>'}</tbody></table></details>
-  <details open class="zn-details"><summary>Resources seen here (${objectRows.length})</summary><table class="g-table"><thead><tr><th>Resource</th><th>Distinct seen</th><th>Last seen</th></tr></thead><tbody>${objectRows.map(o=>`<tr><td>${o.yieldItem?`<span class="dropicon-link" data-item="${esc(o.yieldItem)}" title="Show in Items tab" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><img class="thumb itemthumb" src="${esc(itemImgFor(o.yieldItem))}" alt="" style="width:22px;height:22px;flex:none;border-radius:5px"><span>${esc(prettyId(o.name))} (${esc(prettyId(o.yieldItem))})</span></span>`:esc(prettyId(o.name))}</td><td>${fmt(o.count)}</td><td>${when(o.lastSeen)}</td></tr>`).join('')||'<tr><td colspan="3">None observed yet.</td></tr>'}</tbody></table></details>`;
+  ${peopleRows.length?`<details open class="zn-details"><summary>People here (${peopleRows.length})</summary><table class="g-table"><tbody>${peopleRows.map(m=>`<tr><td><span class="monsterlink" data-monster="${esc(m.typeId||m.id)}"${m.npc?` data-npc="${esc(m.npc)}"`:''} title="Open their page" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><img class="thumb monsterthumb" src="${esc(monsterImg({typeId:m.typeId||m.id,name:m.name}))}" alt="" style="width:22px;height:22px;flex:none;border-radius:5px"><span>${esc(m.name)}</span></span></td></tr>`).join('')}</tbody></table></details>`:''}
+  <details open class="zn-details${monsterRows.length?'':' zn-hide'}"><summary>Monsters seen here (${monsterRows.length})</summary><table class="g-table"><thead><tr><th>Monster</th><th>Observations</th><th>Last seen</th></tr></thead><tbody>${monsterRows.map(m=>`<tr><td><span class="monsterlink" data-monster="${esc(m.typeId||m.id)}"${m.npc?` data-npc="${esc(m.npc)}"`:''} title="${m.npc?'Open their page':'Show in Bestiary'}" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><img class="thumb monsterthumb" src="${esc(monsterImg({typeId:m.typeId||m.id,name:m.name}))}" alt="" style="width:22px;height:22px;flex:none;border-radius:5px"><span>${esc(prettyId(m.name||m.id))}</span></span></td><td>${fmt(m.count)}</td><td>${when(m.lastSeen)}</td></tr>`).join('')||'<tr><td colspan="3">None observed yet.</td></tr>'}</tbody></table></details>
+  <details open class="zn-details${objectRows.length?'':' zn-hide'}"><summary>Resources seen here (${objectRows.length})</summary><table class="g-table"><thead><tr><th>Resource</th><th>Distinct seen</th><th>Last seen</th></tr></thead><tbody>${objectRows.map(o=>`<tr><td>${o.yieldItem?`<span class="dropicon-link" data-item="${esc(o.yieldItem)}" title="Show in Items tab" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><img class="thumb itemthumb" src="${esc(itemImgFor(o.yieldItem))}" alt="" style="width:22px;height:22px;flex:none;border-radius:5px"><span>${esc(prettyId(o.name))} (${esc(prettyId(o.yieldItem))})</span></span>`:esc(prettyId(o.name))}</td><td>${fmt(o.count)}</td><td>${when(o.lastSeen)}</td></tr>`).join('')||'<tr><td colspan="3">None observed yet.</td></tr>'}</tbody></table></details>`;
 }
 let zoneOverlayEl=null;
 // The layout panel sits on the map; on a page (Banker, a cave's resource) the map is hidden, so it floats over the
@@ -1883,30 +1951,29 @@ function ensureZoneOverlay(){
     if(e.target.closest('#dungeonZoomIn')){const k=state.openDungeon;if(k&&state.dungeons.get(k))setDungeonZoom(k,dungeonZoomFor(state.dungeons.get(k))*1.25);return;}
     if(e.target.closest('#dungeonZoomOut')){const k=state.openDungeon;if(k&&state.dungeons.get(k))setDungeonZoom(k,dungeonZoomFor(state.dungeons.get(k))/1.25);return;}
     const parentLink=e.target.closest('#zoneOverlayParentLink');
-    if(parentLink){openZoneOverlay(Number(parentLink.dataset.parentZone));return;}
-    if(e.target.closest('#zoneOverlayRename')){renameZone(state.openZone);return;}
+    if(parentLink){state.zoneArea?.set(Number(parentLink.dataset.parentZone),0);openZoneOverlay(Number(parentLink.dataset.parentZone));return;}
+    if(e.target.closest('#zoneOverlayEditBtn')){state.zoneEditOpen=!state.zoneEditOpen;const m=zoneOverlayEl?.querySelector('.zn-edit-menu');if(m)m.hidden=!state.zoneEditOpen;e.target.closest('#zoneOverlayEditBtn').setAttribute('aria-expanded',String(state.zoneEditOpen));return;}
+    if(e.target.closest('.zn-edit-item'))state.zoneEditOpen=false;
+    if(e.target.closest('#zoneOverlayCancelMode')){stopZoneTools();return;}
+    if(e.target.closest('#zoneOverlayRename')){redrawZoneOverlay();renameZone(state.openZone);return;}
     if(e.target.closest('#zoneOverlayMoveEntrance')){const z=state.openZone;closeZoneOverlay();startMoveEntrance(z);return;}
-    if(e.target.closest('#zoneOverlayLink')){linkManualZone(state.openZone);return;}
-    if(e.target.closest('#zoneOverlayDelete')){deleteZone(state.openZone);return;}
-    if(e.target.closest('#zoneOverlayAssociate')){associateZoneParent(state.openZone);return;}
-    if(e.target.closest('#zoneOverlayDisassociate')){disassociateZoneParent(state.openZone);return;}
+    if(e.target.closest('#zoneOverlayLink')){redrawZoneOverlay();linkManualZone(state.openZone);return;}
+    if(e.target.closest('#zoneOverlayDelete')){redrawZoneOverlay();deleteZone(state.openZone);return;}
+    if(e.target.closest('#zoneOverlayAssociate')){redrawZoneOverlay();associateZoneParent(state.openZone);return;}
+    if(e.target.closest('#zoneOverlayDisassociate')){redrawZoneOverlay();disassociateZoneParent(state.openZone);return;}
     const areaBtn=e.target.closest('.zonearea-btn');
     if(areaBtn){const z=state.openZone;if(z!=null){if(!state.zoneArea)state.zoneArea=new Map();state.zoneArea.set(z,+areaBtn.dataset.area);lastRenderedZoneOverlayZ=null;openZoneOverlay(z);}return;}
     if(e.target.closest('#zoneDetailZoomIn')){const z=state.openZone;if(z!=null)applyZoneZoom(z,getZoneZoom(z)*ZONE_ZOOM_STEP);return;}
     if(e.target.closest('#zoneDetailZoomOut')){const z=state.openZone;if(z!=null)applyZoneZoom(z,getZoneZoom(z)/ZONE_ZOOM_STEP);return;}
     if(e.target.closest('#zoneDetailZoomReset')){const z=state.openZone;if(z!=null)resetZoneView(z);return;}
     if(e.target.closest('#zoneOverlayAddSub')){
-      state.addSubLevelArmed=!state.addSubLevelArmed;
-      const btn=document.getElementById('zoneOverlayAddSub');
-      if(btn)btn.textContent=state.addSubLevelArmed?'Click the layout…':'Add sub-level here';
-      setSubLevelPlacementCursor(state.addSubLevelArmed);
+      state.markExitArmed=false;state.setEntranceForChildZ=null;state.addSubLevelArmed=true;
+      redrawZoneOverlay();setSubLevelPlacementCursor(true);
       return;
     }
     if(e.target.closest('#zoneOverlayMarkExit')){
-      state.markExitArmed=!state.markExitArmed;
-      const btn=document.getElementById('zoneOverlayMarkExit');
-      if(btn)btn.textContent=state.markExitArmed?'Click the layout…':'Mark door to parent here';
-      setSubLevelPlacementCursor(state.markExitArmed);
+      state.addSubLevelArmed=false;state.setEntranceForChildZ=null;state.markExitArmed=true;
+      redrawZoneOverlay();setSubLevelPlacementCursor(true);
       return;
     }
     const svgEl=e.target.closest('svg');
@@ -1914,8 +1981,7 @@ function ensureZoneOverlay(){
       const parentZ=state.openZone;
       const pos=svgPointToGameCoords(svgEl,parentZ,e.clientX,e.clientY);
       state.addSubLevelArmed=false;
-      const btn=document.getElementById('zoneOverlayAddSub');if(btn)btn.textContent='Add sub-level here';
-      setSubLevelPlacementCursor(false);
+      setSubLevelPlacementCursor(false);redrawZoneOverlay();
       if(pos)addSubLevelAt(parentZ,pos);
       return;
     }
@@ -1924,7 +1990,7 @@ function ensureZoneOverlay(){
       const childZ=state.setEntranceForChildZ;
       const pos=svgPointToGameCoords(svgEl,parentZ,e.clientX,e.clientY);
       state.setEntranceForChildZ=null;
-      setSubLevelPlacementCursor(false);
+      setSubLevelPlacementCursor(false);redrawZoneOverlay();
       if(pos){
         bridgeRequest('set-zone-entrance',{z:childZ,x:pos.x,y:pos.y}).then(syncNow).catch(err=>setCollectorStatus('Collector: '+err.message));
       }
@@ -1934,8 +2000,7 @@ function ensureZoneOverlay(){
       const z=state.openZone;
       const pos=svgPointToGameCoords(svgEl,z,e.clientX,e.clientY);
       state.markExitArmed=false;
-      const btn=document.getElementById('zoneOverlayMarkExit');if(btn)btn.textContent='Mark door to parent here';
-      setSubLevelPlacementCursor(false);
+      setSubLevelPlacementCursor(false);redrawZoneOverlay();
       if(pos){
         bridgeRequest('set-zone-exit',{z,x:pos.x,y:pos.y}).then(syncNow).catch(err=>setCollectorStatus('Collector: '+err.message));
       }
@@ -2006,6 +2071,7 @@ function ensureZoneOverlay(){
   return zoneOverlayEl;
 }
 function closeZoneOverlay(){
+  if(state.openZone!=null)state.zoneArea?.delete(state.openZone);
   state.openZone=null;state.openDungeon=null;
   state.addSubLevelArmed=false;
   state.setEntranceForChildZ=null;
@@ -2236,6 +2302,10 @@ function centerZoneViewport(vp,z){
   vp.scrollLeft=Math.max(0,(vp.scrollWidth-vp.clientWidth)/2);
   vp.scrollTop=Math.max(0,(vp.scrollHeight-vp.clientHeight)/2);
 }
+// redraw the open layout panel (keeps its scroll), e.g. to show or hide the tool bar
+function redrawZoneOverlay(){if(state.openZone!=null){lastRenderedZoneOverlayZ=state.openZone;openZoneOverlay(state.openZone)}}
+function stopZoneTools(){state.addSubLevelArmed=false;state.markExitArmed=false;state.setEntranceForChildZ=null;setSubLevelPlacementCursor(false);redrawZoneOverlay()}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(state.addSubLevelArmed||state.markExitArmed||state.setEntranceForChildZ!=null))stopZoneTools()});
 function openZoneOverlay(z){
   if(!state.zones.has(z))return;
   if(state.openZone!==z)state.addSubLevelArmed=false;
@@ -3166,7 +3236,7 @@ function newsHtml(){
         marker=L.circleMarker(pos,{radius:7,weight:2,color:'#1a1208',fillColor:'#3ad1ff',fillOpacity:1});
         marker.bindTooltip(`${esc(meta.name||('Zone '+z))} entrance — click to view layout`,{direction:'top'});
       }
-      marker.on('click',()=>openZoneOverlay(z));
+      marker.on('click',()=>{state.zoneArea?.set(z,0);lastRenderedZoneOverlayZ=null;openZoneOverlay(z)});   // the zone's own place
       marker.addTo(zoneLayer);
       for(const [key,info] of sorted){
         const typeId=key.includes('::')?key.split('::')[0]:key;
@@ -4028,8 +4098,8 @@ function newsHtml(){
       return `<p class="map-panel-kind">Named ${esc(prettyId(e.typeId))}</p><div class="card"><div class="name">${esc(e.name)}</div><div class="s muted">${lv.length?'Level '+(lv.length>1?lv[0]+'–'+lv[lv.length-1]:lv[0])+' · ':''}seen ${fmt(e.seen)}×</div></div><a class="map-panel-open" href="${pageHref('npc',id)}">Open the full page →</a>`;
     }
     if(kind==='zone'){
-      const z=Number(id),nm=state.zones?.get(z)?.name||('Zone '+z),pt=zoneEntrancePoint(z);
-      return `<p class="map-panel-kind">Cave, mine or building</p><div class="card"><div class="name">${esc(nm)}</div><div class="s muted">${pt?'The way in is circled on the map.':'Its entrance has not been recorded yet.'}</div>${typeof zoneQuestNote==='function'?zoneQuestNote(z):''}<button type="button" class="open-zone" data-zone="${z}">Open the layout</button></div>`;
+      const [z,ai]=zonePlaceId(id),nm=placeName(z,ai),pt=placeEntrancePoint(z,ai);
+      return `<p class="map-panel-kind">Cave, mine or building</p><div class="card"><div class="name">${esc(nm)}</div><div class="s muted">${pt?'The way in is circled on the map.':'Its entrance has not been recorded yet.'}</div>${!ai&&typeof zoneQuestNote==='function'?zoneQuestNote(z):''}<button type="button" class="open-zone" data-zone="${z}" data-area="${ai}">Open the layout</button></div>`;
     }
     if(kind==='place'){
       const p=(D.pois||[]).find(x=>x.name===id);if(!p)return '<p class="muted">Unknown place.</p>';
@@ -4185,9 +4255,9 @@ function newsHtml(){
       return {text:`Seen ${nearText(e.pts[0])}`};
     }
     if(kind==='zone'){
-      const pt=zoneEntrancePoint(Number(id));if(!pt){focus(false);return null}
+      const [z,ai]=zonePlaceId(id),pt=placeEntrancePoint(z,ai);if(!pt){focus(false);return null}
       circlePoints([pt],false);focus(true);if(fit)flyToCluster([pt]);   // the move that the map's edge rule cannot cancel
-      return {text:'Entrance to '+(state.zones?.get(Number(id))?.name||'this place')+' '+nearText(pt)};
+      return {text:'Entrance to '+placeName(z,ai)+' '+nearText(pt)};
     }
     if(kind==='place'){
       const p=(D.pois||[]).find(x=>x.name===id);
@@ -4223,7 +4293,7 @@ function newsHtml(){
     if(!btn.classList.contains('on')){pageNow=null;clickTab(btn)}
     setTimeout(()=>{map.invalidateSize({pan:false});openMapPanel(kind,id,{fit:true,quality,level})},60);
   }
-  document.addEventListener('click',e=>{const z=e.target.closest('.open-zone');if(!z)return;e.preventDefault();if(z.dataset.area!=null){if(!state.zoneArea)state.zoneArea=new Map();state.zoneArea.set(Number(z.dataset.zone),+z.dataset.area);lastRenderedZoneOverlayZ=null}openZoneOverlay(Number(z.dataset.zone))});
+  document.addEventListener('click',e=>{const z=e.target.closest('.open-zone');if(!z)return;e.preventDefault();{if(!state.zoneArea)state.zoneArea=new Map();state.zoneArea.set(Number(z.dataset.zone),+z.dataset.area||0);lastRenderedZoneOverlayZ=null}openZoneOverlay(Number(z.dataset.zone))});
   document.addEventListener('click',e=>{const b=e.target.closest('.show-on-map');if(!b)return;e.preventDefault();e.stopPropagation();showOnMap(b.dataset.mapKind,b.dataset.mapId,b.dataset.mapQuality||null,b.dataset.mapLevel||null)},true);
   // a Zones & caves card: the card goes to the place on the map, its buttons do their own thing
   document.addEventListener('click',e=>{const c=e.target.closest('[data-card-map]');if(!c||e.target.closest('button,a'))return;e.preventDefault();showOnMap(c.dataset.cardMap,c.dataset.cardMapId)});
@@ -4977,6 +5047,8 @@ function newsHtml(){
   if(q)q.addEventListener('input',()=>setTimeout(augmentCurrentTab,0));if(onlyObserved)onlyObserved.addEventListener('change',()=>setTimeout(augmentCurrentTab,0));
   content?.addEventListener('click',e=>{
     if(tab!=='zones')return;
+    const editBtn=e.target.closest('.zoneedit-btn');
+    if(editBtn){state.zoneEditOpen=true;lastRenderedZoneOverlayZ=null;state.zoneArea?.set(Number(editBtn.dataset.zone),0);openZoneOverlay(Number(editBtn.dataset.zone));return;}
     const renameBtn=e.target.closest('.zonerename-btn');
     if(renameBtn){renameZone(Number(renameBtn.dataset.zone));return;}
     const linkBtn=e.target.closest('.zonelink-btn');
@@ -4990,7 +5062,8 @@ function newsHtml(){
     const disassociateBtn=e.target.closest('.zonedisassociate-btn');
     if(disassociateBtn){disassociateZoneParent(Number(disassociateBtn.dataset.zone));return;}
     const btn=e.target.closest('[data-zone]');
-    if(btn){const bz=Number(btn.dataset.zone);if(btn.dataset.roomArea!=null){if(!state.zoneArea)state.zoneArea=new Map();state.zoneArea.set(bz,+btn.dataset.roomArea);lastRenderedZoneOverlayZ=null}else if(state.partsOf?.has(bz+'|'+(state.zoneArea?.get(bz)||0))){state.zoneArea.set(bz,0);lastRenderedZoneOverlayZ=null}   // a place card opens the place, not another dungeon's room under its number
+    // a card or button opens the place it names (the zone's own place unless it names another)
+    if(btn){const bz=Number(btn.dataset.zone),ba=+btn.dataset.roomArea||0;if(!state.zoneArea)state.zoneArea=new Map();if((state.zoneArea.get(bz)||0)!==ba)lastRenderedZoneOverlayZ=null;state.zoneArea.set(bz,ba);
     openZoneOverlay(bz);return;}
     const dgn=e.target.closest('[data-dungeon]');
     if(dgn)openDungeonOverlay(dgn.dataset.dungeon);
