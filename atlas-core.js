@@ -202,7 +202,12 @@ const ENCHANT_TOOL_PCT=[5,13,22,32];   // success-chance bonus of an Artisan too
 // the class that gives an item picture its quality's glow ('' for ordinary, which has none)
 const qualityGlow=t=>t&&t!=='ordinary'&&t!=='all'&&QUALITY_TIERS.includes(t)?'q-glow-'+t:'';
 // the quality a craft most likely comes out at, levels over the recipe (capped at +30)
-const likelyQuality=over=>{const p=interpolateCraftQuality(Math.min(30,Math.max(0,over)));return QUALITY_TIERS.reduce((a,b)=>(p[b]||0)>(p[a]||0)?b:a)};
+// The quality you'll most likely reach: the best one you have at least an even chance of getting or beating - players
+// aim for a quality or better, so the biggest single slice is the wrong answer (48% exactly Ordinary with 45% Good or
+// better is "Ordinary"; once Good or better passes 50% it is "Good", however big exactly-Ordinary still is).
+const likelyTier=p=>{let acc=0;for(let i=QUALITY_TIERS.length-1;i>=0;i--){acc+=p[QUALITY_TIERS[i]]||0;if(acc>=0.5-1e-9)return QUALITY_TIERS[i]}return QUALITY_TIERS[0]};
+const orBetterOf=(p,t)=>QUALITY_TIERS.slice(QUALITY_TIERS.indexOf(t)).reduce((a,x)=>a+(p[x]||0),0);
+const likelyQuality=over=>likelyTier(interpolateCraftQuality(Math.min(30,Math.max(0,over))));
 const ENCHANT_TOOL_SERVES=[[/Scribing Quill$/,'Scribing'],[/Herbalist Sickle$/,'Herblore'],[/Sewing Kit$/,'Tailoring'],[/Leatherworking Awl$/,'Leatherworking'],[/Fishing Rod$/,'Fishing'],[/Shears$/,'Shearing'],[/Carving Tool$/,'Bowyer'],[/Pickaxe$/,'Mining'],[/Axe$/,'Lumberjack'],[/Frying Pan$/,'Cooking'],[/Smithing Hammer$/,'Smithing']];
 // What kind of enchant a recipe's item can take (null = cannot be enchanted: shields and ammunition), and its material tier.
 function enchantInfo(r){
@@ -424,11 +429,13 @@ function calcGather(){
    const mine=(Array.isArray(snap?.crafts)?snap.crafts:[]).filter(x=>slugId(x.itemTypeId||'')===id);
    const mineGood=mine.filter(x=>QUALITY_TIERS.indexOf(x.quality||'ordinary')>=QUALITY_TIERS.indexOf('good')).length;
    const mineLine=mine.length?`<div class="muted" style="margin-top:6px">You have crafted ${prettyId(r.item)} ${mine.length} time${mine.length===1?'':'s'} so far: ${(mineGood/mine.length*100).toFixed(0)}% came out Good or better.</div>`:'';
-   const ref=CRAFT_QUALITY_TABLE.filter(t=>t.levelsOver%5===0).map(t=>`<tr><td>+${t.levelsOver}${t.levelsOver===15?' (mastery)':t.levelsOver===30?' (cap)':''}</td>${QUALITY_TIERS.map(q=>`<td>${pct(t[q]||0)}</td>`).join('')}</tr>`).join('');
-   // The single most likely outcome, as the headline answer: whichever band a craft lands in most often.
-   const likely=bands.reduce((b,x)=>x[1]>b[1]?x:b);
+   const ref=CRAFT_QUALITY_TABLE.filter(t=>t.levelsOver%5===0).map(t=>`<tr><td>+${t.levelsOver}${t.levelsOver===15?' (mastery from +14)':t.levelsOver===30?' (cap)':''}</td>${QUALITY_TIERS.map(q=>`<td>${pct(t[q]||0)}</td>`).join('')}</tr>`).join('');
+   // The headline: the best quality you have even odds or better of reaching (see likelyTier), and the split at the next
+   // quality up - how close the next step is.
+   const bandP=Object.fromEntries(QUALITY_TIERS.map((t,i)=>[t,bands[i]?bands[i][1]:0]));
+   const lt=likelyTier(bandP),li=QUALITY_TIERS.indexOf(lt),likely=bands[li]||bands[0],nextT=QUALITY_TIERS[li+1],upP=nextT?orBetterOf(bandP,nextT):0;
    return `${status}
-   <div class="craft-answer" style="border-left-color:${likely[2]}">Most likely: <b>${likely[0]}</b> - ${pct(likely[1])} of crafts at level ${Math.max(lvl,r.level)}. <span class="muted">(${likely[3]})</span></div>
+   <div class="craft-answer" style="border-left-color:${likely[2]}">Most likely: <b>${likely[0]}</b>${li>0?' or better':''} - ${pct(orBetterOf(bandP,lt))} of crafts at level ${Math.max(lvl,r.level)}.${nextT?` <span class="muted">${prettyId(lt)} or worse ${pct(1-upP)} · ${prettyId(nextT)} or better ${pct(upP)}</span>`:''}</div>
    <div class="qualitygrid"><div class="qualitymetric"><b>${pct(p.goodPlus)}</b>Good or better</div><div class="qualitymetric"><b>${pct(p.superiorPlus)}</b>Superior or better</div><div class="qualitymetric"><b>${pct(p.flawless)}</b>Flawless</div></div>
    <table class="qualitytable"><thead><tr><th>Quality of the ${prettyId(r.item)}</th><th>Chance</th><th></th></tr></thead><tbody>${bands.map(([label,v,color,hint],bi)=>`<tr title="${hint}"><td><img class="q-mini ${qualityGlow(QUALITY_TIERS[bi])}" src="${itemImg({id:r.id,item:r.item,skill:r.skill})}" alt="">${label}</td><td>${pct(v)}</td><td><div class="qualitybar"><span style="width:${(v*100).toFixed(2)}%;background:${color}"></span></div></td></tr>`).join('')}</tbody></table>
    ${mineLine}
@@ -438,7 +445,7 @@ function calcGather(){
  // recipe's level, capped at 95% fifteen levels over - the same curve the Crafting XP calculator uses), not what
  // quality tier it lands on. Shown only for enchantable items, since that is what "mastery" is quoted against.
  function masteryChartHtml(rec,lvl){
-   const chance=craftChance(rec,lvl),masteryLevel=rec.level+15,short=lvl<rec.level;
+   const chance=craftChance(rec,lvl),masteryLevel=craftSureAt(rec),short=lvl<rec.level;   // mastery = where success reaches 95%
    const pct=v=>(v*100).toFixed(1)+'%';
    const status=short
      ?`<div class="note" style="border-color:#b5574b"><b>You are ${rec.level-lvl} level${rec.level-lvl===1?'':'s'} short.</b> ${rec.item} needs ${rec.skill} level ${rec.level} before you can attempt this craft at all.</div>`
@@ -532,7 +539,11 @@ function calcGather(){
    const e=enchantInfo(r),opts=enchOptions(r),sel=opts[Number(q('enEnchant').value)||0]||opts[0];
    const tool=e.kind==='tool'?enchToolNeed(r):null;
    const masteryRec=e.kind==='tool'?((tool?.next&&RECIPES.find(x=>x.skill===r.skill&&x.item===tool.next))||r):r;
-   const masteryLevel=masteryRec.level+15,chance=craftChance(masteryRec,lvl);
+   // Every enchant needs "Mastery": the level where crafting reaches its 95% success (the dev; with the game's own
+   // formula that is 14 levels past the recipe). For a tool it is mastery of the same tool one metal up (the official
+   // guide: good enough to make that tool one metal up); titanium has no metal above, so its own mastery is assumed.
+   const toolUp=e.kind==='tool'&&tool&&tool.next&&masteryRec!==r;
+   const masteryLevel=craftSureAt(masteryRec),chance=craftChance(masteryRec,lvl);
    const per=(e.kind==='tool'||e.kind==='ring')?1:3,maxC=e.tier?per*e.tier:null;
    const pickC=maxC?Math.max(1,Math.min(maxC,enCaratPick||Math.min(maxC,2*per))):0;
    const none=enNone&&!!e.kind;
@@ -547,8 +558,8 @@ function calcGather(){
    const enchPage=body=>`<article class="wp tool-wp"><div class="wp-main">${body}</div><aside class="wp-infobox"><div class="wp-pic ${qualityGlow(wantQ)} ${dmg&&dmg.add?dmg.glow:''}" title="${prettyId(wantQ)}"><img src="${itemImg({id:r.id,item:r.item,skill:r.skill})}" alt=""></div><h3>${wantQ!=='ordinary'?`<span class="q-name q-${wantQ}">${prettyId(wantQ)}</span> `:''}${sel&&sel.rec&&!none?r.item+' '+sel.rec.name:r.item}</h3><table>
      <tr><th>Quality</th><td><span class="q-name q-${wantQ}">${prettyId(wantQ)}</span>${QUALITY_MULT[wantQ]?` (${QUALITY_MULT[wantQ]>0?'+':''}${Math.round(QUALITY_MULT[wantQ]*100)}% stats)`:''}</td></tr>
      ${gs?`<tr><th>Stats</th><td>${gs.main}${gs0&&gs0.main!==gs.main?` <span class="muted">(ordinary: ${gs0.main})</span>`:''}${dmg&&dmg.add?`<br><span class="e-name e-${dmg.key}">${dmg.add}</span> <span class="muted">(${pickC}c)</span><br>= <b>${dmg.total}</b>`:''}</td></tr>${gs.set?`<tr><th>A full set</th><td>${gs.set}</td></tr>`:''}`:''}
-     <tr><th>Chance at ${Math.max(lvl,r.level)}</th><td>${pctQ(exactly)} exactly · ${pctQ(orBetter)} this or better</td></tr>
-     <tr><th>Made with</th><td>${r.skill} ${r.level}</td></tr>${e.kind?`<tr><th>Enchant from</th><td>${masteryRec.skill} ${masteryRec.level+15}</td></tr>`:''}${maxC?`<tr><th>Most carats</th><td>${maxC}</td></tr>`:''}${maxC&&e.kind!=='tool'?`<tr><th>Intellect to wear</th><td>${5*maxC}</td></tr>`:''}<tr><th>Success at ${lvl}</th><td>${lvl>=r.level?(craftChance(r,lvl)*100).toFixed(0)+'%':'Locked'}</td></tr></table>
+     <tr><th>Chance at ${Math.max(lvl,r.level)}</th><td>${pctQ(orBetter)} ${prettyId(wantQ)} or better · ${pctQ(exactly)} exactly</td></tr>${(()=>{const nx=QUALITY_TIERS[QUALITY_TIERS.indexOf(wantQ)+1];if(!nx)return '';const up=orBetterOf(pq,nx);return `<tr><th>Next step</th><td>${prettyId(wantQ)} or worse ${pctQ(1-up)} · ${prettyId(nx)} or better ${pctQ(up)}</td></tr>`})()}
+     <tr><th>Made with</th><td>${r.skill} ${r.level}</td></tr>${e.kind?`<tr><th>Enchant from</th><td>${masteryRec.skill} ${masteryLevel}</td></tr>`:''}${maxC?`<tr><th>Most carats</th><td>${maxC}</td></tr>`:''}${maxC&&e.kind!=='tool'?`<tr><th>Intellect to wear</th><td>${5*maxC}</td></tr>`:''}<tr><th>Success at ${lvl}</th><td>${lvl>=r.level?(craftChance(r,lvl)*100).toFixed(0)+'%':'Locked'}</td></tr></table>
      <p class="g-aside-h">More</p><ul class="g-toc"><li><a href="#/item/${encodeURIComponent(r.id)}">${r.item} page</a></li>${globalThis.bxcGuides?.forSkill(r.skill)?'<li>'+globalThis.bxcGuides.link(globalThis.bxcGuides.forSkill(r.skill))+'</li>':''}<li><a href="#/guide/quality-and-enchanting">Quality &amp; enchanting guide</a></li><li><a href="#/guide/gems">Gems guide</a></li></ul></aside></article>`;
    const step=(n,title,body,cls='')=>`<section class="craft-step ${cls}"><div class="craft-step-head"><span class="craft-step-n">${n}</span><h3>${title}</h3></div>${body}</section>`;
    const item=`<div class="craft-item"><img class="thumb itemthumb" src="${itemImg({id:r.id,item:r.item,skill:r.skill})}" alt=""><div><div class="name" style="margin:0">${sel&&sel.rec&&!none?r.item+' '+sel.rec.name:r.item}</div><div class="muted">${r.skill} · needs level ${r.level}${e.tier?' · '+e.material:''}</div></div></div>`;
@@ -560,11 +571,12 @@ function calcGather(){
    let s2;
    if(!e.kind)s2=step(2,'Can you enchant it?',`<div class="craft-answer">No - this item can't take an enchant. Shields and ammunition never can; everything else you hold or wear can.</div>`,'dim');
    else{
-     const mastered=lvl>=masteryLevel,left=masteryLevel-lvl,prog=Math.max(0,Math.min(1,(lvl-masteryRec.level)/15));
-     const need=[`Mastery: ${masteryRec.skill} level <b>${masteryLevel}</b>${e.kind==='tool'?` (15 levels past ${masteryRec.item}, one metal up)`:` (15 levels past the item's own level)`}`];
+     const mastered=lvl>=masteryLevel,left=masteryLevel-lvl,prog=Math.max(0,Math.min(1,(lvl-(toolUp?r.level:masteryRec.level))/Math.max(1,masteryLevel-(toolUp?r.level:masteryRec.level))));
+     const over=masteryLevel-masteryRec.level;
+     const need=[toolUp?`Mastery: ${masteryRec.skill} level <b>${masteryLevel}</b> (95% success on a ${masteryRec.item}, one metal up: ${over} levels past it)`:`Mastery: ${masteryRec.skill} level <b>${masteryLevel}</b> (95% success: ${over} levels past ${e.kind==='tool'?`the ${r.item}; there is no metal above titanium, so its own mastery is assumed`:`the item's own level`})`];
      if(maxC)need.push(e.kind==='tool'?`Gem: one stone, up to <b>${maxC} carat${maxC===1?'':'s'}</b>`:`Gems: ${per===1?'one stone':'three stones'}, up to <b>${maxC} carat${maxC===1?'':'s'}</b> in total`);
      if(maxC&&e.kind!=='tool')need.push(`Intellect: <b>${5*maxC}</b> to wear it at full strength (5 per carat)`);
-     s2=step(2,'Can you enchant it?',`<div class="craft-answer ${mastered?'ok':'no'}">${mastered?`Yes - you've mastered it (level ${masteryLevel}).`:`Not yet - enchanting needs mastery: <b>${masteryRec.skill} level ${masteryLevel}</b>. You're level ${lvl}: ${left} to go.`}</div>
+     s2=step(2,'Can you enchant it?',`<div class="craft-answer ${mastered?'ok':'no'}">${mastered?(toolUp?`Yes - you've mastered the ${masteryRec.item} (level ${masteryLevel}), so you can set a gem while forging this one.`:`Yes - you've mastered it (level ${masteryLevel}).`):toolUp?`Not yet - setting a gem needs mastery of the ${masteryRec.item}, one metal up: <b>${masteryRec.skill} level ${masteryLevel}</b>. You're level ${lvl}: ${left} to go.`:`Not yet - enchanting needs mastery: <b>${masteryRec.skill} level ${masteryLevel}</b>. You're level ${lvl}: ${left} to go.`}</div>
        <div class="craft-progress" title="Progress to mastery"><span style="width:${(prog*100).toFixed(1)}%"></span></div>
        <div class="muted" style="margin-top:4px">What it takes:</div><ul class="craft-needs">${need.map(x=>'<li>'+x+'</li>').join('')}</ul>
        <details class="craft-more"><summary>More detail</summary><div class="muted" style="margin:6px 0">Mastery is also where a craft stops failing as often: ${(chance*100).toFixed(0)}% success at your level now, 95% (the most anything ever gets) from level ${masteryLevel}.${e.kind==='tool'?' A tool\'s gem is set while it is being forged, so it can\'t be added to a tool you already have, and an enchanted tool needs no Intellect.':''}</div></details>`);
