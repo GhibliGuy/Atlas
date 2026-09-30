@@ -1,0 +1,765 @@
+/* Binxonia Atlas - visual identity: a naturalist's field journal for a living game world, not a generic dark
+   dashboard. Warm bark and old-paper tones instead of the flat green/gold "gaming UI" look, a serif with real
+   character for headings (an old-book voice, not default Georgia), flat surfaces and hairline rules instead of
+   rounded "SaaS card" shadows and gradient washes, and index-card-style top rules on every card as the one
+   consistent structural device. Boldness is spent once, on the masthead; everything else stays quiet and legible. */
+:root{
+  --bg:#141518;--ink:#ecdfc0;--muted:#9c8f76;--panel:#1b1c1f;--panel2:#1f2023;--edge:#3c3d40;
+  --accent:#c4903f;--accent-soft:#8a6430;--moss:#7fae70;--rust:#c07752;--teal:#5f9490;
+  --serif:'Iowan Old Style','Palatino Linotype',Palatino,Georgia,serif;
+  --sans:system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:ui-monospace,Consolas,'Cascadia Mono',monospace;
+  --sidebar-width:460px;color-scheme:dark
+}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 var(--sans)}
+body{display:flex;flex-direction:column;overflow:hidden}
+button,input,select{font:inherit;max-width:100%;border:1px solid var(--edge);border-radius:4px;background:var(--panel2);color:var(--ink);padding:8px 11px}
+button{cursor:pointer;transition:background .15s,border-color .15s}button:hover{background:#2a2b2e;border-color:var(--accent)}button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* Masthead: the one place spending real boldness - a title-page treatment, framed by a thin double rule. */
+#bar{height:auto;flex:none;min-height:88px;display:flex;flex-wrap:wrap;gap:10px 14px;padding:16px 22px 13px;background:var(--bg);border-bottom:1px solid var(--accent-soft);box-shadow:0 1px 0 var(--edge);white-space:normal}
+#bar>b{font:32px/1.05 var(--serif);letter-spacing:.3px;color:var(--ink);margin-right:14px}
+#bar>b small{display:block;font:12.5px/1.8 var(--serif);font-style:italic;letter-spacing:.2px;color:var(--muted);margin-top:3px;text-transform:none}
+#q{width:250px;flex:1 1 200px;max-width:360px;background:#0f1013}#bar label{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:5px}#bar input[type=checkbox]{accent-color:var(--accent)}
+#status{margin-left:0;color:var(--muted);font-size:12.5px}#collectorStatus{max-width:none;flex:1 1 260px;white-space:normal;overflow-wrap:anywhere;color:#b9c9a8;font-size:12.5px}.atlas-statusline{display:flex;flex-wrap:wrap;gap:6px 24px;width:100%;border-top:1px solid var(--edge);padding-top:8px}
+
+#main{height:auto;flex:1;min-height:0;display:grid;grid-template-columns:minmax(300px,var(--sidebar-width)) 12px minmax(0,1fr);overflow:hidden}
+#side{padding:0;min-width:0;min-height:0;display:flex;flex-direction:column;overflow:hidden;background:var(--bg);border:0;border-right:1px solid var(--edge)}
+.tabs{position:static;display:flex;flex-wrap:wrap;align-items:center;gap:6px 30px;padding:9px 22px;background:var(--panel);border-bottom:1px solid var(--edge);flex:none}
+.nav-group{display:flex;flex-direction:row;flex-wrap:wrap;align-items:center;gap:4px;min-width:0}
+.nav-label{font-size:12.5px;letter-spacing:.2px;color:var(--muted);margin:0 8px 0 0;font-weight:400;font-style:italic;font-family:var(--serif)}
+.tab{width:auto;white-space:nowrap;text-align:center;padding:7px 12px;font-size:12.5px;border:1px solid transparent;background:transparent;line-height:1.35;border-radius:4px;color:#c2b598}
+.tab.on{color:var(--ink);background:var(--panel2);border-color:var(--edge);box-shadow:inset 0 -2px var(--accent)}
+.section-intro{padding:16px 20px 12px;flex:none;border-bottom:1px solid var(--edge)}
+.section-intro p{margin:0;font-size:12.5px;letter-spacing:.2px;color:var(--muted);font-style:italic;font-family:var(--serif)}
+.section-intro h1{font:28px/1.2 var(--serif);margin:4px 0;color:var(--ink);font-weight:400}
+.section-intro span{font-size:12.5px;color:var(--muted)}
+#content{padding:12px 16px 24px;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;overflow-wrap:anywhere;flex:1}
+#content:empty:after{content:'No matches. Try a different search or turn off Observed only.';display:block;padding:18px;color:var(--muted)}
+#splitter{padding:0;border:0;border-radius:0;background:var(--bg);cursor:col-resize;touch-action:none;position:relative;z-index:3}#splitter:before{content:'';position:absolute;width:3px;height:44px;border-radius:3px;background:var(--edge);left:4px;top:calc(50% - 22px)}#splitter:hover,#splitter:focus-visible{background:var(--panel2)}body.resizing{cursor:col-resize;user-select:none}
+#map{height:100%;min-width:0;min-height:0;background:#0b0c0f}.leaflet-container{font-family:var(--sans)}.leaflet-control-layers,.legend{background:#1c1710ef;color:var(--ink);border:1px solid var(--edge);border-radius:6px;box-shadow:0 4px 20px #0007}.leaflet-control-layers label{line-height:1.7}
+
+/* Cards read as specimen index cards: flat surface, hairline border, a ruled top edge instead of a drop shadow -
+   no border-radius-on-everything, no gradient wash. */
+.card{display:flow-root;padding:14px 14px 13px;margin:0 0 10px;border:1px solid var(--edge);border-top:2px solid var(--accent-soft);background:var(--panel);border-radius:2px}
+.card:hover{border-color:var(--edge);border-top-color:var(--accent)}
+.name{color:var(--ink);font-size:15px;font-family:var(--serif)}
+.s{color:#c2b89e;line-height:1.6}
+.muted{color:var(--muted)}
+.obs,.good{color:var(--moss)}
+.weak,.warn{color:var(--rust)}
+.res{color:var(--teal)}
+
+.grid{border-color:var(--edge);gap:5px 10px}.grid b{font-family:var(--mono);font-weight:600;letter-spacing:.2px}
+.pill{background:var(--panel2);color:var(--ink);border:1px solid var(--edge)}
+.note,.calcbox{background:var(--panel2);border-color:var(--edge);border-radius:2px;line-height:1.65;margin:8px 0}
+.note{border-left:3px solid var(--accent-soft);color:#d8cbac}
+.calcbox{padding:14px}.calcbox label{display:block;color:#c9bc9e;font-size:12.5px;margin:7px 0 3px}
+.calcbox input,.calcbox select{background:#0f1013;border-color:var(--edge);min-width:0}
+.calcgrid>*{min-width:0}.calcgrid{gap:10px}
+.bigresult{color:var(--accent);font-family:var(--serif)}
+.subresult{color:#cabf9f}
+.thumb{width:64px;height:64px;object-fit:contain;background:#0f1013;border-color:var(--edge);border-radius:4px}
+.itemthumb{width:58px;height:58px}
+.monstercard{min-height:70px}
+.monsterthumb{float:left;margin:0 10px 7px 0}
+.poi-label{background:rgba(15,12,8,.9);color:var(--ink);border:1px solid var(--edge);border-radius:3px;padding:2px 4px;box-shadow:none;font-size:12.5px;white-space:nowrap}
+.leaflet-tooltip.poi-label:before{display:none}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.gc-top td{color:var(--accent);font-weight:700}
+.collector-status{color:#8fc7c2;font-size:12.5px;max-width:420px;overflow:hidden;text-overflow:ellipsis}
+.collector-stale{margin-left:6px;padding:2px 8px;border:1px solid #d9b878;border-radius:999px;background:rgba(217,184,120,.15);color:#efd39a;font-size:12.5px;cursor:pointer}
+.collector-stale:hover{background:rgba(217,184,120,.3)}
+.itempreview{background:var(--panel2);border-color:var(--edge)}
+.collector-panel{background:var(--panel2);border:1px solid var(--edge);border-top:2px solid var(--teal)}
+.collector-title{color:var(--ink);font-family:var(--serif);font-size:16px}
+details.collector-panel>summary{cursor:pointer}
+.collector-extra{color:#c9bc9e;border-color:var(--edge)}
+.statline{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+.statline span{background:var(--panel);border:1px solid var(--edge);color:#c9bc9e}
+.calcsubtabs{flex-wrap:wrap;gap:8px}.calcsubtab{width:auto;margin:0;padding:7px 11px}.calcsubtab.on{background:#2e2f32;border-color:var(--accent);color:#f0d6a6}
+.qualitygrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin:8px 0}
+.qualitymetric{background:#111215;border:1px solid var(--edge);border-radius:6px;padding:9px 11px;display:flex;flex-direction:column;gap:2px;font-size:12.5px;color:#c9bc9e}.qualitymetric b{display:block;font-size:19px;line-height:1.15;color:var(--accent);font-family:var(--mono)}
+.qualitybar{height:9px;border-radius:5px;overflow:hidden;background:#1e1f22;margin-top:2px}.qualitybar>span{display:block;height:100%;background:var(--accent)}
+.table-scroll{overflow-x:auto;max-width:100%;margin:8px 0}
+.research-table,.xptable,.qualitytable{min-width:280px;width:100%;border-collapse:collapse;font-size:12.5px}
+.research-table{font-size:12.5px;margin-top:7px}
+.research-table th,.research-table td{padding:5px 6px;border-bottom:1px solid var(--edge);text-align:left;vertical-align:top}
+.xptable th,.xptable td{padding:5px 7px;border-bottom:1px solid var(--edge);text-align:right}
+.qualitytable th,.qualitytable td{padding:6px;border-bottom:1px solid var(--edge);text-align:right}
+.xptable th:first-child,.xptable td:first-child,.qualitytable th:first-child,.qualitytable td:first-child{text-align:left}
+.research-table code{font-size:12.5px;white-space:normal;word-break:break-word}
+.research-table th{color:var(--muted);font-family:var(--serif);font-weight:400;font-style:italic}
+.research-row{padding:5px 0;border-bottom:1px solid var(--edge);font-size:12.5px}
+.research-row span{float:right;color:var(--muted);margin-left:8px}
+.xpchart{background:#0f1013;border-color:var(--edge)}
+*{scrollbar-width:thin;scrollbar-color:var(--edge) var(--bg)}::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:var(--edge);border:2px solid var(--bg);border-radius:8px}::-webkit-scrollbar-track{background:var(--bg)}
+@media(min-width:761px) and (max-width:1000px){.tabs{gap:6px 16px;padding:8px 12px}.tab{font-size:12.5px;padding:6px 8px}.nav-label{font-size:12.5px}.calcgrid{grid-template-columns:1fr}}
+@media(max-width:760px){body{height:auto;min-height:100%;overflow:auto}#bar{padding:14px}#bar>b{width:100%}#q{max-width:none}#main{display:flex;flex-direction:column;overflow:visible;flex:none}#side{overflow:visible}#content{max-height:65vh;min-height:220px;flex:none}.tabs{gap:8px;padding:14px}.section-intro{padding:14px}#splitter{display:none}#map{height:55vh;min-height:300px;resize:vertical;overflow:hidden;border-top:3px solid var(--accent-soft)}.calcgrid{grid-template-columns:1fr}.atlas-statusline{gap:6px}.qualitygrid{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){button{transition:none}}
+/* Compact icon chips for a card's related entities (a monster's drops, an item's source monsters) - same idea as
+   the in-game combat card's own drop row: one small picture per related thing, name below, full detail in the
+   hover tooltip instead of an always-expanded stats line, so many related entities fit at a glance instead of
+   one long scroll of full-width rows. */
+.chip-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.entity-chip{display:flex;flex-direction:column;align-items:center;gap:4px;width:64px;cursor:pointer;padding:4px;border-radius:3px;transition:background .15s}
+.entity-chip:hover{background:#ffffff0a}
+.entity-chip:hover img{border-color:var(--accent)}
+.entity-chip img{width:40px;height:40px;border-radius:4px;border:1.5px solid var(--edge);background:#0f1013;object-fit:contain;transition:border-color .15s}
+.entity-chip-label{font-size:12.5px;line-height:1.25;text-align:center;color:#c2b89e;overflow-wrap:anywhere;max-width:100%}
+.entity-chip-stat{font-size:12.5px;font-family:var(--mono);color:var(--accent);text-align:center}
+.entity-chip-quality{font-size:12.5px;color:var(--teal);text-align:center;line-height:1.2}
+.entity-chip.elite img{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+/* Weak/resist as small pills instead of a plain "Weak: a, b, c" text line - same idea as the in-game combat
+   card's own weak/resist chips, so a card's key combat info reads at a glance rather than as a run-on sentence. */
+.s i{color:var(--muted);font-size:12.5px;margin-right:2px}
+.tag-chip{display:inline-block;padding:1px 9px;margin:2px 4px 2px 0;border-radius:999px;border:1px solid;font-size:12.5px}
+.tag-chip.weak{color:#e0a488;border-color:var(--rust);background:rgba(192,119,82,.15)}
+.weak-filters{margin:0 0 10px}
+.weak-filter{display:flex;flex-wrap:wrap;align-items:center;gap:2px;margin:0 0 4px}
+.weak-filter i{min-width:52px}
+.weak-filter .tag-chip.resist.on{color:#10201f;background:#9cd4cf}
+.weak-filter i{margin-right:6px;color:var(--muted);font-size:12.5px}
+.weak-filter .tag-chip{cursor:pointer;font:inherit;font-size:12.5px;text-transform:capitalize;opacity:.7}
+.weak-filter .tag-chip:hover{opacity:1}
+.weak-filter .tag-chip.on{opacity:1;color:#151619;background:#e0a488;font-weight:600}
+.weak-filters .weak-clear{height:auto;padding:1px 9px;margin:2px 0 0 58px;border-radius:999px;border:1px solid var(--edge);background:transparent;color:var(--muted);font-size:12.5px;cursor:pointer}
+.tag-chip.resist{color:#9cd4cf;border-color:var(--teal);background:rgba(95,148,144,.15)}
+/* The "+N more" button on a chip row of entity chips (icon + label + stat): a plain button, not a <details>, so
+   the extra chips it reveals are already direct flex children of .chip-row from the start (just hidden) and join
+   the same wrapping grid - same CAP columns per row - instead of stacking one per line inside a disclosure box. */
+.entity-chip[hidden]{display:none}
+.chip-row-more-btn{align-self:flex-start;height:40px;padding:0 10px;border-radius:3px;border:1px solid var(--edge);background:transparent;color:var(--muted);font-size:12.5px}
+.chip-row-more-btn:hover{border-color:var(--accent);color:var(--ink);background:transparent}
+
+.zonearea-btn.on{background:#4a341c;border-color:var(--accent);color:#f0d6a6}
+
+/* Planner / reading pages: no map, the content gets the width (centred, at a readable measure) */
+/* World map page: the map on its own, full width, with a side panel for the one thing clicked (atlas-live.js). */
+#main{position:relative}
+#main[data-view=mapfull]{grid-template-columns:minmax(0,1fr)}
+#main[data-view=mapfull] #side,#main[data-view=mapfull] #splitter{display:none}
+#mapPanel{position:absolute;top:12px;right:12px;bottom:12px;width:380px;max-width:calc(100% - 24px);z-index:1100;overflow:auto;overscroll-behavior:contain;background:var(--panel);border:1px solid var(--accent-soft);border-radius:6px;box-shadow:0 10px 40px #000b;padding:14px 14px 18px;box-sizing:border-box}
+#mapPanel[hidden],#main:not([data-view=mapfull]) #mapPanel{display:none}
+#mapPanel .card{margin:0 0 10px;cursor:default}
+.map-panel-close{position:absolute;right:6px;top:6px;width:30px;height:30px;padding:0;font-size:18px;line-height:1;background:transparent;border-color:transparent;z-index:1}
+.map-panel-kind{margin:0 0 8px;font:italic 12.5px var(--serif);color:var(--accent)}
+.map-panel-h{margin:14px 0 6px;font:400 15px var(--serif);border-bottom:1px solid var(--edge);padding-bottom:3px}
+.map-panel-picks{display:flex;flex-direction:column;gap:5px}
+.map-panel-pick{text-align:left;background:transparent}
+.map-panel-open{display:block;width:100%;margin-top:14px;border-color:var(--accent-soft)}
+#main.map-panel-open[data-view=mapfull] .leaflet-right{right:392px}
+#mapHint{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:1000;margin:0;padding:6px 14px;border-radius:999px;background:#1c1710ee;border:1px solid var(--edge);color:var(--muted);font-size:12.5px;pointer-events:none;white-space:nowrap}
+#main:not([data-view=mapfull]) #mapHint,#main.map-panel-open #mapHint{display:none}
+.show-on-map{margin-top:8px;padding:5px 12px;font-size:12.5px;border-color:var(--accent-soft)}
+@media(max-width:760px){#main[data-view=mapfull] #map{height:calc(100vh - 170px)}#mapPanel{position:fixed;left:0;right:0;top:auto;bottom:0;width:auto;max-width:none;max-height:45vh;border-radius:12px 12px 0 0}#main.map-panel-open[data-view=mapfull] .leaflet-right{right:0}#mapHint{bottom:12px;top:auto;white-space:normal;max-width:85%;text-align:center}}
+#main[data-view=wide]{grid-template-columns:minmax(0,1fr)}
+#main[data-view=wide] #splitter,#main[data-view=wide] #map{display:none}
+#main[data-view=wide] #side{border-right:0}
+#main[data-view=wide] #side>*{width:100%;max-width:1040px;margin-left:auto;margin-right:auto}
+
+/* Crafting planner: numbered steps, one question each, the short answer first */
+.craft-lede{margin:2px 0 12px;color:var(--ink);font-size:14px;line-height:1.5}
+.craft-item{display:flex;gap:14px;align-items:center;padding:12px 14px;border:1px solid var(--edge);border-radius:10px;background:#16171a;margin:14px 0 10px}
+.craft-item img{width:56px;height:56px;flex:none}
+.craft-step{border:1px solid var(--edge);border-radius:10px;padding:12px 14px;margin:10px 0;background:#121316}
+.craft-step.dim{opacity:.8}
+.craft-step-head{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.craft-step-head h3{margin:0;font:600 16px/1.2 Georgia,serif;color:#efd39a}
+.craft-step-n{width:24px;height:24px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#2e2f32;color:#f0d6a6;font:700 12.5px Arial,sans-serif}
+.craft-answer{font-size:14px;line-height:1.45;padding:8px 10px;border-radius:7px;border-left:4px solid #8f978f;background:#191a1d}
+.craft-answer.ok{border-left-color:#5fae6f}
+.craft-answer.no{border-left-color:#d9a04a}
+.craft-progress{height:8px;border-radius:5px;background:#232427;margin:10px 0 6px;overflow:hidden}
+.craft-progress span{display:block;height:100%;background:linear-gradient(90deg,#b88a3e,#5fae6f)}
+.craft-needs{margin:4px 0 4px 18px;padding:0;line-height:1.6}
+.craft-tip{margin:8px 0 2px;padding:7px 10px;border-radius:7px;background:#191a1d;font-size:13px}
+.craft-more{margin-top:8px}
+.craft-more>summary{cursor:pointer;color:#bfa976;font-size:12.5px}
+
+/* the in-app "Using levels from [character]" line on planner pages */
+.collector-panel.charpick{padding:8px 12px;margin-bottom:10px}
+.collector-panel.charpick label{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0}
+.collector-panel.charpick select{min-width:180px}
+
+/* Community forms (atlas-community.js) */
+.cf{max-width:760px}
+.cf-lede{margin:2px 0 14px;font-size:14px;line-height:1.5}
+.cf-field{display:flex;flex-direction:column;gap:5px;margin:0 0 12px}
+.cf-field>span{font-weight:600;color:#efd39a}
+.cf-req{color:#e0a488}
+.cf-field input,.cf-field select,.cf-field textarea{width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--edge);border-radius:7px;background:#121316;color:var(--ink);font:14px/1.45 var(--sans,'Segoe UI',Arial,sans-serif)}
+.cf-field textarea{resize:vertical;min-height:120px}
+.cf-field input:focus,.cf-field select:focus,.cf-field textarea:focus{outline:none;border-color:var(--accent,#d9b878)}
+.cf-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:4px 0 14px}
+.cf-send{padding:9px 18px;font-weight:700;border-radius:8px}
+.cf-note{font-size:13px}.cf-note.good{color:#9be3a6}.cf-note.bad{color:#f0a488}
+.cf-how{padding:10px 12px;border-left:3px solid var(--edge);background:#121316;border-radius:6px;font-size:12.5px;line-height:1.5;color:#c9bda2}
+
+/* Splash / home page (public Atlas only, atlas-splash.js): a title page over the world map, then one tile per section. */
+#atlasSplash{position:fixed;inset:0;z-index:20000;overflow:auto;background:var(--bg);color:var(--ink)}
+#atlasSplash[hidden]{display:none}
+body.splash-open #atlasGlobalResults{display:none}
+.splash-backdrop{position:fixed;inset:0;pointer-events:none;opacity:.22;filter:sepia(.35) saturate(.8);
+  background:url(tiles/1/0/0.png) 0 0/50% 50% no-repeat,url(tiles/1/1/0.png) 100% 0/50% 50% no-repeat,url(tiles/1/0/1.png) 0 100%/50% 50% no-repeat,url(tiles/1/1/1.png) 100% 100%/50% 50% no-repeat;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 35%,#000 20%,transparent 75%);mask-image:radial-gradient(ellipse at 50% 35%,#000 20%,transparent 75%)}
+.splash-inner{position:relative;max-width:980px;margin:0 auto;padding:clamp(28px,7vh,72px) 16px 40px;box-sizing:border-box}
+.splash-head{text-align:center;padding-bottom:18px;border-bottom:1px solid var(--accent-soft);box-shadow:0 3px 0 -2px var(--edge)}
+.splash-kicker{margin:0;font:italic 14px/1.6 var(--serif);color:var(--muted)}
+.splash-head h1{margin:2px 0 8px;font:400 clamp(40px,7vw,68px)/1.05 var(--serif);letter-spacing:.5px}
+.splash-lede{margin:0 auto;max-width:560px;color:#c9bb9c;font-size:15px}
+.splash-search{display:flex;gap:8px;max-width:640px;margin:26px auto 6px}
+.splash-search input{flex:1;min-width:0;padding:13px 15px;font-size:16px;background:#0f1013;border-color:var(--accent-soft)}
+.splash-search button{padding:0 20px;border-color:var(--accent-soft);color:var(--ink)}
+.splash-hint{text-align:center;margin:0 0 28px;font-size:12.5px;color:var(--muted)}
+.splash-hint i{font-family:var(--serif);color:#c9bb9c}
+.splash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.splash-tile{display:flex;flex-direction:column;align-items:flex-start;gap:3px;text-align:left;padding:14px 16px 16px;background:var(--panel);border:1px solid var(--edge);border-top:2px solid var(--accent-soft);border-radius:2px;color:var(--ink);min-height:96px}
+.splash-tile:hover,.splash-tile:focus-visible{background:var(--panel2);border-color:var(--accent);border-top-color:var(--accent)}
+.splash-tile b{font:400 20px/1.2 var(--serif)}
+.splash-tile span{font-size:12.5px;color:var(--muted);line-height:1.4}
+.splash-tile .splash-tile-group{font:italic 12.5px/1.4 var(--serif);color:var(--accent)}
+.splash-foot{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;margin-top:30px}
+.splash-enter{padding:11px 26px;font-size:15px;background:var(--accent-soft);border-color:var(--accent);color:#fff6e2}
+.splash-enter:hover{background:var(--accent)}
+.splash-foot label{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
+.splash-foot input{accent-color:var(--accent)}
+#splashHome{align-self:center;padding:6px 12px;font-size:12.5px}
+/* Splash animation: the map drifts slowly behind; the title rises in, its rule draws outward, then the search and
+   the tiles follow one after another. Replays each time Home reopens it (hidden -> shown restarts CSS animations).
+   Leaving fades the whole page out. All of it is switched off for visitors who ask for reduced motion. */
+@keyframes splashRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes splashFade{from{opacity:0}to{opacity:1}}
+@keyframes splashRule{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes splashDrift{0%{transform:scale(1.08) translate(0,0)}50%{transform:scale(1.14) translate(-1.5%,1%)}100%{transform:scale(1.08) translate(0,0)}}
+@keyframes splashGlow{0%,100%{box-shadow:0 0 0 0 rgba(196,144,63,0)}50%{box-shadow:0 0 0 6px rgba(196,144,63,.12)}}
+#atlasSplash{transition:opacity .3s ease}
+#atlasSplash.splash-leaving{opacity:0;pointer-events:none}
+.splash-backdrop{animation:splashFade 1.6s ease both,splashDrift 60s ease-in-out 1.6s infinite}
+.splash-head{position:relative;border-bottom-color:transparent;box-shadow:none}
+.splash-head::after{content:'';position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--accent-soft);box-shadow:0 2px 0 var(--edge);transform-origin:50% 50%;animation:splashRule .9s cubic-bezier(.2,.7,.2,1) .35s both}
+.splash-kicker{animation:splashRise .7s ease-out .05s both}
+.splash-head h1{animation:splashRise .8s cubic-bezier(.2,.7,.2,1) .15s both}
+.splash-lede{animation:splashRise .7s ease-out .3s both}
+.splash-search{animation:splashRise .6s ease-out .5s both}
+.splash-search input{animation:splashGlow 2.4s ease-in-out 1.2s 2}
+.splash-hint{animation:splashFade .6s ease-out .65s both}
+.splash-tile{animation:splashRise .5s cubic-bezier(.2,.7,.2,1) calc(.7s + var(--i,0) * 55ms) both;transition:background .15s,border-color .15s,transform .15s}
+.splash-tile:hover{transform:translateY(-2px)}
+.splash-foot{animation:splashFade .6s ease-out 1.3s both}
+#atlasSplash.splash-app .splash-backdrop{animation:splashFade 1.6s ease both}
+@media (max-width:560px){.splash-search{flex-direction:column}.splash-search button{padding:11px}.splash-grid{grid-template-columns:1fr}}
+
+/* Pages for one monster / item / resource (atlas-live.js "Pages and links"): reading text on the left, an infobox on
+   the right, like a wiki article. In the narrow sidebar (Resources keeps its map) the infobox goes on top. */
+.wp{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:26px;align-items:start;padding-top:4px}
+.wp-main h2{font:400 20px/1.3 var(--serif);margin:22px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--edge)}
+.wp-main h2:first-of-type{margin-top:6px}
+.wp-lede{font-size:14.5px;color:#d6c8a8;margin:0 0 4px}
+.wp-list{margin:6px 0 10px;padding-left:18px}.wp-list li{margin:3px 0}
+.wp-infobox{background:var(--panel);border:1px solid var(--edge);border-top:2px solid var(--accent-soft);padding:12px;position:sticky;top:0}
+.wp-pic{display:grid;place-items:center;height:160px;background:#0f1013;border:1px solid var(--edge);margin-bottom:8px}
+.wp-pic img{max-width:140px;max-height:140px;object-fit:contain}
+.wp-infobox h3{font:400 18px var(--serif);margin:0 0 6px;text-align:center}
+.wp-infobox table{width:100%;border-collapse:collapse;font-size:12.5px}
+.wp-infobox th{text-align:left;font-weight:400;color:var(--muted);padding:4px 8px 4px 0;vertical-align:top;width:45%}
+.wp-infobox td{padding:4px 0;border-bottom:1px solid #26272a}
+.wp .card{margin:0 0 10px}
+a.page-link{color:inherit;text-decoration:none;border-bottom:1px dotted var(--accent-soft)}
+a.page-link:hover{color:var(--accent);border-bottom-color:var(--accent)}
+#content a:not(.page-link),#mapPanel a:not(.map-panel-open){color:#e2b86a}
+#sectionTrail a{color:inherit}
+a.map-panel-open{display:block;text-align:center;margin-top:14px;padding:9px;border:1px solid var(--accent-soft);border-radius:4px;color:var(--ink);text-decoration:none}
+a.map-panel-open:hover{border-color:var(--accent);background:var(--panel2)}
+#main:not([data-view=wide]) .wp,.wp-narrow .wp{grid-template-columns:1fr}
+#main:not([data-view=wide]) .wp-infobox{position:static;order:-1}
+@media(max-width:760px){.wp{grid-template-columns:1fr}.wp-infobox{position:static;order:-1}}
+
+/* Guides (atlas-guides.js): an index of cards by group, and article pages with tables and an "On this page" box. */
+.g-index section{margin:4px 0 22px}.g-index h2{font:400 20px var(--serif);margin:0 0 10px;padding-bottom:4px;border-bottom:1px solid var(--edge)}
+.g-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
+.g-card{display:flex;flex-direction:column;gap:3px;padding:12px 14px;background:var(--panel);border:1px solid var(--edge);border-top:2px solid var(--accent-soft);color:var(--ink)!important;text-decoration:none}
+.g-card:hover{border-color:var(--accent)}.g-card b{font:400 18px var(--serif)}.g-card span{font-size:12.5px;color:var(--muted)}
+.g-page section{scroll-margin-top:12px}
+.g-scroll{overflow-x:auto;margin:6px 0 4px}
+.g-table{width:100%;border-collapse:collapse;font-size:13px}
+.g-table th{text-align:left;font-weight:600;font-size:12.5px;color:var(--muted);padding:6px 8px;border-bottom:1px solid var(--accent-soft);white-space:nowrap}
+.g-table td{padding:5px 8px;border-bottom:1px solid #26272a;vertical-align:middle}
+.g-table tr:hover td{background:#191a1d}
+.g-ico{width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:6px}
+.g-note{font-size:12.5px;color:var(--muted);margin:4px 0 8px}
+.g-list li{margin:4px 0}
+.g-cols{columns:3 180px;margin:4px 0;padding-left:18px}.g-cols li{margin:2px 0}
+.g-aside h3{margin-bottom:0}.g-aside-group{margin:0 0 8px;text-align:center;font:italic 12.5px var(--serif);color:var(--accent)}
+.g-aside-h{margin:10px 0 4px;font-size:12.5px;color:var(--muted)}
+.g-toc{margin:0;padding-left:20px;font-size:13px}.g-toc li{margin:3px 0}
+.wp-guides{margin-top:18px;padding-top:10px;border-top:1px solid var(--edge);font-size:13px}
+
+/* World map focus: while the side panel shows something, the rest of the map fades so its circles stand out;
+   you can still click anything faded to switch to it. */
+#map .leaflet-marker-pane,#map .leaflet-overlay-pane,#map .leaflet-tooltip-pane{transition:opacity .25s}
+#map.bxc-focus .leaflet-marker-pane,#map.bxc-focus .leaflet-overlay-pane{opacity:.28}
+#map.bxc-focus .leaflet-tooltip-pane{opacity:.2}
+#map.bxc-focus .leaflet-marker-pane:hover,#map.bxc-focus .leaflet-overlay-pane:hover{opacity:.6}
+.map-panel-best{margin:0 26px 10px 0;padding:7px 10px;border-left:3px solid #ffe08a;background:rgba(255,224,138,.08);font-size:12.5px;color:#f3e3b4}
+
+/* Tool pages (Crafting planner, Quality & enchanting, Gem combiner): wiki layout with a small "Your numbers" box. */
+.tool-form{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-start;margin:6px 0 14px;padding:12px 14px;background:var(--panel);border:1px solid var(--edge);border-top:2px solid var(--accent-soft)}
+.tool-form label,.tool-form>div{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muted);min-width:110px}
+.tool-form select,.tool-form input{min-width:0;height:36px;box-sizing:border-box}
+.tool-form input[type=number]{width:96px}
+.tool-form [hidden]{display:none}
+.tool-form [id$=AutoState]:empty{display:none}   /* the collector level note, only when it says something */
+.tool-auto{flex-basis:100%;font-size:12.5px;min-width:0!important}
+.tool-answer{font-size:15px;margin:4px 0 10px}
+.tool-total{margin:8px 0 4px;font-size:13px}
+.tool-wp .wp-main>section,.tool-page .wp-main>section{margin-top:4px}
+.tool-page,.gem-wp{border:0;background:none;padding:0}
+.tool-page>.name{display:none}
+.tool-wp .craft-step{border:0;border-radius:0;background:none;padding:0;margin:0 0 18px}
+.tool-wp .craft-step-head{margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--edge)}
+.tool-wp .craft-step-head h3{font:400 20px/1.3 var(--serif);color:var(--ink)}
+.tool-wp .craft-step-n{background:var(--accent-soft);color:#fff6e2}
+.gem-wp .wp-main h2,.tool-wp .wp-main h2{font:400 20px/1.3 var(--serif);margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid var(--edge)}
+@media(max-width:760px){.tool-wp .wp-infobox{order:1}}
+/* hidden until the start page is up (atlas.html head script, atlas-splash.js) */
+html.splash-pending body>*:not(#atlasSplash){visibility:hidden}
+/* quest items (atlas-live questItem): a tag; drop rates unchanged */
+.entity-chip.quest{border-color:#6f8fd0!important;box-shadow:inset 0 0 0 1px rgba(111,143,208,.35)}
+.wp-quest{margin:0 0 10px;padding:7px 10px;border-left:3px solid #6f8fd0;background:rgba(111,143,208,.1);font-size:13px}
+.quest-badge{display:inline-block;margin-left:6px;padding:0 7px;border-radius:999px;border:1px solid #6f8fd0;color:#a9c0ee;font:600 12.5px/16px var(--sans);vertical-align:middle}
+.entity-chip{position:relative}.quest-tag{position:absolute;top:-6px;left:-6px;padding:0 5px;border-radius:8px;background:#6f8fd0;color:#0e1320;font:700 12.5px/15px Arial,sans-serif}
+/* caves / mines holding the picked thing (atlas-live cavesFor/drawCaves) */
+.bxc-cave-wrap{background:none;border:0}
+.bxc-cave{display:inline-block;white-space:nowrap;padding:2px 8px;border-radius:999px;background:#1c1710f2;border:1.5px solid #ffe08a;color:#f3e3b4;font:600 12.5px/1.4 'Segoe UI',Arial,sans-serif;cursor:pointer;transform:translate(-50%,-50%);box-shadow:0 2px 8px #000a}
+.bxc-cave b{color:#ffe08a;margin-left:3px}
+.open-zone{margin-left:8px;padding:2px 10px;font-size:12.5px;border-color:var(--accent-soft)}
+/* item quality (atlas-live gearQualityHtml); tier colours are the game's own */
+.q-picker{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 8px}
+.q-chip{padding:3px 10px;border:1px solid var(--edge);border-radius:999px;font-size:12.5px;color:var(--ink)!important;text-decoration:none!important}
+.q-chip span{color:var(--muted);font-size:12.5px}
+.q-chip.on{border-color:var(--accent);background:rgba(196,144,63,.18)}
+.q-table .q-row-on td{background:rgba(196,144,63,.12)}
+.q-name{font-weight:600}
+.q-inferior{color:#8c8378}.q-crude{color:#9d9d9d}.q-shoddy{color:#b5ad9c}.q-good{color:#7fc98a}.q-excellent{color:#5fb8dd}.q-superior{color:#b98cf0}.q-flawless{color:#ffc861}
+.q-chip.q-inferior,.q-chip.q-crude,.q-chip.q-shoddy,.q-chip.q-good,.q-chip.q-excellent,.q-chip.q-superior,.q-chip.q-flawless{color:inherit}
+.q-chip.q-good{border-color:#4d7a55}.q-chip.q-excellent{border-color:#3d7890}.q-chip.q-superior{border-color:#6f5796}.q-chip.q-flawless{border-color:#9b7c39}
+/* named NPCs list on a type page; clickable level rows */
+.named-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px}
+.named-card{display:grid;grid-template-columns:28px 1fr;column-gap:8px;align-items:center;padding:6px 10px;border:1px solid var(--edge);border-radius:4px;color:var(--ink)!important;text-decoration:none!important}
+.named-card:hover{border-color:var(--accent)}.named-card span{font-size:12.5px;color:var(--muted)}
+tr[data-href]{cursor:pointer}
+/* outfits (atlas-guides "outfits", NPC "Wearing") */
+.outfit-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.outfit-card{display:flex;gap:10px;align-items:center;padding:8px 10px;background:var(--panel);border:1px solid var(--edge);border-radius:4px}
+.outfit-card img{width:48px;height:auto;max-height:110px;object-fit:contain;flex:none}
+.outfit-worn{font-size:12.5px;margin-top:3px}
+.gear-line{display:flex;flex-wrap:wrap;gap:6px}
+.gear-piece{padding:2px 8px;border:1px solid var(--edge);border-radius:999px;font-size:12.5px}.gear-piece i{color:var(--muted);font-size:12.5px;margin-right:3px}
+.named-card img{grid-row:span 2;width:28px;height:48px;object-fit:contain}
+/* monster appearance by class and level band (atlas-live looksHtml) */
+.look-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.look-card{display:flex;gap:10px;align-items:center;padding:6px 10px;border:1px solid var(--edge);border-radius:4px;background:var(--panel)}
+.look-card.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.look-card img{width:44px;height:auto;max-height:90px;object-fit:contain;flex:none}
+/* trainers: map markers and the Trainers guide */
+.bxc-trainer img{width:30px;height:30px;object-fit:contain;border-radius:50%;background:rgba(28,23,16,.85);border:2px solid #e6c34a;box-sizing:border-box;box-shadow:0 1px 4px rgba(0,0,0,.6)}
+.trainer-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
+.trainer-card{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border:1px solid var(--edge);border-radius:4px;background:var(--panel)}
+.trainer-card img{width:40px;height:auto;max-height:80px;object-fit:contain;flex:none}
+.trainer-card .show-on-map{margin-top:6px}
+/* Quality & enchanting: pick the enchant (step 3) */
+.ench-opts{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px;margin:0 0 12px}
+.ench-opt{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:8px 10px;border:1px solid var(--edge);border-radius:6px;background:#16171a;color:var(--ink);cursor:pointer;font:inherit}
+.ench-opt:hover{border-color:#8a6430}
+.ench-opt.on{border-color:#d9b878;background:rgba(217,184,120,.12);box-shadow:inset 0 0 0 1px #d9b878}
+.ench-opt-what{font-size:12.5px;color:var(--muted)}
+.ench-opt-gems{font-size:12.5px;margin-top:2px}
+.ench-pick-h{margin:2px 0 4px}
+/* Market listings on an item page (app only) */
+.mk-box{margin:10px 0 4px}
+.mk-chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px}
+.mk-chip{display:flex;flex-direction:column;padding:6px 10px;border:1px solid var(--edge);border-radius:6px;background:var(--panel);min-width:110px}
+.mk-chip span{font-size:12.5px;color:var(--muted)}.mk-chip b{font-size:15px}
+.mk-depth{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.mk-depth h3,.mk-box h3{margin:6px 0 4px;font-size:15px}
+/* guide groups: links along the top of the guides index; group headings link to their page */
+.g-groups{margin:0 0 10px;font-size:14px}
+.g-index h2 a{color:inherit;text-decoration:none}.g-index h2 a:hover{text-decoration:underline}
+/* quality glow: the game draws an item of a quality with a glow in that quality's colour (atlas-core qualityGlow) */
+.q-glow-inferior img,img.q-glow-inferior{filter:drop-shadow(0 0 2px #8c8378) drop-shadow(0 0 6px #8c8378aa)}
+.q-glow-crude img,img.q-glow-crude{filter:drop-shadow(0 0 2px #9d9d9d) drop-shadow(0 0 6px #9d9d9daa)}
+.q-glow-shoddy img,img.q-glow-shoddy{filter:drop-shadow(0 0 2px #b5ad9c) drop-shadow(0 0 6px #b5ad9caa)}
+.q-glow-good img,img.q-glow-good{filter:drop-shadow(0 0 2px #7fc98a) drop-shadow(0 0 6px #7fc98aaa)}
+.q-glow-excellent img,img.q-glow-excellent{filter:drop-shadow(0 0 2px #5fb8dd) drop-shadow(0 0 6px #5fb8ddaa)}
+.q-glow-superior img,img.q-glow-superior{filter:drop-shadow(0 0 2px #b98cf0) drop-shadow(0 0 6px #b98cf0aa)}
+.q-glow-flawless img,img.q-glow-flawless{filter:drop-shadow(0 0 2px #ffc861) drop-shadow(0 0 6px #ffc861aa)}
+.q-mini{width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:6px}
+/* the tool box on skill guides */
+.g-tool{margin:6px 0 10px;padding:10px 12px;border:1px solid var(--edge);border-radius:8px;background:#121316}
+.g-tool .tool-form{margin-bottom:6px}
+/* a switch on a tool form (combat calculator: follow my gear) */
+.tool-form .tool-check{flex-basis:100%;flex-direction:row;align-items:center;gap:8px;color:var(--ink)}
+.tool-form .tool-check input{width:auto;height:auto}
+#atlasBack{align-self:center;padding:6px 12px;font-size:12.5px;margin-right:6px}
+#atlasBack:disabled{opacity:.45;cursor:default}
+/* rarity, in the game's quality colours: uncommon = good, semi-rare = excellent, rare = superior, very rare = flawless */
+.tag-chip.rar-common{color:#9d9d9d;border-color:#9d9d9d66;background:#9d9d9d14}
+.tag-chip.rar-uncommon{color:#7fc98a;border-color:#7fc98a80;background:#7fc98a1a}
+.tag-chip.rar-semi-rare{color:#5fb8dd;border-color:#5fb8dd80;background:#5fb8dd1a}
+.tag-chip.rar-rare{color:#b98cf0;border-color:#b98cf080;background:#b98cf01a}
+.tag-chip.rar-very-rare{color:#ffc861;border-color:#ffc86180;background:#ffc8611f}
+.q-table tr.q-row{cursor:pointer}
+.q-table tr.q-row:hover td{background:rgba(255,255,255,.03)}
+.wp-infobox .wp-pic{position:relative}
+.wp-pic .wp-badge{position:absolute;right:8px;bottom:6px}
+.wp-pic .wp-badge .tag-chip{margin:0;background:rgba(20,16,10,.85)}
+.e-glow-burn,.e-burn{--eg:#e85030}.e-glow-freeze,.e-freeze{--eg:#4fa8ff}.e-glow-shock,.e-shock{--eg:#f0c83a}
+.e-glow-corrode,.e-corrode{--eg:#7ab332}.e-glow-destruction,.e-destruction{--eg:#8a4fd0}.e-glow-seeking,.e-seeking{--eg:#a45cff}
+.e-name{color:var(--eg)}
+.rel-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.rel-row b{margin-right:4px}
+.rel-chip{display:inline-flex;align-items:center;gap:2px;padding:2px 10px 2px 6px;border:1px solid var(--edge);border-radius:999px;font-size:12.5px;text-decoration:none}
+.rel-chip:hover{border-color:var(--gold,#c9a54a)}
+.e-glow-artisan,.e-artisan{--eg:#c8a24a}
+.e-glow-titan,.e-titan{--eg:#c85a34}.e-glow-camel,.e-camel{--eg:#b3914a}.e-glow-weasel,.e-weasel{--eg:#58b168}
+.e-glow-leopard,.e-leopard{--eg:#4bb3ab}.e-glow-sage,.e-sage{--eg:#5586cc}.e-glow-mage,.e-mage{--eg:#9d5fe0}
+/* Home page, refreshed: live numbers, beginner links, creature of the day, grouped tiles with game icons */
+.splash-stats{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 28px;margin:4px auto 18px;animation:splashFade .6s ease-out .75s both}
+.splash-stats div{display:flex;flex-direction:column;align-items:center;min-width:70px}
+.splash-stats b{font:400 26px/1.1 var(--serif);color:var(--ink)}
+.splash-stats span{font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.splash-new{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;margin:0 auto 22px;animation:splashFade .6s ease-out .85s both}
+.splash-new>span{font:italic 13px var(--serif);color:var(--muted);margin-right:4px}
+.splash-new .q-chip{text-decoration:none}
+.splash-feature{display:flex;gap:18px;align-items:center;margin:0 auto 26px;padding:16px 18px;max-width:760px;background:linear-gradient(135deg,var(--panel2),var(--panel));border:1px solid var(--edge);border-left:3px solid var(--accent);border-radius:6px;animation:splashRise .7s ease-out .9s both}
+.splash-feature-pic{flex:none;width:110px;height:110px;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(196,144,63,.18),transparent 70%);border-radius:50%}
+.splash-feature-pic img{max-width:100%;max-height:100%;object-fit:contain}
+.splash-feature-body{min-width:0}
+.splash-feature-body h2{margin:0 0 4px;font:400 26px/1.15 var(--serif)}
+.splash-feature-body p{margin:4px 0}
+.splash-feature-facts{color:#c9bb9c;font-size:13.5px}
+.splash-feature-go{margin-top:8px;padding:6px 14px;font-size:13px}
+.splash-group{margin:0 0 20px}
+.splash-group h2{margin:0 0 8px;font:italic 400 15px/1.3 var(--serif);color:var(--accent);letter-spacing:.04em;border-bottom:1px solid var(--edge);padding-bottom:4px}
+.splash-tile{flex-direction:row!important;align-items:center!important;gap:12px!important}
+.splash-tile-ico{flex:none;width:44px;height:44px;object-fit:contain;border-radius:8px;background:#0e0f12;border:1px solid var(--edge)}
+.splash-tile-glyph{display:flex;align-items:center;justify-content:center;font:400 22px var(--serif);color:var(--accent)}
+.splash-tile-words{display:flex;flex-direction:column;gap:2px;min-width:0}
+.splash-tile:hover .splash-tile-ico{border-color:var(--accent)}
+@media (max-width:560px){.splash-feature{flex-direction:column;text-align:center}.splash-stats{gap:8px 16px}}
+
+/* ===== Dark and Light modes ================================================================================
+   Dark is the default look: neutral stone greys with brass accents. Light mode (html[data-theme="light"], the
+   ☀/☾ switch in the header, remembered per browser; the first visit follows the system) swaps the palette and has
+   a light twin for every rule that hard-codes a dark colour. Quality, rarity and enchant colours are deepened a
+   little in Light mode so they still read on a pale page. */
+:root{--bg:#1c1d20;--ink:#e9e7e2;--muted:#9a9ca3;--panel:#232428;--panel2:#2a2b30;--edge:#4a4d55;--accent:#c9a45c;--accent-soft:#7e6a45;color-scheme:dark}
+button:hover{background-color:#34363c}
+.wp-pic{background-color:#141518}
+.wp-pic .wp-badge .tag-chip{background:rgba(16,17,20,.88)}
+.g-table tr:hover td{background:#26272b}
+#themeToggle{align-self:center;padding:6px 10px;font-size:13px;min-width:38px}
+html[data-theme="light"]{--bg:#f4f3f0;--ink:#24252a;--muted:#62656d;--panel:#ffffff;--panel2:#eceae5;--edge:#cfcdc6;--accent:#9a6f1e;--accent-soft:#c9a45c;color-scheme:light}
+html[data-theme="light"] button:hover{background-color:#e2dfd7}
+html[data-theme="light"] .wp-pic{background-color:#2a2b30}
+html[data-theme="light"] .g-table tr:hover td{background:#f0eee9}
+html[data-theme="light"] .splash-backdrop{opacity:.12}
+html[data-theme="light"] .q-inferior{color:#6f675c!important}html[data-theme="light"] .q-crude{color:#6e6e6e!important}html[data-theme="light"] .q-shoddy{color:#857c69!important}
+html[data-theme="light"] .q-good,html[data-theme="light"] .tag-chip.rar-uncommon{color:#2f8a41!important}
+html[data-theme="light"] .q-excellent,html[data-theme="light"] .tag-chip.rar-semi-rare{color:#1f78a3!important}
+html[data-theme="light"] .q-superior,html[data-theme="light"] .tag-chip.rar-rare{color:#7a45c2!important}
+html[data-theme="light"] .q-flawless,html[data-theme="light"] .tag-chip.rar-very-rare{color:#a86f00!important}
+html[data-theme="light"] .q-name.q-ordinary{color:var(--ink)!important}
+html[data-theme="light"] button:hover{background:#ebebed}
+html[data-theme="light"] #q{background:#fafafc}
+html[data-theme="light"] #collectorStatus{color:#3e3e42}
+html[data-theme="light"] #map{background:#fcfcfe}
+html[data-theme="light"] .s{color:#414145}
+html[data-theme="light"] .calcbox input,html[data-theme="light"] .calcbox select{background:#fafafc}
+html[data-theme="light"] .thumb{background:#fafafc}
+html[data-theme="light"] .calcsubtab.on{background:#e9e9eb}
+html[data-theme="light"] .qualitymetric{background:#f9f9fb}
+html[data-theme="light"] .qualitybar{background:#f2f2f4}
+html[data-theme="light"] .xpchart{background:#fafafc}
+html[data-theme="light"] .entity-chip img{background:#fafafc}
+html[data-theme="light"] .entity-chip-label{color:#414145}
+html[data-theme="light"] .craft-item{background:#f6f6f8}
+html[data-theme="light"] .craft-step{background:#f8f8fa}
+html[data-theme="light"] .craft-step-n{background:#e9e9eb}
+html[data-theme="light"] .craft-answer{background:#f4f4f6}
+html[data-theme="light"] .craft-progress{background:#efeff1}
+html[data-theme="light"] .craft-tip{background:#f4f4f6}
+html[data-theme="light"] .cf-field input,html[data-theme="light"] .cf-field select,html[data-theme="light"] .cf-field textarea{background:#f8f8fa}
+html[data-theme="light"] .cf-how{background:#f8f8fa;color:#3f3f43}
+html[data-theme="light"] .splash-backdrop{-webkit-mask-image:radial-gradient(ellipse at 50% 35%,#ffffff 20%,transparent 75%);mask-image:radial-gradient(ellipse at 50% 35%,#ffffff 20%,transparent 75%)}
+html[data-theme="light"] .splash-search input{background:#fafafc}
+html[data-theme="light"] .splash-enter{color:#2b2b2f}
+html[data-theme="light"] .wp-pic{background:#fafafc}
+html[data-theme="light"] .wp-infobox td{border-bottom:1px solid #ededef}
+html[data-theme="light"] .g-table td{border-bottom:1px solid #ededef}
+html[data-theme="light"] .g-table tr:hover td{background:#f4f4f6}
+html[data-theme="light"] .tool-wp .craft-step-n{color:#2b2b2f}
+html[data-theme="light"] .q-crude{color:#4a4a4e}
+html[data-theme="light"] .q-shoddy{color:#454549}
+html[data-theme="light"] .ench-opt{background:#f6f6f8}
+html[data-theme="light"] .g-tool{background:#f8f8fa}
+html[data-theme="light"] .tag-chip.rar-common{color:#4a4a4e}
+html[data-theme="light"] .splash-tile-ico{background:#fbfbfd}
+html[data-theme="light"] .splash-lede,html[data-theme="light"] .splash-feature-facts,html[data-theme="light"] .splash-hint i{color:#4c4f57}
+html[data-theme="light"] #collectorStatus{color:#4d6b3a}
+html[data-theme="light"] .tag-chip.weak{color:#9a3f16;background:rgba(192,119,82,.12)}
+html[data-theme="light"] .tag-chip.resist{color:#1d6b66;background:rgba(95,148,144,.12)}
+html[data-theme="light"] .splash-head h1{color:#24252a;text-shadow:none}
+html[data-theme="light"] .splash-feature{background:linear-gradient(135deg,#ffffff,#f3f1ec)}
+/* Home page backdrop: the fade-in used to end at full strength (the "fade" keyframes end at opacity 1), which put the
+   bright map right behind the text. It now settles faint, with a veil in the page colour over it, and the chips and
+   numbers sit on solid backgrounds so they read over anything. */
+@keyframes splashBackIn{from{opacity:0}to{opacity:.16}}
+#atlasSplash .splash-backdrop,#atlasSplash.splash-app .splash-backdrop{animation:splashBackIn 1.6s ease both!important;opacity:.16}
+html[data-theme="light"] #atlasSplash .splash-backdrop{animation-name:splashBackInLight!important;opacity:.1}
+@keyframes splashBackInLight{from{opacity:0}to{opacity:.1}}
+.splash-backdrop::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 30%,color-mix(in srgb,var(--bg) 55%,transparent) 0%,var(--bg) 80%)}
+.splash-new .q-chip{background:var(--panel);color:var(--ink)!important}
+.splash-new>span,.splash-stats{text-shadow:0 1px 2px var(--bg)}
+.splash-stats{background:color-mix(in srgb,var(--bg) 70%,transparent);border-radius:8px;padding:6px 14px;width:max-content;max-width:100%}
+.splash-group h2{background:color-mix(in srgb,var(--bg) 80%,transparent)}
+
+/* ===== Readability ===========================================================================================
+   The clearest system text face, a slightly larger body size, nothing under 12.5px, stronger secondary text, and
+   real semi-bold weights for bold words and table headers. */
+:root{--sans:'Segoe UI Variable Text','Segoe UI',system-ui,-apple-system,Roboto,'Helvetica Neue',Arial,sans-serif;--muted:#b0b2b9}
+html[data-theme="light"]{--muted:#50535b}
+html,body{font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+button,input,select{font-size:14px}
+b,strong{font-weight:650;color:var(--ink)}
+th,.g-table th{font-weight:600;color:var(--ink);letter-spacing:.01em}
+.wp h2,.wp-main h2,.splash-group h2,section>h2{font-weight:500}
+.wp h1,.wp-main h1{font-weight:500}
+.wp-infobox th{font-weight:600;color:var(--muted)}
+.muted,.g-note,.s.muted{color:var(--muted)}
+.g-table td,.wp-infobox td{line-height:1.5}
+.q-chip,.tag-chip{font-weight:500}
+.q-name{font-weight:600}
+.splash-tile b{font-weight:500}
+.splash-tile-text,.splash-tile span{font-size:13px;line-height:1.45}
+/* the Home page map shows at the sides; the content column sits on the plain page colour */
+#atlasSplash .splash-backdrop,#atlasSplash.splash-app .splash-backdrop{animation-name:splashBackIn2!important;opacity:.35}
+@keyframes splashBackIn2{from{opacity:0}to{opacity:.35}}
+html[data-theme="light"] #atlasSplash .splash-backdrop{animation-name:splashBackIn2L!important;opacity:.22}
+@keyframes splashBackIn2L{from{opacity:0}to{opacity:.22}}
+.splash-backdrop::after{background:linear-gradient(90deg,transparent 0,var(--bg) calc(50% - 540px),var(--bg) calc(50% + 540px),transparent 100%)}
+@media (max-width:1180px){.splash-backdrop::after{background:var(--bg)}}
+/* the Home page map, visible everywhere: stronger, with a see-through veil (not a wall) over the content column,
+   a soft shadow on the text, and solid cards and tiles */
+#atlasSplash .splash-backdrop,#atlasSplash.splash-app .splash-backdrop{animation-name:splashBackIn3!important;opacity:.6}
+@keyframes splashBackIn3{from{opacity:0}to{opacity:.6}}
+html[data-theme="light"] #atlasSplash .splash-backdrop{animation-name:splashBackIn3L!important;opacity:.45}
+@keyframes splashBackIn3L{from{opacity:0}to{opacity:.45}}
+.splash-backdrop::after{background:linear-gradient(90deg,color-mix(in srgb,var(--bg) 25%,transparent) 0,color-mix(in srgb,var(--bg) 72%,transparent) calc(50% - 520px),color-mix(in srgb,var(--bg) 72%,transparent) calc(50% + 520px),color-mix(in srgb,var(--bg) 25%,transparent) 100%)}
+@media (max-width:1180px){.splash-backdrop::after{background:color-mix(in srgb,var(--bg) 70%,transparent)}}
+.splash-head,.splash-hint,.splash-stats,.splash-new>span{text-shadow:0 1px 3px var(--bg),0 0 12px var(--bg)}
+.splash-tile,.splash-feature{background-color:var(--panel)}
+.splash-group h2{background:color-mix(in srgb,var(--bg) 85%,transparent);padding:2px 6px;border-radius:4px 4px 0 0}
+/* the map fills the whole page (the old centre-only fade hid it exactly where the veil is) */
+#atlasSplash .splash-backdrop{-webkit-mask-image:none!important;mask-image:none!important;filter:saturate(.85)}
+
+/* ===== Living glows =========================================================================================
+   "New to Binxonia?" is bold with a pointing arrow that nudges and shifts colour (like the map overlay's pointer);
+   Home tiles show gear flawless with an enchant aura; and across the Atlas the rare qualities breathe and enchant
+   auras pulse. All motion stops with reduced motion. */
+.splash-new-lead{display:inline-flex;align-items:center;gap:8px;margin-right:6px}
+.splash-new-lead b{font:600 italic 14.5px var(--serif);color:var(--ink)}
+.splash-arrow{display:inline-block;font-size:17px;line-height:1;color:var(--accent);animation:arrowNudge 1.4s ease-in-out infinite,arrowFlash 2.8s ease-in-out infinite}
+@keyframes arrowNudge{0%,100%{transform:translateX(0)}50%{transform:translateX(6px)}}
+@keyframes arrowFlash{0%,100%{color:var(--accent);text-shadow:0 0 4px color-mix(in srgb,var(--accent) 60%,transparent)}50%{color:#fff3cf;text-shadow:0 0 10px var(--accent),0 0 18px color-mix(in srgb,var(--accent) 50%,transparent)}}
+.splash-ico-wrap{position:relative;flex:none;display:inline-flex}
+.splash-ico-wrap img{position:relative}
+/* the tile's dark square is the holder's, so a glow follows the item's own shape, and an enchant aura sits inside */
+.splash-ico-wrap{width:46px;height:46px;align-items:center;justify-content:center;border-radius:8px;background:#131416;border:1px solid var(--edge);overflow:hidden}
+html[data-theme="light"] .splash-ico-wrap{background:#2a2b30}
+.splash-tile .splash-tile-ico{width:36px;height:36px;background:none!important;border:0!important;border-radius:0}
+.splash-tile:hover .splash-ico-wrap{border-color:var(--accent)}
+.splash-new .splash-arrow{animation:arrowNudge 1.4s ease-in-out infinite,arrowFlash 2.8s ease-in-out infinite}
+/* creatures on the Home page: their real sprite, with a gentle idle breath (the game's own animation frames are not recorded) */
+.splash-feature-pic img,.splash-tile[data-i] .splash-ico-wrap img[data-ico="monsters"]{transform-origin:50% 90%;animation:idleBreath 2.8s ease-in-out infinite}
+@keyframes idleBreath{0%,100%{transform:translateY(0) scale(1,1)}50%{transform:translateY(-1.5px) scale(1.01,1.035)}}
+.tool-form .ring-row{flex-basis:100%;display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-start}
+/* staff school enchants, in the game's own colours (the same rims as the weapon elements) */
+.e-glow-staff-fire,.e-staff-fire{--eg:#e85030}.e-glow-staff-ice,.e-staff-ice{--eg:#4fa8ff}.e-glow-staff-shock,.e-staff-shock{--eg:#f0c83a}.e-glow-staff-acid,.e-staff-acid{--eg:#7ab332}
+.wp-pic.q-glow-inferior,.splash-ico-wrap:has(img.q-glow-inferior){--qa:#8c8378}
+.wp-pic.q-glow-crude,.splash-ico-wrap:has(img.q-glow-crude){--qa:#9d9d9d}
+.wp-pic.q-glow-shoddy,.splash-ico-wrap:has(img.q-glow-shoddy){--qa:#b5ad9c}
+.wp-pic.q-glow-good,.splash-ico-wrap:has(img.q-glow-good){--qa:#7fc98a}
+.wp-pic.q-glow-excellent,.splash-ico-wrap:has(img.q-glow-excellent){--qa:#5fb8dd}
+.wp-pic.q-glow-superior,.splash-ico-wrap:has(img.q-glow-superior){--qa:#b98cf0}
+.wp-pic.q-glow-flawless,.splash-ico-wrap:has(img.q-glow-flawless){--qa:#ffc861}
+
+/* ===== Glows (the whole Atlas) ==================================================================================
+   QUALITY never moves: an item with a quality and no enchant has a steady outline in the quality's colour; an
+   enchanted item has its quality as a steady soft aura behind it. ENCHANTS are the only thing that pulses: an outline
+   in the enchant's own colour that brightens and widens, brightness only, never another colour. Every enchant pulse
+   runs on one clock set from the time of day (atlas-live.js, pulseClock), so a page redraw, a refresh or a reload
+   carries on where the pulse was instead of restarting, and all of them stay in step. */
+.wp-pic{position:relative}
+.wp-pic img,.splash-ico-wrap img{position:relative}
+.wp-pic[class*="e-glow-"]::before,.splash-ico-wrap[class*="e-glow-"]::before{content:"";position:absolute;pointer-events:none;border-radius:50%;inset:12%;opacity:.6;background:radial-gradient(circle,var(--qa,transparent) 0%,transparent 68%)}
+.splash-ico-wrap[class*="e-glow-"]::before{inset:0;border-radius:8px}
+@keyframes enchPulse{0%,100%{filter:drop-shadow(0 0 2px var(--eg)) drop-shadow(0 0 4px var(--eg))}50%{filter:drop-shadow(0 0 3px var(--eg)) drop-shadow(0 0 10px var(--eg))}}
+.wp-pic[class*="e-glow-"] img,.splash-ico-wrap[class*="e-glow-"] img{animation:enchPulse 2.6s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.wp-pic[class*="e-glow-"] img,.splash-ico-wrap[class*="e-glow-"] img,.splash-arrow,.splash-feature-pic img,img[data-ico="monsters"]{animation:none}}
+.gc-prices{margin-top:10px}
+/* the Gems guide: carat chips pick which ring / pendant wording shows */
+.gg-wrap .gg-at{display:none}
+.gg-wrap[data-c="0.5"] .gg-at[data-c="0.5"],.gg-wrap[data-c="1"] .gg-at[data-c="1"],.gg-wrap[data-c="1.5"] .gg-at[data-c="1.5"],.gg-wrap[data-c="2"] .gg-at[data-c="2"],.gg-wrap[data-c="2.5"] .gg-at[data-c="2.5"],.gg-wrap[data-c="3"] .gg-at[data-c="3"],.gg-wrap[data-c="3.5"] .gg-at[data-c="3.5"],.gg-wrap[data-c="4"] .gg-at[data-c="4"]{display:inline}
+.gg-size{margin:0 0 10px;padding:8px 12px;background:var(--panel);border:1px solid var(--edge);border-radius:4px;line-height:1.7}
+.gg-pick{margin:4px 0 8px}
+.gg-pick button.q-chip{cursor:pointer;font:inherit}
+#gcPlan{margin:8px 0}
+.gc-need{display:flex;align-items:center;min-width:96px;height:36px;box-sizing:border-box;padding:0 12px;border:1px solid var(--accent-soft);border-radius:4px;color:var(--accent);font-weight:700}
+.gc-result{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 4px;padding:10px 14px;background:var(--panel);border:1px solid var(--edge);border-left:3px solid var(--accent);border-radius:4px}
+.gc-result-h{color:var(--muted,#9a9486);font-size:13px;margin-right:2px}
+.gc-pill{padding:3px 10px;border:1px solid var(--accent-soft);border-radius:999px;color:var(--accent);white-space:nowrap}
+.gc-result-fee{margin-left:auto;white-space:nowrap}
+/* Gear & DPS planner */
+.gear-wp .gp-row{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:flex-end}
+.gp-armor select,.gp-armor input{height:32px}
+.gp-armor input{width:70px}
+.gp-grid td{text-align:center}
+.gp-grid td.gp-dw{background:rgba(90,170,90,.12)}
+.gp-grid td.gp-dr{background:rgba(200,90,90,.12)}
+.gp-mine{padding:5px 14px;border:1px solid var(--accent-soft);border-radius:4px;background:var(--panel);color:var(--accent);font:inherit;font-weight:600;cursor:pointer}
+.gp-mine:hover{border-color:var(--accent)}
+/* the answer sits beside the loadout and stays in view while you scroll it */
+.gear-wp .gp-aside{position:sticky;top:12px;align-self:flex-start;max-height:calc(100vh - 24px);overflow:auto}
+.gp-aside .g-table{font-size:13px}
+.gp-aside .g-table th,.gp-aside .g-table td{padding:5px 6px}
+.gp-aside #gpTotals h3{margin-top:14px}
+.gp-dps{width:100%;border-collapse:separate;border-spacing:4px;margin:4px 0}
+.gp-dps td{text-align:center;padding:6px 4px;border:1px solid var(--edge);border-radius:4px;vertical-align:top}
+.gp-dps td:empty{border:0}
+.gp-dps .gp-l{display:block;font-size:11.5px;color:var(--muted,#9a9486)}
+.gp-dps b{display:block;font-size:17px}
+.gp-dps .gp-h{display:block;font-size:11.5px;color:var(--muted,#9a9486)}
+.gp-dps td.gp-dw{background:rgba(90,170,90,.14)}
+.gp-dps td.gp-dr{background:rgba(200,90,90,.14)}
+.gp-dps td.gp-na{opacity:.55}
+.gp-swing{margin:6px 0 8px;padding:8px 10px;border:1px solid var(--edge);border-left:3px solid var(--accent);border-radius:4px;background:rgba(255,255,255,.03);font-size:13.5px;line-height:1.5}
+.gp-dps .gp-h{white-space:nowrap}
+/* the damage boxes: 6 columns - three singles, two doubles, stats in pairs */
+.gp-cards{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin:4px 0}
+.gp-c{min-width:0;text-align:center;padding:6px 3px;border:1px solid var(--edge);border-radius:4px}
+.gp-c .gp-l,.gp-c .gp-h{display:block;font-size:11.5px;color:var(--muted,#9a9486);overflow-wrap:anywhere}
+.gp-c b{display:block;font-size:17px}
+.gp-3{grid-column:span 2}.gp-half{grid-column:span 3}.gp-full{grid-column:1/-1}.gp-s{grid-column:span 3}
+.gp-c.gp-n{border-color:var(--accent-soft)}
+.gp-c.gp-dw{background:rgba(90,170,90,.14)}.gp-c.gp-dr{background:rgba(200,90,90,.14)}
+.gp-c.gp-na{font-size:12px;color:var(--muted,#9a9486);padding:8px}
+.gp-sep{margin-top:6px;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted,#9a9486);text-align:left}
+.gp-s b{font-size:15px}
+.gp-spells tr[data-spell]{cursor:pointer}
+.gp-spells tr[data-spell]:hover td{background:rgba(255,255,255,.04)}
+.gp-spells tr.on td{background:rgba(197,154,94,.14)}
+.gp-spells td{white-space:nowrap}.gp-spells td:first-child,.gp-spells td:nth-child(3),.gp-spells td:nth-child(4){white-space:normal}
+.tag-chip.gp-pick{border-color:var(--accent);color:var(--accent)}
+.gp-tick{display:inline-block;width:16px;color:var(--accent);visibility:hidden}
+.gp-spells tr.on .gp-tick{visibility:visible}
+.tag-chip.gp-out{opacity:.6}
+.gp-chips{margin:4px 0 0 16px;display:flex;flex-wrap:wrap;gap:4px}
+.gp-chips .tag-chip{font-size:11.5px;padding:1px 7px}
+.gp-spells td:first-child{min-width:170px}
+.gp-spells .gp-ok{color:#6fbf73;font-weight:600}
+.gp-spells .gp-no{color:#e0685c;font-weight:600}
+html[data-theme="light"] .gp-spells .gp-ok{color:#2e7d32}
+html[data-theme="light"] .gp-spells .gp-no{color:#c62828}
+.gp-budget{margin:6px 0 10px;padding:8px 12px;border:1px solid var(--edge);border-left:3px solid var(--accent);border-radius:4px}
+.gp-plan{font-size:15px}
+#gpAdvice .gp-ok{color:#6fbf73;font-weight:600}#gpAdvice .gp-no{color:#e0685c;font-weight:600}
+html[data-theme="light"] #gpAdvice .gp-ok{color:#2e7d32}html[data-theme="light"] #gpAdvice .gp-no{color:#c62828}
+.gp-armor tr.gp-jewel:first-of-type td,.gp-armor tr.gp-jewel td{border-top:0}
+.gp-armor tr.gp-jewel:nth-last-child(3) td{border-top:2px solid var(--edge)}
+.gp-armor td.muted{font-size:12.5px}
+.gp-linkrow{flex-basis:100%;margin:0 0 4px}
+#cmbPlanOut .gp-ok{color:#6fbf73;font-weight:600}#cmbPlanOut .gp-no{color:#e0685c;font-weight:600}
+html[data-theme="light"] #cmbPlanOut .gp-ok{color:#2e7d32}html[data-theme="light"] #cmbPlanOut .gp-no{color:#c62828}
+.en-combo{margin:8px 0 10px;padding:10px 14px;border:1px solid var(--edge);border-left:3px solid var(--accent);border-radius:4px}
+.en-combo-h{font-size:15px;margin-bottom:4px}
+.en-combo-list{list-style:none;margin:6px 0;padding:0}
+.en-combo-list li{padding:3px 0;display:flex;flex-wrap:wrap;align-items:center;gap:5px}
+.en-combo-list li.en-best b{color:var(--accent);font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+.en-combo-foot{font-size:12px;margin-top:4px}
+/* ===== The Atlas on a phone (html.bxm, set in atlas.html's head only on touch phones) ============================
+   One column that scrolls like a normal page; a compact top bar (Back, the name, search, theme); a bottom bar for the
+   places people go most (Map, Bestiary, Items, Guides, Menu); the menu is a full-screen list of every section. The
+   map fills the screen between the two bars and its details open as a sheet from the bottom. */
+html.bxm{--m-top:52px;--m-bottom:calc(58px + env(safe-area-inset-bottom,0px));-webkit-text-size-adjust:100%}
+html.bxm,html.bxm body{height:auto;min-height:100%;overflow-x:hidden}
+html.bxm body{display:block;overflow-y:auto;padding-bottom:var(--m-bottom)}
+/* top bar */
+html.bxm #bar{position:sticky;top:0;z-index:1500;min-height:0;height:var(--m-top);padding:0 8px 0 4px;padding-top:env(safe-area-inset-top,0px);box-sizing:content-box;display:flex;flex-wrap:nowrap;align-items:center;gap:4px;box-shadow:0 1px 0 var(--edge)}
+html.bxm #bar>b{flex:1;min-width:0;width:auto;margin:0 4px;font-size:21px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer}
+html.bxm #bar>b small,html.bxm #bar>label,html.bxm #fit,html.bxm .atlas-statusline,html.bxm #splashHome{display:none!important}
+html.bxm #atlasBack{order:-1;flex:none;width:40px;height:40px;padding:0;font-size:0;border:0;background:none}
+html.bxm #atlasBack::before{content:'‹';font-size:30px;line-height:36px;color:var(--ink)}
+html.bxm #atlasBack:disabled{visibility:hidden}
+html.bxm #themeToggle{flex:none;width:40px;height:40px;padding:0;border:0;background:none;font-size:18px}
+html.bxm .m-iconbtn{flex:none;width:40px;height:40px;display:inline-flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:8px;background:none;color:var(--ink)}
+html.bxm .m-iconbtn svg{width:22px;height:22px}
+html.bxm #q{display:none}
+html.bxm #bar.m-searching>b,html.bxm #bar.m-searching #themeToggle,html.bxm #bar.m-searching #atlasBack{display:none}
+html.bxm #bar.m-searching #q{display:block;flex:1;min-width:0;max-width:none;height:38px;margin:0 4px 0 8px;font-size:16px}
+/* the desktop menus and the resize handle are replaced */
+html.bxm nav.tabs,html.bxm #splitter{display:none!important}
+/* pages: one column, no scrolling boxes inside the page */
+html.bxm #main{display:block;overflow:visible;height:auto}
+html.bxm #side{display:block;overflow:visible;border:0;width:auto;max-width:100vw}
+html.bxm #content{max-height:none;min-height:0;overflow:visible;padding:12px 16px 20px;box-sizing:border-box;width:auto;max-width:100vw}
+html.bxm .section-intro{padding:14px 16px 10px;box-sizing:border-box;width:auto;max-width:100vw}
+html.bxm #sectionTitle{font-size:26px;line-height:1.15}
+html.bxm #sectionDescription{font-size:14px}
+html.bxm #content *{max-width:100%;box-sizing:border-box}
+html.bxm .table-scroll,html.bxm .g-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+html.bxm #content table{max-width:none}
+html.bxm .card{margin-left:0;margin-right:0}
+html.bxm .wp{display:block}
+html.bxm .wp-infobox{position:static!important;max-height:none!important;margin:0 0 16px}
+html.bxm .tool-wp .wp-infobox,html.bxm .gear-wp .wp-infobox{margin-top:16px}
+html.bxm .calcgrid,html.bxm .qualitygrid{grid-template-columns:1fr}
+html.bxm .tool-form,html.bxm .gp-row{gap:10px}
+html.bxm .tool-form label{min-width:0;flex:1 1 140px}
+html.bxm input,html.bxm select,html.bxm button{font-size:16px}   /* 16px stops phones zooming into a box */
+html.bxm .q-picker{flex-wrap:wrap}
+html.bxm .splash-grid{grid-template-columns:1fr}
+/* map: fills the screen between the bars; its details are a sheet from the bottom */
+html.bxm #main[data-view=map] #map{display:none}
+html.bxm #main[data-view=mapfull] #map{display:block;height:calc(100vh - var(--m-top) - var(--m-bottom));height:calc(100dvh - var(--m-top) - var(--m-bottom) - env(safe-area-inset-top,0px))}
+html.bxm #main[data-view=mapfull] #side{display:none}
+html.bxm #mapPanel{position:fixed;left:0;right:0;top:auto;bottom:var(--m-bottom);width:auto;max-width:none;max-height:55vh;border-radius:14px 14px 0 0;z-index:1400}
+html.bxm #mapHint{bottom:12px;top:auto;white-space:normal;max-width:85%;text-align:center}
+/* bottom bar */
+.m-tabbar{display:none}
+html.bxm .m-tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:20010;height:58px;padding-bottom:env(safe-area-inset-bottom,0px);background:var(--panel);border-top:1px solid var(--edge)}
+html.bxm .m-tabbar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px 0 4px;border:0;border-radius:0;background:none;color:var(--muted);font:600 11px/1.1 var(--sans);letter-spacing:.02em}
+html.bxm .m-tabbar button svg{width:24px;height:24px}
+html.bxm .m-tabbar button.on{color:var(--accent)}
+html.bxm .m-tabbar button:focus-visible{outline:2px solid var(--accent);outline-offset:-4px}
+html.bxm #atlasSplash{bottom:var(--m-bottom)}
+/* menu: every section, full screen */
+.m-menu{position:fixed;inset:0;z-index:20020;display:flex;flex-direction:column;background:var(--bg);padding-top:env(safe-area-inset-top,0px)}
+.m-menu[hidden]{display:none}
+html.m-menu-open body{overflow:hidden}
+.m-menu-head{display:flex;align-items:center;justify-content:space-between;height:52px;padding:0 8px 0 16px;border-bottom:1px solid var(--edge)}
+.m-menu-head b{font:21px/1 var(--serif);color:var(--ink)}
+.m-menu-body{flex:1;overflow-y:auto;padding:4px 16px calc(24px + env(safe-area-inset-bottom,0px))}
+.m-menu section{padding:10px 0 12px;border-bottom:1px solid var(--edge)}
+.m-menu h2{margin:4px 0 6px;font:600 12px/1 var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.m-menu .m-sub{margin:10px 0 2px;font:600 11px/1 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.m-menu .m-item{display:block;width:100%;min-height:44px;padding:10px 4px;border:0;border-radius:6px;background:none;color:var(--ink);font:16px/1.3 var(--sans);text-align:left}
+.m-menu .m-item.on{color:var(--accent);font-weight:600}
+.m-menu .m-item:active{background:var(--panel)}
+.m-menu .m-foot{margin:16px 0 0;font-size:13px;color:var(--muted)}
+.m-dps{display:none}
+html.bxm .m-dps{display:flex;align-items:center;gap:6px;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--m-bottom) + 10px);z-index:20005;padding:8px 14px;border:1px solid var(--accent-soft);border-radius:999px;background:var(--panel);color:var(--muted);font:13px/1 var(--sans);box-shadow:0 4px 14px rgba(0,0,0,.35);white-space:nowrap;transition:opacity .2s}
+html.bxm .m-dps b{color:var(--accent);font-size:16px}
+html.bxm .m-dps[hidden],html.bxm .m-dps.m-away{opacity:0;pointer-events:none}
+html.bxm .m-dps[hidden]{display:none}
