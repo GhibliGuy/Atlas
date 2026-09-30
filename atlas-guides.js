@@ -439,7 +439,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   const questBySlug=s=>String(s||'').startsWith('quest-')?questList().find(q=>questSlug(q)===s)||null:null;
   // Quest guides the user has confirmed as fully written (quest ids). Every other quest gets an alert: on its card on
   // the Quests page, and a banner on its own page.
-  const QUEST_COMPLETE=new Set(['wasteland-nothing-gets-through']);
+  const QUEST_COMPLETE=new Set(['wasteland-nothing-gets-through','imp-menace']);
   const questDone=q=>QUEST_COMPLETE.has(q.questId);
   const ALERT_SVG='<svg class="q-alert-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20z" fill="currentColor"/><path d="M12 10v5M12 17.6v.4" stroke="#1b1300" stroke-width="2.2" stroke-linecap="round"/></svg>';
   const questLink=q=>`<a href="#/guide/${enc(questSlug(q))}">${esc(q.name)}</a>`;
@@ -472,16 +472,28 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   const questRewardLine=q=>{const r=q.rewards||{},b=[];if(r.gold)b.push(qn(r.gold)+' gold');if(r.characterXp)b.push(qn(r.characterXp)+' XP');if((r.items||[]).length||(r.choice||[]).length)b.push('items');if(q.questPoints)b.push(q.questPoints+' QP');return b.join(' · ')};
   // The steps: 1 is always "talk to the quest-giver" (where they are, with a map button); then the stages the game sent
   // while someone was on the quest (numbered after it); with none recorded, what players reported (QUEST_REQUIRES).
+  // Quests whose every step is known: the recorded steps are all of them, and handIn - the last step is going back to
+  // the quest-giver (as players who finished it reported).
+  const QUEST_STEPS_KNOWN={'imp-menace':{handIn:true}};
   function questSteps(q){
     const st=(q.stages||[]).filter(s=>s.objectives&&s.objectives.length);
     const placeOf=w=>(globalThis.bxcPlaceAt&&globalThis.bxcPlaceAt(w.z,w.x,w.y))||questZone(w.z);   // the building or dungeon it is in, not just its zone number
-    const where=w=>w?(w.z&&w.z!==0?` <span class="muted">inside ${esc(placeOf(w)||'a cave or building')}${placeOf(w)?'':` (${Math.round(w.x)}, ${Math.round(w.y)})`}</span>`:` <span class="muted">at ${Math.round(w.x)}, ${Math.round(w.y)}</span>`):'';
+    // a named place links to it on the map: the game's own marker (Imp Tree), else the building's or cave's entrance
+    const placeLink=w=>{const n=placeOf(w);if(!n)return '';const poi=(typeof D!=='undefined'&&D.pois||[]).find(p=>p.name===n);return `<a href="#" class="show-on-map" data-map-kind="${poi?'place':'zone'}" data-map-id="${esc(poi?poi.name:String(w.z))}">${esc(n)}</a>`};
+    const where=w=>w?(w.z&&w.z!==0?` <span class="muted">inside ${placeOf(w)?placeLink(w):'a cave or building'}${placeOf(w)?'':` (${Math.round(w.x)}, ${Math.round(w.y)})`}</span>`:` <span class="muted">at ${Math.round(w.x)}, ${Math.round(w.y)}</span>`):'';
     const g=q.giverName?(globalThis.bxcQuestGivers?globalThis.bxcQuestGivers():[]).find(x=>x.name===q.giverName):null;
     const p=!g&&q.giverName&&globalThis.bxcNpcByName?globalThis.bxcNpcByName(q.giverName):null;
     const who=q.giverName?(g||p?`<a href="${esc((g||p).href)}">${esc(q.giverName)}</a>`:esc(q.giverName)):'the quest-giver';
     const whereGiver=g&&g.where&&g.where[0]?` <span class="muted">(${esc(g.where[0])})</span>`:'';
     const mapBtn=(g&&g.onMap)||(p&&p.onMap)?` <button type="button" class="show-on-map" data-map-kind="npc" data-map-id="${esc((g||p).slug)}">Show on map</button>`:'';
     const steps=[`<li value="1">Talk to ${who}${whereGiver} to get the quest.${mapBtn}</li>`];
+    // every step known (players who finished it said so): the recorded ones in order, then handing it back in
+    const known=QUEST_STEPS_KNOWN[q.questId];
+    if(st.length&&known){
+      st.forEach((s,k)=>steps.push(`<li value="${k+2}">${s.text&&!s.objectives.some(o=>o.text===s.text)?`<b>${esc(s.text)}</b><br>`:''}${s.objectives.map(o=>`${esc(o.text)}${o.required>1?` <span class="muted">(${qn(o.required)})</span>`:''}${o.itemTypeId?' - '+item(o.itemTypeId):''}${where((o.waypoints||[])[0])}`).join('<br>')}</li>`));
+      if(known.handIn)steps.push(`<li value="${st.length+2}">Go back to ${who} to finish the quest.${mapBtn}</li>`);
+      return '<ol class="q-steps">'+steps.join('')+'</ol>';
+    }
     if(st.length){
       for(const s of st)steps.push(`<li value="${(s.n||0)+2}">${s.text&&!s.objectives.some(o=>o.text===s.text)?`<b>${esc(s.text)}</b><br>`:''}${s.objectives.map(o=>`${esc(o.text)}${o.required>1?` <span class="muted">(${qn(o.required)})</span>`:''}${o.itemTypeId?' - '+item(o.itemTypeId):''}${where((o.waypoints||[])[0])}`).join('<br>')}</li>`);
       return '<ol class="q-steps">'+steps.join('')+'</ol>'+((st[0].n||0)>0?note('Some steps in between were not recorded.'):'');
@@ -493,7 +505,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       steps.push(`<li value="3">Bring it back to ${who} to finish the quest.</li>`);
       return '<ol class="q-steps">'+steps.join('')+'</ol>'+note('Steps 2 and 3 are as reported by players who finished it.');
     }
-    return '<ol class="q-steps">'+steps.join('')+'</ol>'+note('The rest of the steps are not recorded yet. They fill in when someone plays this quest with the collector running.');
+    return '<ol class="q-steps">'+steps.join('')+'</ol>'+note('The rest of the steps are still missing: the data for this quest is incomplete.');
   }
   const questTalk=q=>(q.dialogue||[]).map(d=>'<div class="q-conv">'+d.lines.map(x=>`<p class="${x.speaker==='npc'?'q-npc':'q-you'}"><b>${x.speaker==='npc'?esc(d.npcName||q.giverName||'NPC'):'You'}:</b> ${esc(x.text)}</p>`).join('')+'</div>').join('');
   // What finishing a quest opens up, from the game's news (the quest log does not say). The contents and the ways in
@@ -559,7 +571,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     }
     for(const r of S.questItems||[])if((r.quests||[]).includes(q.name))add(r.itemTypeId,0);
     const stepsKnown=(q.stages||[]).some(st=>(st.objectives||[]).length);
-    if(!need.size)return pre||(stepsKnown?'<p>Nothing to bring in the steps recorded so far.</p>':note('Not recorded yet. The items fill in when someone plays this quest with the collector running.'));
+    if(!need.size)return pre||(stepsKnown?(questDone(q)?'<p>Nothing to bring.</p>':'<p>Nothing to bring in the steps recorded so far.</p>'):note('Not known yet: the data for this quest is incomplete.'));
     return pre+'<ul class="q-needs">'+[...need].map(([id,n])=>`<li>${item(id)}${n>0?' <b>×'+qn(n)+'</b>':''}</li>`).join('')+'</ul>'
       +(stepsKnown&&!(q.stages||[]).every(st=>(st.objectives||[]).length)?note('From the steps recorded so far.'):'');
   }
@@ -580,10 +592,10 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   }
   reg({slug:'quests',group:'Quests',title:'All quests',blurb:'Every quest players have done: who gives it, the level, what it pays, and the steps.',build:()=>{
     const Q=questList();
-    if(!Q.length)return {lede:'The quests players have done, with who gives them and what they pay.',sections:[['none','Nothing recorded yet','<p class="muted">Quests appear here as they are played with the collector running.</p>']],related:['travel']};
+    if(!Q.length)return {lede:'The quests players have done, with who gives them and what they pay.',sections:[['none','Nothing recorded yet','<p class="muted">Quests appear here as data for them comes in.</p>']],related:['travel']};
     const totalQp=Q.reduce((a,q)=>a+(q.questPoints||0),0);
     const rows=qs=>table(['Quest','Level','Length','Given by','Rewards'],qs.map(q=>[questLink(q),String(q.recommendedLevel||'?'),esc(pretty(q.lengthTag||'')),giverLink(q),esc(questRewardLine(q))]));
-    return {lede:`The ${Q.length} quests players have done so far (${totalQp} quest points in all). Each has its own page with who gives it, what it pays and, where someone played it with the collector running, the steps and what the quest-giver says.`,
+    return {lede:`The ${Q.length} quests players have done so far (${totalQp} quest points in all). Each has its own page with who gives it, what it pays and, where the data has them, the steps and what the quest-giver says.`,
       sections:[...Q_CATS.map(([k,t])=>[k,t,Q.some(q=>questCat(q)===k)?rows(Q.filter(q=>questCat(q)===k)):'']).filter(x=>x[2])],related:['travel','getting-started']};
   }});
   reg({slug:'travel',group:'World',title:'Travel & quests',blurb:'Horses, warp scrolls, keys, and how quests work.',build:()=>({lede:'Getting around faster, and the basics of quests.',sections:[
