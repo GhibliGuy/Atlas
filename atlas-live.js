@@ -1147,6 +1147,30 @@ function deriveZones(){
     const r=m.get(key)||{count:0,lastSeen:0,name:o.name||o.typeId,yieldItem}; r.count++; r.lastSeen=Math.max(r.lastSeen,num(o.lastSeen)||0); m.set(key,r);
   }
   state.zones=zones; state.zoneEntrances=entrances; state.zoneContents=contents;
+  // An official dungeon whose rooms the game recorded under other places' numbers (Imp Tree: under the Church's and the
+  // Tailor's) is a dungeon of those parts of zones, so it gets its card, room buttons and map like any other.
+  placeNameSnap=null;state.partsOf=new Map();
+  for(const p of D.pois||[]){
+    if(p.category!=='dungeon'||[...state.dungeons.values()].some(g=>g.name.toLowerCase()===String(p.name).toLowerCase()))continue;
+    const parts=[];for(const z of zones.keys()){if(!z)continue;const n=zoneAreas(z).length;for(let i=1;i<n;i++)if(placeName(z,i)===p.name)parts.push({z,area:i})}
+    if(!parts.length)continue;
+    const key='p:'+String(p.name).toLowerCase();
+    const rooms=parts.map((r,n)=>{const a=zoneAreas(r.z)[r.area];return {...r,label:'Room '+(n+1),entered:true,visits:allTrans.filter(t=>t.toZ===r.z&&t.atX!=null&&t.atY!=null&&inArea(a,{x:t.atX,y:t.atY})).length}});
+    const g={key,name:p.name,rooms,doors:[],parts:true};state.dungeons.set(key,g);for(const r of rooms)state.partsOf.set(r.z+'|'+r.area,{key,label:r.label,name:p.name});
+    // Its doors, from what stands in its rooms (nobody may have been seen walking through yet): a door and a dark
+    // doorway (or ladder, hatch, pit) facing each other across two rooms link them; the one door, ladder or hole
+    // left over nearest the dungeon's marker is the way out.
+    const portsOf=r=>portalsIn(r.z).filter(o=>roomHas(r,o.position)),usedP=new Set(),cands=[];
+    for(let x=0;x<rooms.length;x++)for(let y=x+1;y<rooms.length;y++)for(const pa of portsOf(rooms[x]))for(const pb of portsOf(rooms[y])){const d=Math.hypot(pa.position.x-pb.position.x,pa.position.y-pb.position.y);if(d<=3.5&&pa.typeId!==pb.typeId)cands.push({x,y,pa,pb,d})}
+    const addExit=(r,to,o)=>{const l=internalExits.get(r.z)||[];if(!l.some(e=>e.x===o.position.x&&e.y===o.position.y))l.push({toZ:to.z,x:o.position.x,y:o.position.y,samples:0,lastSeen:0,faced:true,how:'facing'});internalExits.set(r.z,l)};
+    for(const c of cands.sort((a,b)=>a.d-b.d)){
+      if(usedP.has(c.pa)||usedP.has(c.pb))continue;usedP.add(c.pa);usedP.add(c.pb);
+      const A=rooms[c.x],B=rooms[c.y];addExit(A,B,c.pa);addExit(B,A,c.pb);
+      g.doors.push({a:A.z,b:B.z,la:A.label,lb:B.label,x:(c.pa.position.x+c.pb.position.x)/2,y:(c.pa.position.y+c.pb.position.y)/2,samples:0,lastSeen:0});
+    }
+    const out=rooms.flatMap(r=>portsOf(r).filter(o=>!usedP.has(o)).map(o=>({r,o,d:Math.hypot(o.position.x-p.x,o.position.y-p.y)}))).sort((a,b)=>a.d-b.d)[0];
+    if(out&&out.d<=30){const l=surfaceExits.get(out.r.z)||[];l.push({toZ:0,fromZ:out.r.z,x:out.o.position.x,y:out.o.position.y,area:out.r.area,surface:true,place:p.name,samples:0,lastSeen:0});surfaceExits.set(out.r.z,l)}
+  }
   state.zoneInternalExits=internalExits; state.zoneParent=parentByZone;
 }
 // ---- Dungeons and their rooms ----------------------------------------------------------------------------------
@@ -1248,15 +1272,25 @@ function roomLabelFor(z){
   const g=state.dungeons.get(key);const r=g&&g.rooms.find(x=>x.z===z);
   return r?r.label:null;
 }
+// a dungeon room is a whole zone, or one area of a zone (a dungeon recorded under other places' numbers)
+function roomHas(r,p){return r.area==null||!p||inArea(zoneAreas(r.z)[r.area],p)}
+function roomContents(r){
+  if(r.area==null)return state.zoneContents?.get(r.z)||{monsters:new Map(),objects:new Map()};
+  const monsters=new Map(),objects=new Map();
+  for(const o of snapshot?.npcObservations||[])if(o.position?.z===r.z&&roomHas(r,o.position))monsters.set(String(o.typeId||o.name),1);
+  for(const o of snapshot?.worldObjects||[])if(o.position?.z===r.z&&roomHas(r,o.position)&&state.objectSkillByType?.get(o.typeId))objects.set(o.typeId,1);
+  return {monsters,objects};
+}
+const roomAttrs=(r,attr)=>`${attr}="${r.z}"${r.area!=null?` data-room-area="${r.area}"`:''}`;
 function dungeonCardHtml(g){
   const entered=g.rooms.filter(r=>r.entered).length;
   const last=g.rooms.reduce((m,r)=>Math.max(m,num(state.zones.get(r.z)?.lastSeen)||0),0);
   const mon=new Set(),res=new Set();
-  for(const r of g.rooms){const c=state.zoneContents?.get(r.z);if(c){for(const k of c.monsters.keys())mon.add(k);for(const k of c.objects.keys())res.add(k)}}
+  for(const r of g.rooms){const c=roomContents(r);if(c){for(const k of c.monsters.keys())mon.add(k);for(const k of c.objects.keys())res.add(k)}}
   return `<div class="card dungeoncard" data-dungeon="${esc(g.key)}"><div class="name">${esc(g.name)} <span class="pill">dungeon</span></div>`
    +`<div class="s">${fmt(g.rooms.length)} rooms · ${fmt(entered)} entered${entered<g.rooms.length?' · '+fmt(g.rooms.length-entered)+' seen from a doorway':''} · ${fmt(g.doors.length)} door${g.doors.length===1?'':'s'} between rooms · ${fmt(mon.size)} monster types · ${fmt(res.size)} resource types</div>`
    +`<div class="s muted">last seen ${when(last)}</div>`
-   +`<div class="s" style="margin:6px 0">${g.rooms.map(r=>`<button type="button" class="roomlink-btn" data-zone="${r.z}" title="Zone ${r.z}${r.entered?'':' - not entered yet'}">${esc(r.label)}${r.entered?'':' (not entered)'}</button>`).join(' ')}</div>`
+   +`<div class="s" style="margin:6px 0">${g.rooms.map(r=>`<button type="button" class="roomlink-btn" ${roomAttrs(r,'data-zone')} title="Zone ${r.z}${r.entered?'':' - not entered yet'}">${esc(r.label)}${r.entered?'':' (not entered)'}</button>`).join(' ')}</div>`
    +`<button type="button" class="dungeonview-btn" data-dungeon="${esc(g.key)}">View dungeon map</button></div>`;
 }
 const DUNGEON_ZOOM_MIN=2,DUNGEON_ZOOM_MAX=60,DUNGEON_FIT_WIDTH=820;
@@ -1276,7 +1310,8 @@ function dungeonSvg(g){
   const bounds=new Map();
   let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
   const grow=(x,y)=>{if(x==null||y==null)return;minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y)};
-  for(const r of g.rooms){const b=terrainBoundsForZone(r.z);if(b){bounds.set(r.z,b);grow(b.minX,b.minY);grow(b.maxX,b.maxY)}}
+  const inRoom=(z,p)=>g.rooms.some(r=>r.z===z&&roomHas(r,p));
+  for(const r of g.rooms){const b=r.area!=null?zoneAreas(r.z)[r.area]:terrainBoundsForZone(r.z);if(b){bounds.set(r,b);grow(b.minX,b.minY);grow(b.maxX,b.maxY)}}
   for(const d of g.doors)grow(d.x,d.y);
   const objsByZ=new Map();
   for(const o of snapshot?.worldObjects||[]){const z=o.position?.z;if(members.has(z)&&num(o.position.x)!==null&&num(o.position.y)!==null){if(!objsByZ.has(z))objsByZ.set(z,[]);objsByZ.get(z).push(o)}}
@@ -1288,33 +1323,33 @@ function dungeonSvg(g){
   let body='';
   // rooms you only glimpsed are drawn first, so the rooms you entered are never covered by them
   g.rooms.map((room,i)=>({room,i})).sort((p,q)=>(p.room.entered===q.room.entered?p.i-q.i:p.room.entered?1:-1)).forEach(({room,i})=>{
-    const col=ROOM_COLORS[i%ROOM_COLORS.length],b=bounds.get(room.z);
-    const runs=runsByZ.get(room.z)||[];
+    const col=ROOM_COLORS[i%ROOM_COLORS.length],b=bounds.get(room);
+    const runs=(runsByZ.get(room.z)||[]).filter(r=>roomHas(room,{x:r.xStart,y:r.y}));
     const tiles=runs.map(r=>`<rect x="${tx(r.xStart)}" y="${ty(r.y)}" width="${r.length}" height="1" fill="${zoneTileColor(r.typeId)}"/>`).join('');
-    const walls=wallSegments((objsByZ.get(room.z)||[]).filter(o=>/^wall-/.test(o.typeId))).map(s=>`<line x1="${tx(s.x1)}" y1="${ty(s.y1)}" x2="${tx(s.x2)}" y2="${ty(s.y2)}" stroke="#15110d" stroke-width="0.7" stroke-linecap="square"/><line x1="${tx(s.x1)}" y1="${ty(s.y1)}" x2="${tx(s.x2)}" y2="${ty(s.y2)}" stroke="${WALL_COLORS[String(s.o.typeId).split('-')[1]]||WALL_COLORS.stone}" stroke-width="0.45" stroke-linecap="square"/>`).join('');
-    body+=`<g class="dungeon-room" data-room-zone="${room.z}" style="cursor:pointer" opacity="${room.entered?1:.5}"><title>${escXml(room.label)} (zone ${room.z})${room.entered?'':' - seen from a doorway, not entered'}</title>${tiles}${walls}`;
+    const walls=wallSegments((objsByZ.get(room.z)||[]).filter(o=>/^wall-/.test(o.typeId)&&roomHas(room,o.position))).map(s=>`<line x1="${tx(s.x1)}" y1="${ty(s.y1)}" x2="${tx(s.x2)}" y2="${ty(s.y2)}" stroke="#15110d" stroke-width="0.7" stroke-linecap="square"/><line x1="${tx(s.x1)}" y1="${ty(s.y1)}" x2="${tx(s.x2)}" y2="${ty(s.y2)}" stroke="${WALL_COLORS[String(s.o.typeId).split('-')[1]]||WALL_COLORS.stone}" stroke-width="0.45" stroke-linecap="square"/>`).join('');
+    body+=`<g class="dungeon-room" ${roomAttrs(room,'data-room-zone')} style="cursor:pointer" opacity="${room.entered?1:.5}"><title>${escXml(room.label)} (zone ${room.z})${room.entered?'':' - seen from a doorway, not entered'}</title>${tiles}${walls}`;
     if(b)body+=`<rect x="${tx(b.minX)}" y="${ty(b.minY)}" width="${b.maxX-b.minX}" height="${b.maxY-b.minY}" fill="none" stroke="${col}" stroke-width="0.25"${room.entered?'':' stroke-dasharray="1 .7"'}/><text x="${tx(b.minX)+.5}" y="${ty(b.minY)+1.7}" font-size="1.6" font-weight="700" fill="${col}" stroke="#0d0a07" stroke-width="0.25" paint-order="stroke">${escXml(room.label)}</text>`;
     body+='</g>';
   });
   const doorSvg=g.doors.map(d=>{
-    const la=roomLabelFor(d.a)||('Zone '+d.a),lb=roomLabelFor(d.b)||('Zone '+d.b);
+    const la=d.la||roomLabelFor(d.a)||('Zone '+d.a),lb=d.lb||roomLabelFor(d.b)||('Zone '+d.b);
     return `<g><circle cx="${tx(d.x)}" cy="${ty(d.y)}" r="0.9" fill="#7fd0ff" stroke="#08202e" stroke-width="0.2"><title>${escXml(la+' ⇄ '+lb+' - door near ('+Math.round(d.x)+', '+Math.round(d.y)+'), crossed '+d.samples+' time'+(d.samples===1?'':'s'))}</title></circle></g>`;
   }).join('');
   const seen=new Set(),dots=[];
   for(const o of snapshot?.npcObservations||[]){
-    const z=o.position?.z;if(!members.has(z)||o.id==null||seen.has(o.id))continue;
+    const z=o.position?.z;if(!members.has(z)||!inRoom(z,o.position)||o.id==null||seen.has(o.id))continue;
     seen.add(o.id);if(dots.length<400)dots.push(`<circle cx="${tx(o.position.x)}" cy="${ty(o.position.y)}" r="0.35" fill="#e2574c" stroke="#2a0b08" stroke-width="0.08"><title>${escXml(o.name||prettyId(o.typeId))} (${escXml(roomLabelFor(z)||'')})</title></circle>`);
   }
-  const selfs=(state.selves||[]).filter(s=>members.has(s.position?.z)).map(s=>`<circle cx="${tx(s.position.x)}" cy="${ty(s.position.y)}" r="0.8" fill="#ffd45e" stroke="#3a2a06" stroke-width="0.2"><title>${escXml(s.name||'You')} (${escXml(roomLabelFor(s.position.z)||'')})</title></circle>`).join('');
+  const selfs=(state.selves||[]).filter(s=>members.has(s.position?.z)&&inRoom(s.position.z,s.position)).map(s=>`<circle cx="${tx(s.position.x)}" cy="${ty(s.position.y)}" r="0.8" fill="#ffd45e" stroke="#3a2a06" stroke-width="0.2"><title>${escXml(s.name||'You')} (${escXml(roomLabelFor(s.position.z)||'')})</title></circle>`).join('');
   return `<div id="dungeonViewport" style="overflow:auto;max-height:640px;border:1px solid #4b3b2a;border-radius:6px;background:#0b0907"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${Math.round(w*zoom)}" height="${Math.round(h*zoom)}" style="display:block">${body}${doorSvg}${dots.join('')}${selfs}</svg></div>`;
 }
 function dungeonOverlayContent(g){
   const zoom=dungeonZoomFor(g);
   const entered=g.rooms.filter(r=>r.entered).length;
   const roomRows=g.rooms.map(r=>{
-    const c=state.zoneContents?.get(r.z)||{monsters:new Map(),objects:new Map()};
+    const c=roomContents(r);
     const doors=g.doors.filter(d=>d.a===r.z||d.b===r.z).map(d=>{const o=d.a===r.z?d.b:d.a;return esc(roomLabelFor(o)||('Zone '+o))}).join(', ');
-    return `<tr><td><b>${esc(r.label)}</b> <span class="muted">zone ${r.z}</span></td><td>${r.entered?'entered '+fmt(r.visits)+' time'+(r.visits===1?'':'s'):'<span class="muted">seen from a doorway</span>'}</td><td>${fmt(c.monsters.size)}</td><td>${fmt(c.objects.size)}</td><td>${doors||'<span class="muted">none seen</span>'}</td><td><button type="button" data-room-zone="${r.z}">View room</button></td></tr>`;
+    return `<tr><td><b>${esc(r.label)}</b> <span class="muted">zone ${r.z}</span></td><td>${r.entered?'entered '+fmt(r.visits)+' time'+(r.visits===1?'':'s'):'<span class="muted">seen from a doorway</span>'}</td><td>${fmt(c.monsters.size)}</td><td>${fmt(c.objects.size)}</td><td>${doors||'<span class="muted">none seen</span>'}</td><td><button type="button" ${roomAttrs(r,'data-room-zone')}>View room</button></td></tr>`;
   }).join('');
   const doorRows=g.doors.sort((p,q)=>q.samples-p.samples).map(d=>`<li>${esc(roomLabelFor(d.a)||('Zone '+d.a))} ⇄ ${esc(roomLabelFor(d.b)||('Zone '+d.b))} <span class="muted">- door near (${Math.round(d.x)}, ${Math.round(d.y)}), crossed ${fmt(d.samples)} time${d.samples===1?'':'s'}</span></li>`).join('');
   return `<div id="zoneOverlayDragHandle" style="display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:move" title="Drag to move this panel"><div class="collector-title" style="margin:0">${esc(g.name)} <span class="muted" style="font-weight:400">- dungeon map</span></div><button type="button" id="zoneOverlayClose" title="Close">×</button></div>`
@@ -1349,7 +1384,10 @@ function roomBannerHtml(z){
 }
 function zoneSummaryRow(z){
   const meta=state.zones.get(z)||{};
-  const c=state.zoneContents.get(z)||{monsters:new Map(),objects:new Map()};
+  let c=state.zoneContents.get(z)||{monsters:new Map(),objects:new Map()};
+  // leave out another dungeon's rooms recorded under this number
+  const parts=[...(state.partsOf?.keys()||[])].filter(k=>k.startsWith(z+'|')).map(k=>zoneAreas(z)[+k.split('|')[1]]).filter(Boolean);
+  if(parts.length){const out=p=>!parts.some(a=>inArea(a,p));const monsters=new Map(),objects=new Map();for(const o of snapshot?.npcObservations||[])if(o.position?.z===z&&out(o.position))monsters.set(String(o.typeId||o.name),1);for(const o of snapshot?.worldObjects||[])if(o.position?.z===z&&out(o.position)&&state.objectSkillByType?.get(o.typeId))objects.set(o.typeId,1);c={monsters,objects}}
   return {z,name:meta.name||('Zone '+z),pvpMode:meta.pvpMode||null,lastSeen:meta.lastSeen||0,entrance:state.zoneEntrances.get(z)||null,parentZ:state.zoneParent?.get(z)??null,monsterCount:c.monsters.size,objectCount:c.objects.size};
 }
 // The game's own floor colours (base fill of each ground type, read from the game's stylesheet), so
@@ -1510,7 +1548,7 @@ function exitKind(ex,near){
   return ex.toZ===0?'cave':'door';
 }
 function exitMarkup(ex,objs,cx,cy,shadow){
-  const toArea=ex.surface?0:placeIndexAt(ex.toZ,ex),targetName=ex.surface?'outside':placeName(ex.toZ,toArea);
+  const toArea=ex.surface?0:placeIndexAt(ex.toZ,ex),part=!ex.surface&&state.partsOf?.get(ex.toZ+'|'+toArea),targetName=ex.surface?'outside':part?part.name+' '+part.label:placeName(ex.toZ,toArea);
   const near=exitObjectNear(ex,objs);
   const kind=exitKind(ex,near);
   const label=kind==='ladder'?'Ladder':kind==='hole'?'Hole':kind==='hatch'?'Hatch':kind==='cave'?'Cave entrance':'Door';
@@ -1519,7 +1557,7 @@ function exitMarkup(ex,objs,cx,cy,shadow){
   const url=near?objectIconUrl(near.typeId,near.name):null;
   // yellow ring: back the way you came; green ring: the way out to the surface
   const ring=ex.isParentExit||ex.surface?`<circle cx="${cx}" cy="${cy}" r="1.15" fill="none" stroke="${ex.surface?'#5fd38a':'#ffd54a'}" stroke-width="0.14" ${shadow}/>`:'';
-  const attrs=ex.surface?`${shadow} class="zone-exit-dot zone-exit-out show-on-map" data-map-kind="zone" data-map-id="${ex.fromZ}" style="cursor:pointer"`:`${shadow} class="zone-exit-dot" data-exit-to="${ex.toZ}" data-exit-area="${toArea}" style="cursor:pointer"`;
+  const attrs=ex.surface?`${shadow} class="zone-exit-dot zone-exit-out show-on-map" data-map-kind="${ex.place?'place':'zone'}" data-map-id="${escXml(ex.place||String(ex.fromZ))}" style="cursor:pointer"`:`${shadow} class="zone-exit-dot" data-exit-to="${ex.toZ}" data-exit-area="${toArea}" style="cursor:pointer"`;
   if(url)return `${ring}<image href="${url}" x="${cx-.9}" y="${cy-.9}" width="1.8" height="1.8" preserveAspectRatio="xMidYMid meet" ${attrs}>${title}</image>`;
   if(kind==='ladder'){
     return `${ring}<g transform="translate(${cx},${cy})" ${attrs}><line x1="-0.5" y1="-0.9" x2="-0.5" y2="0.9" stroke="#c9a15a" stroke-width="0.16"/><line x1="0.5" y1="-0.9" x2="0.5" y2="0.9" stroke="#c9a15a" stroke-width="0.16"/><line x1="-0.5" y1="-0.55" x2="0.5" y2="-0.55" stroke="#c9a15a" stroke-width="0.14"/><line x1="-0.5" y1="-0.05" x2="0.5" y2="-0.05" stroke="#c9a15a" stroke-width="0.14"/><line x1="-0.5" y1="0.45" x2="0.5" y2="0.45" stroke="#c9a15a" stroke-width="0.14"/>${title}</g>`;
@@ -1683,8 +1721,11 @@ function zoneDetailSvg(z){
 function zonesHtml(search=''){
   const s=String(search||'').toLowerCase().trim();
   const tilesByZ=new Map(),objsByZ=new Map();
-  for(const r of snapshot?.terrain||[])tilesByZ.set(r.z,(tilesByZ.get(r.z)||0)+(num(r.length)||0));
-  for(const o of snapshot?.worldObjects||[]){const oz=o.position?.z;if(oz&&!isGroundItem(o))objsByZ.set(oz,(objsByZ.get(oz)||0)+1)}
+  // another dungeon's rooms recorded under a zone's number (Imp Tree under the Church's) are not counted as that zone's
+  const partBoxes=new Map();for(const k of state.partsOf?.keys()||[]){const [z,i]=k.split('|').map(Number);const b=zoneAreas(z)[i];if(b)(partBoxes.get(z)||partBoxes.set(z,[]).get(z)).push(b)}
+  const inPart=(z,p)=>(partBoxes.get(z)||[]).some(b=>inArea(b,p));
+  for(const r of snapshot?.terrain||[])if(!inPart(r.z,{x:r.xStart,y:r.y}))tilesByZ.set(r.z,(tilesByZ.get(r.z)||0)+(num(r.length)||0));
+  for(const o of snapshot?.worldObjects||[]){const oz=o.position?.z;if(oz&&!isGroundItem(o)&&!inPart(oz,o.position))objsByZ.set(oz,(objsByZ.get(oz)||0)+1)}
   const dungeonCards=[...(state.dungeons?.values()||[])].filter(g=>!s||JSON.stringify(g).toLowerCase().includes(s)||g.rooms.some(r=>JSON.stringify(zoneSummaryRow(r.z)).toLowerCase().includes(s))).map(dungeonCardHtml);
   const rows=[...state.zones.keys()].filter(z=>z!==0&&!state.dungeonOfZone?.has(z)).map(zoneSummaryRow).filter(r=>!s||JSON.stringify(r).toLowerCase().includes(s)).sort((a,b)=>b.lastSeen-a.lastSeen);
   return `<div class="collector-panel"><div class="collector-title">Known zones & caves</div><div class="statline"><span>${fmt(rows.length+dungeonCards.length)} zones observed</span>${dungeonCards.length?`<span>${fmt(dungeonCards.length)} dungeon${dungeonCards.length===1?"":"s"} with rooms</span>`:""}</div><div class="muted">Interiors are identified by the server's own zone/floor id. Monsters and resources shown here are only what your collector has actually observed inside each one.</div></div>` +
@@ -1692,7 +1733,7 @@ function zonesHtml(search=''){
     const parentName=r.parentZ!=null?(state.zones.get(r.parentZ)?.name||('Zone '+r.parentZ)):null;
     const statusLine=parentName?`Inside ${esc(parentName)}`:(r.entrance?.manual?'Manually placed entrance':r.entrance?`Entrance located from ${fmt(r.entrance.samples)} visit${r.entrance.samples===1?'':'s'}`:'Entrance location not yet observed');
     const writeButtons=PUBLIC_MODE?'':` <button type="button" class="zonerename-btn" data-zone="${r.z}">Rename</button> <button type="button" class="zonemoveentrance-btn" data-zone="${r.z}">Move entrance</button> ${state.zones.get(r.z)?.manual?`<button type="button" class="zonelink-btn" data-zone="${r.z}" title="This marker has nothing recorded inside it. Link it to a zone you already have.">Link to existing zone</button> `:''}<button type="button" class="zonedelete-btn" data-zone="${r.z}">Delete</button> <button type="button" class="zoneassociate-btn" data-zone="${r.z}">Set parent</button> <button type="button" class="zonedisassociate-btn" data-zone="${r.z}">Clear parent</button>`;
-    return `<div class="card zonecard" data-zone="${r.z}"><div class="name">${esc(r.name)}</div>${zoneAreas(r.z).length>1?`<div class="s muted">The game also uses this number for: ${zoneAreas(r.z).slice(1).map((a,i)=>esc(placeName(r.z,i+1))).join(", ")}</div>`:""}${zoneQuestNote(r.z)}<div class="s">${r.pvpMode?esc(prettyId(r.pvpMode))+' · ':''}${fmt(r.monsterCount)} monster types · ${fmt(r.objectCount)} resource/object types</div><div class="s muted">${statusLine} · last seen ${when(r.lastSeen)}</div><div class="s muted">${tilesByZ.get(r.z)||objsByZ.get(r.z)?'Layout captured: '+fmt(tilesByZ.get(r.z)||0)+' floor tiles · '+fmt(objsByZ.get(r.z)||0)+' objects — walk around inside to fill in the rest':'Layout not captured yet — walk around inside and it fills in automatically'}</div><button type="button" class="zoneview-btn" data-zone="${r.z}">View layout</button>${writeButtons}</div>`;
+    return `<div class="card zonecard" data-zone="${r.z}"><div class="name">${esc(r.name)}</div>${(()=>{const o=zoneAreas(r.z).map((a,i)=>i).filter(i=>i>0&&!state.partsOf?.has(r.z+"|"+i));return o.length?`<div class="s muted">The game also uses this number for: ${o.map(i=>esc(placeName(r.z,i))).join(", ")}</div>`:""})()}${zoneQuestNote(r.z)}<div class="s">${r.pvpMode?esc(prettyId(r.pvpMode))+' · ':''}${fmt(r.monsterCount)} monster types · ${fmt(r.objectCount)} resource/object types</div><div class="s muted">${statusLine} · last seen ${when(r.lastSeen)}</div><div class="s muted">${tilesByZ.get(r.z)||objsByZ.get(r.z)?'Layout captured: '+fmt(tilesByZ.get(r.z)||0)+' floor tiles · '+fmt(objsByZ.get(r.z)||0)+' objects — walk around inside to fill in the rest':'Layout not captured yet — walk around inside and it fills in automatically'}</div><button type="button" class="zoneview-btn" data-zone="${r.z}">View layout</button>${writeButtons}</div>`;
   }).join('')
   :(dungeonCards.length?'':'<div class="note">No interior zones captured yet. Walk into a cave, dungeon, or building with the collector running and it will appear here automatically.</div>'));
 }
@@ -1715,7 +1756,8 @@ function placeName(z,i){
   // a floor lying at one of the game's own dungeon markers is that dungeon (Imp Tree's rooms were recorded under the
   // Church's and the Tailor's numbers)
   const dist=p=>Math.hypot(Math.max(a.minX-p.x,0,p.x-a.maxX),Math.max(a.minY-p.y,0,p.y-a.maxY));
-  const dg=(D.pois||[]).filter(p=>p.category==='dungeon'&&dist(p)<=12).sort((p,q)=>dist(p)-dist(q))[0];
+  // (only a dungeon with no zone of its own name: a floor near West Tomb is another floor of West Tomb, below)
+  const dg=(D.pois||[]).filter(p=>p.category==='dungeon'&&dist(p)<=12&&![...(state.zones?.values()||[])].some(m=>String(m.name).toLowerCase()===String(p.name).toLowerCase())).sort((p,q)=>dist(p)-dist(q))[0];
   if(dg){placeNameCache.set(key,dg.name);return dg.name}
   const names=new Map();for(const t of snapshot?.zoneTransitions||[])if(t.toZ===z&&t.zoneName&&t.atX!=null&&t.atY!=null&&inArea(a,{x:t.atX,y:t.atY}))names.set(t.zoneName,(names.get(t.zoneName)||0)+1);
   const region=[...names].sort((p,q)=>q[1]-p[1])[0]?.[0]||null;
@@ -1734,7 +1776,12 @@ function zoneAreaPickerHtml(z){
   const areas=zoneAreas(z);
   if(areas.length<2)return '';
   const cur=zoneAreaIndex(z);
-  return `<div class="zonearea-pick" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px"><span class="muted" style="font-size:11px">The game uses this zone number for ${areas.length} separate places:</span>${areas.map((a,i)=>`<button type="button" class="zonearea-btn${i===cur?' on':''}" data-area="${i}" title="Near ${Math.round((a.minX+a.maxX)/2)}, ${Math.round((a.minY+a.maxY)/2)} · ${fmt(a.tiles)} floor tiles${a.arrivals?' · entered '+fmt(a.arrivals)+'×':''}">${esc(placeName(z,i))}</button>`).join('')}</div>`;
+  // a room of another dungeon recorded under this number (Imp Tree under the Church's) belongs to that dungeon
+  const part=state.partsOf?.get(z+'|'+cur);
+  if(part)return `<div class="muted" style="margin:-4px 0 8px">${esc(part.label)} of <a href="#" data-dungeon="${esc(part.key)}" style="color:#7fd0ff;text-decoration:underline;cursor:pointer">${esc(part.name)}</a> - <a href="#" data-dungeon="${esc(part.key)}" style="color:#7fd0ff;text-decoration:underline;cursor:pointer">view the whole dungeon map</a></div>`;
+  const own=areas.map((a,i)=>i).filter(i=>!state.partsOf?.has(z+'|'+i));
+  if(own.length<2)return '';
+  return `<div class="zonearea-pick" style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:0 0 8px"><span class="muted" style="font-size:11px">The game uses this zone number for ${own.length} separate places:</span>${own.map(i=>[areas[i],i]).map(([a,i])=>`<button type="button" class="zonearea-btn${i===cur?' on':''}" data-area="${i}" title="Near ${Math.round((a.minX+a.maxX)/2)}, ${Math.round((a.minY+a.maxY)/2)} · ${fmt(a.tiles)} floor tiles${a.arrivals?' · entered '+fmt(a.arrivals)+'×':''}">${esc(placeName(z,i))}</button>`).join('')}</div>`;
 }
 // "You need the quest ... to get in" (Agauton Mine and the like: see QUEST_UNLOCKS in atlas-guides.js)
 function zoneQuestNote(z){const qs=globalThis.bxcZoneQuests?globalThis.bxcZoneQuests(z):[];if(!qs.length)return '';
@@ -1795,7 +1842,7 @@ function ensureZoneOverlay(){
     const iconLink=e.target.closest('.dropicon-link');
     if(iconLink){goToItemCard(iconLink.dataset.item);return;}
     const roomBtn=e.target.closest('[data-room-zone]');
-    if(roomBtn){e.preventDefault();openZoneOverlay(Number(roomBtn.dataset.roomZone));return;}
+    if(roomBtn){e.preventDefault();const rz=Number(roomBtn.dataset.roomZone);if(roomBtn.dataset.roomArea!=null){if(!state.zoneArea)state.zoneArea=new Map();state.zoneArea.set(rz,+roomBtn.dataset.roomArea);lastRenderedZoneOverlayZ=null}openZoneOverlay(rz);return;}
     const dungeonBtn=e.target.closest('[data-dungeon]');
     if(dungeonBtn){e.preventDefault();openDungeonOverlay(dungeonBtn.dataset.dungeon);return;}
     if(e.target.closest('#dungeonZoomIn')){const k=state.openDungeon;if(k&&state.dungeons.get(k))setDungeonZoom(k,dungeonZoomFor(state.dungeons.get(k))*1.25);return;}
@@ -4148,7 +4195,8 @@ function newsHtml(){
   // Official places: a click opens the panel on the map page (they used to open a small popup, kept elsewhere).
   if(typeof poiMarkersByName!=='undefined')for(const [name,cm] of poiMarkersByName){
     const pop=cm.getPopup?.(),content=pop?pop.getContent():null;cm.unbindPopup();
-    cm.on('click',ev=>{if(armedPassthrough(ev))return;if(onMapPage())openMapPanel('place',name,{});else if(content)L.popup().setLatLng(cm.getLatLng()).setContent(content).openOn(map)});
+    // a dungeon with rooms recorded (Imp Tree) opens its dungeon map as well
+    cm.on('click',ev=>{if(armedPassthrough(ev))return;const dg=[...(state.dungeons?.values()||[])].find(g=>String(g.name).toLowerCase()===String(name).toLowerCase());if(dg)openDungeonOverlay(dg.key);if(onMapPage())openMapPanel('place',name,{});else if(content)L.popup().setLatLng(cm.getLatLng()).setContent(content).openOn(map)});
   }
   mapPanel();
   // ---- Pages and links ------------------------------------------------------------------------------------------
@@ -4905,7 +4953,8 @@ function newsHtml(){
     const disassociateBtn=e.target.closest('.zonedisassociate-btn');
     if(disassociateBtn){disassociateZoneParent(Number(disassociateBtn.dataset.zone));return;}
     const btn=e.target.closest('[data-zone]');
-    if(btn){openZoneOverlay(Number(btn.dataset.zone));return;}
+    if(btn){const bz=Number(btn.dataset.zone);if(btn.dataset.roomArea!=null){if(!state.zoneArea)state.zoneArea=new Map();state.zoneArea.set(bz,+btn.dataset.roomArea);lastRenderedZoneOverlayZ=null}else if(state.partsOf?.has(bz+'|'+(state.zoneArea?.get(bz)||0))){state.zoneArea.set(bz,0);lastRenderedZoneOverlayZ=null}   // a place card opens the place, not another dungeon's room under its number
+    openZoneOverlay(bz);return;}
     const dgn=e.target.closest('[data-dungeon]');
     if(dgn)openDungeonOverlay(dgn.dataset.dungeon);
   });
