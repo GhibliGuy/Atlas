@@ -40,15 +40,17 @@
   // per success = base yield × (1 + 10% for every level past mastery) × (1 + overflow), and Prospector rings (amber)
   // add 2% gathered yield per carat on top. An attempt takes 3.5 s at rocks, trees and fishing spots, 2 s at plants.
   const GATHER_MS={mining:3500,lumberjack:3500,fishing:3500,herblore:2000};
-  function gatherModel(g,tool,pros){
+  const toolAtLevel=(tool,l)=>typeof tool==='function'?tool(l):tool;
+  function gatherModel(g,toolIn,pros){const tool=l=>toolAtLevel(toolIn,l);
     const base=l=>Math.min(.95,.5+Math.max(0,l-g.level)*.05);
-    const chance=l=>l<g.level?0:Math.max(0,Math.min(.95,base(l)+tool));
-    const overflow=l=>Math.min(.95,Math.max(0,base(l)+tool-.95));
+    const chance=l=>l<g.level?0:Math.max(0,Math.min(.95,base(l)+tool(l)));
+    const overflow=l=>Math.min(.95,Math.max(0,base(l)+tool(l)-.95));
     const avg=((+g.minYield||1)+(+g.maxYield||+g.minYield||1))/2;
     const yieldAt=l=>avg*(1+Math.max(0,l-(g.level+9))*.1)*(1+overflow(l))*(1+.02*pros);
     return {chance,yieldAt,ms:GATHER_MS[g.skill]||null};
   }
-  function optionsFor(skill,mode,tool,pros=0){
+  function optionsFor(skill,mode,toolIn,pros=0){
+    const T=l=>toolAtLevel(toolIn,l),tool=toolIn;   // per level: a tool you can't use yet adds nothing
     if(mode==='gather'){
       const key=skill.toLowerCase();
       return (typeof GATHERABLES!=='undefined'?GATHERABLES:[]).filter(g=>g.skill===key).map(g=>{const mdl=gatherModel(g,tool,pros);
@@ -58,29 +60,64 @@
     return (typeof RECIPES!=='undefined'?RECIPES:[]).filter(r=>r.skill===skill||(r.split&&r.split.includes(skill))).map(r=>({id:r.id,label:r.item,level:r.level,xp:r.split&&r.skill!==skill?r.xp/r.split.length:r.xp,out:r.out||1,per:r.ingredients||[],
       chance:l=>{
         if(r.chance==='always')return 1;
-        if(r.chance==='cooking'){if(l<r.level)return 0;const burn=l>=r.stop?.05:(l<=r.level?r.burn:r.burn*(1-(l-r.level)/(r.stop-r.level)));return Math.max(0,Math.min(.95,1-Math.max(0,burn-tool)))}
-        if(l<r.level)return 0;const base=typeof craftChance==='function'?craftChance(r,l):.6;return Math.max(0,Math.min(.95,base+tool));
-      },sure:typeof craftSureAt==='function'?craftSureAt(r):r.level+14,split:r.split?r.split.length:1}));
+        if(r.chance==='cooking'){if(l<r.level)return 0;const burn=l>=r.stop?.05:(l<=r.level?r.burn:r.burn*(1-(l-r.level)/(r.stop-r.level)));return Math.max(0,Math.min(.95,1-Math.max(0,burn-T(l))))}
+        if(l<r.level)return 0;const base=typeof craftChance==='function'?craftChance(r,l):.6;return Math.max(0,Math.min(.95,base+T(l)));
+      },
+      // Crafting, from the game's rules: success is capped at 95% and the tool's bonus is added on top; whatever goes past
+      // 95% ("overflow") is the chance an attempt hands the materials back (official guide, Tool Smithing: "for a crafter
+      // it means the attempt hands your materials back"). Once a recipe is mastered that is the whole tool bonus.
+      keep:l=>{if(r.chance==='always'||r.chance==='cooking'||l<r.level)return 0;const base=typeof craftChance==='function'?craftChance(r,l):.6;return Math.min(.95,Math.max(0,base+T(l)-.95))},
+      sure:typeof craftSureAt==='function'?craftSureAt(r):r.level+14,split:r.split?r.split.length:1}));
   }
   // From (level, xp into it) to goal: split where a better option unlocks, take the most XP per attempt in each stretch.
-  function plan(opts,level,into,goal){
+  // How to pick what to make at each stretch (the "Plan for" box):
+  //   fast      - Fewest crafts: the most XP per attempt.
+  //   save      - Fewest bars (smithing) / Fewest materials: the fewest materials for the XP.
+  // Fewest bars only chooses among items made from the same materials as the fastest one (titanium
+  // with titanium, gold with gold), so it never sends you back down a metal. Misses and the attempts your tool hands
+  // the materials back are counted, averaged over the stretch (the odds keep climbing through it).
+  const PLAN_BY={fast:'Fewest crafts',save:'Fewest bars'};
+  function plan(opts,level,into,goal,by='fast'){
     const unlocks=[...new Set(opts.map(o=>o.level))].filter(l=>l>level&&l<goal).sort((a,b)=>a-b);
     const stops=[level,...unlocks,goal],rows=[];
     let xp=xpAtT(level)+into;
     for(let i=0;i<stops.length-1;i++){
       const from=stops[i],to=stops[i+1],ok=opts.filter(o=>o.level<=from);if(!ok.length)continue;
-      const best=ok.reduce((a,b)=>b.xp*b.chance(from)>a.xp*a.chance(from)?b:a);
+      const fastest=ok.reduce((a,b)=>b.xp*b.chance(from)>a.xp*a.chance(from)?b:a);
+      const best=by==='fast'||!fastest.per.length?fastest:pickBy(ok.filter(o=>matKey(o)===matKey(fastest)),by,from,Math.max(from,to-1));
       // level by level (fast even when the goal is millions of crafts away)
-      let tries=0,items=0;const succ=Math.ceil((xpAtT(to)-xp)/best.xp);
-      for(let l=levelFor(xp);l<to;l++){const part=Math.min(xpAtT(l+1),xpAtT(to))-Math.max(xpAtT(l),xp);if(part>0){tries+=part/best.xp/Math.max(.05,best.chance(l));if(best.yieldAt)items+=part/best.xp*best.yieldAt(l)}}
+      let tries=0,used=0,items=0;const xpStart=xp,succ=Math.ceil((xpAtT(to)-xp)/best.xp);
+      for(let l=levelFor(xp);l<to;l++){const part=Math.min(xpAtT(l+1),xpAtT(to))-Math.max(xpAtT(l),xp);if(part>0){const t=part/best.xp/Math.max(.05,best.chance(l));tries+=t;used+=t*(1-(best.keep?best.keep(l):0));if(best.yieldAt)items+=part/best.xp*best.yieldAt(l)}}   // used: attempts that do not hand the materials back
       xp=xpAtT(to);
       // an unlock that does not change the best choice just extends the stretch before it
       const last=rows[rows.length-1];
-      if(last&&last.best===best){last.to=to;last.succ+=succ;last.tries+=Math.round(tries);last.items+=items}else rows.push({from,to,best,succ,tries:Math.round(tries),items});
+      if(last&&last.best===best){last.to=to;last.xpTo=xp;last.succ=Math.ceil((last.xpTo-last.xpFrom)/best.xp);last.triesX+=tries;last.tries=Math.round(last.triesX);last.used+=used;last.items+=items}
+      else rows.push({from,to,best,xpFrom:xpStart,xpTo:xp,succ,triesX:tries,tries:Math.round(tries),used,items});   // successes from the XP span, attempts rounded only for show   // used stays exact (materials are summed from it, then rounded)
     }
     return rows;
   }
-  function mats(rows){const m=new Map();for(const r of rows)for(const i of r.best.per)m.set(i.id,(m.get(i.id)||0)+i.quantity*r.tries);return m}
+  const matKey=o=>o.per.map(i=>i.id).sort().join('+');
+  // per XP over levels a..b: attempts, and materials used (after the attempts that hand them back)
+  const avgOver=(a,b,f)=>{let c=0;for(let l=a;l<=b;l++)c+=f(l);return c/(b-a+1)};
+  const matsPerXp=(o,a,b)=>avgOver(a,b,l=>o.per.reduce((s,i)=>s+i.quantity,0)*(1-(o.keep?o.keep(l):0))/Math.max(1e-9,o.xp*Math.max(.05,o.chance(l))));
+  // the item using the fewest materials for its XP over levels a..b
+  function pickBy(cands,by,a,b){
+    const m=new Map(cands.map(o=>[o,matsPerXp(o,a,b)]));
+    return cands.reduce((x,y)=>m.get(y)<m.get(x)?y:x);
+  }
+  function stretchStats(o,xpFrom,xpTo){
+    let tries=0,used=0;const to=levelFor(xpTo-1)+1;
+    for(let l=levelFor(xpFrom);l<to;l++){const part=Math.min(xpAtT(l+1),xpTo)-Math.max(xpAtT(l),xpFrom);if(part>0){const t=part/o.xp/Math.max(.05,o.chance(l));tries+=t;used+=t*(1-(o.keep?o.keep(l):0))}}
+    return {succ:Math.ceil((xpTo-xpFrom)/o.xp),tries,used};
+  }
+  // A few other things to make over a stretch - the same materials as the pick (so the numbers compare), best first by
+  // the plan's own measure (fewest attempts, or fewest materials used).
+  function stretchAlts(r,opts,by,howMany=2){
+    const cands=opts.filter(o=>o!==r.best&&o.level<=r.from&&o.per.length&&matKey(o)===matKey(r.best)).map(o=>({o,...stretchStats(o,r.xpFrom,r.xpTo)}));
+    const cost=x=>by==='save'?x.o.per.reduce((a,i)=>a+i.quantity,0)*x.used:x.tries;
+    return cands.sort((a,b)=>cost(a)-cost(b)).slice(0,howMany);
+  }
+  function mats(rows){const m=new Map();for(const r of rows)for(const i of r.best.per)m.set(i.id,(m.get(i.id)||0)+i.quantity*(r.used??r.tries));return m}
 
   function skillsList(){
     const crafts=[...new Set((typeof RECIPES!=='undefined'?RECIPES:[]).filter(r=>!r.split).map(r=>r.skill))].sort();   // Smelting is not a skill of its own
@@ -223,6 +260,8 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
         <label>Your level<input id="cLevel" type="number" min="1" max="100" value="${Number(saved.level)||1}"></label>
         <label>XP into it<input id="cInto" type="number" min="0" value="0"></label>
         <label>Goal level<input id="cTarget" type="number" min="2" max="100" value=""></label>
+        <label id="cMatField">Material<select id="cMat" data-want="${esc(saved.mat||'')}"><option value="">Any</option></select></label>
+        <label id="cGoalByField">Plan for<select id="cGoalBy">${Object.entries(PLAN_BY).map(([k,l])=>`<option value="${k}"${(saved.by==='cheap'?'save':PLAN_BY[saved.by]?saved.by:'fast')===k?' selected':''}>${l}</option>`).join('')}</select></label>
         <label id="cToolField" hidden><span id="cToolName">Tool</span><select id="cTool">${toolOptions(saved.tool)}</select></label>
         <label id="cQualField" hidden>Quality<select id="cQual">${QUALITIES.map(([k])=>`<option value="${k}"${k===(saved.qual||'ordinary')?' selected':''}>${pretty(k)}</option>`).join('')}</select></label>
         <label id="cCaratField" hidden>Artisan carats<input id="cCarat" type="number" min="0" max="4" step="1" value="${Number(saved.carat)||0}"></label>
@@ -244,7 +283,20 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
       const tool=toolName?toolBonus(TOOL[ti][0],el('cQual').value,Math.min(ti+1,+el('cCarat').value||0)):0;
       el('cProsField').hidden=mode!=='gather';el('cSmithField').hidden=mode!=='gather';
       const pros=mode==='gather'?Math.max(0,Math.min(8,Math.floor(+el('cPros').value||0))):0;
-      const opts=optionsFor(skill,mode,tool,pros).sort((a,b)=>a.level-b.level);
+      const toolLvReq=toolName?TOOL[ti][3]:1,toolAt=l=>l>=toolLvReq?tool:0;   // no bonus below the level the tool needs
+      const opts=optionsFor(skill,mode,toolAt,pros).sort((a,b)=>a.level-b.level);
+      // A recipe's base material is the ingredient that sets its tier - the bar, the wood, the knick or pelt - found as
+      // its least-shared ingredient (wool goes into many recipes; each metal or wood into only its own tier).
+      const useCount=new Map();for(const o of opts)for(const i of o.per)useCount.set(i.id,(useCount.get(i.id)||0)+1);
+      const baseOf=o=>o.per.length?o.per.reduce((a,b)=>(useCount.get(b.id)<useCount.get(a.id)||(useCount.get(b.id)===useCount.get(a.id)&&b.quantity>a.quantity))?b:a).id:'';
+      const matSel=el('cMat');
+      // (smelting a bar also counts towards smithing, but ore is not a material you make smithing items from)
+      {const firstAt=new Map();for(const o of opts){const b=baseOf(o);if(b&&!(o.split>1)&&!firstAt.has(b))firstAt.set(b,o.level)}const bases=[...firstAt.entries()].sort((x,y)=>x[1]-y[1]);
+       const have=[...matSel.options].map(o=>o.value).join(),want=[''].concat(bases.map(b=>b[0])).join();
+       if(have!==want){const keep=matSel.dataset.want||matSel.value;matSel.innerHTML='<option value="">Any (moves up as each unlocks)</option>'+bases.map(([id,lv])=>`<option value="${esc(id)}">${esc(pretty(id))}${lv>1?' (from level '+lv+')':''}</option>`).join('');matSel.value=bases.some(b=>b[0]===keep)?keep:''}}
+      el('cMatField').hidden=mode==='gather'||matSel.options.length<3;
+      const baseMat=mode==='gather'?'':matSel.value;
+      const planOpts=baseMat?opts.filter(o=>baseOf(o)===baseMat):opts;   // the plan keeps to the material you picked
       const level=Math.max(1,Math.min(99,Math.floor(+el('cLevel').value||1)));
       const into=Math.max(0,Math.min(xpAtT(level+1)-xpAtT(level)-1,Math.floor(+el('cInto').value||0)));
       const next=opts.find(o=>o.level>level);
@@ -252,36 +304,72 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
       const aim=opts.find(o=>o.level>=level+5);
       if(!goalTouched)el('cTarget').value=String(aim?aim.level:Math.min(100,level+10));
       const goal=Math.max(level+1,Math.min(100,Math.floor(+el('cTarget').value||level+1)));
-      try{localStorage.setItem('bxcCraftPlanner',JSON.stringify({skill:opt.textContent,level,tool:el('cTool').value,qual:el('cQual').value,carat:+el('cCarat').value||0,pros:+el('cPros').value||0,smith:+el('cSmith').value||0}))}catch{}
+      el('cGoalByField').hidden=mode==='gather';
+      // "Fewest bars" where the materials are bars (smithing), "Fewest materials" for the other crafts
+      const barSkill=opts.some(o=>o.per.some(i=>/-bar$/.test(i.id))),saveLabel=barSkill?'Fewest bars':'Fewest materials';
+      {const so=el('cGoalBy').querySelector('option[value="save"]');if(so)so.textContent=saveLabel}
+      try{localStorage.setItem('bxcCraftPlanner',JSON.stringify({mat:el('cMat').dataset.want||el('cMat').value,by:el('cGoalBy').dataset.want||el('cGoalBy').value,skill:opt.textContent,level,tool:el('cTool').value,qual:el('cQual').value,carat:+el('cCarat').value||0,pros:+el('cPros').value||0,smith:+el('cSmith').value||0}))}catch{}
       const toolLv=TOOL[ti][3],toolLine=toolName?`${tsel==='best'?'Best for level '+level+': ':''}${TOOL[ti][1]} ${toolName.toLowerCase()}${el('cQual').value!=='ordinary'?' ('+el('cQual').value+')':''}${Math.min(ti+1,+el('cCarat').value||0)?' of the Artisan '+Math.min(ti+1,+el('cCarat').value||0)+'c':''}: <b>${tool>=0?'+':''}${(tool*100).toFixed(1).replace(/\.0$/,'')}%</b> ${mode!=='gather'&&skill.toLowerCase()==='cooking'?'less chance to burn':'success'}`:'';
-      const rows=plan(opts,level,into,goal),m=mats(rows);
+      const sel=el('cGoalBy');if(!sel.dataset.want)sel.dataset.want=sel.value;const want=sel.dataset.want;   // the plan you picked, kept while it is hidden
+      const by=mode==='gather'||!PLAN_BY[want]?'fast':want;
+      if(sel.value!==by)sel.value=by;
+      const rows=plan(planOpts,level,into,goal,by),m=mats(rows);
+      const matStart=baseMat&&planOpts.length?Math.min(...planOpts.map(o=>o.level)):0;
+      // The refund on what the plan makes now: only what your level and tool together push past 95% - the full tool bonus
+      // only once the item alone reaches 95% (its mastery), 14 levels past it.
+      // The plan table. Crafting: each stretch's pick outlined, with a couple of other things you could make instead (same
+      // materials) under it and what they cost or save against the pick.
+      const rangeOf=(o,a,b,f)=>{const x=f(a),y=f(b);return Math.abs(x-y)<.005?pct(x):pct(x)+' → '+pct(y)};
+      const oddsCell=(o,r)=>{const last=Math.max(r.from,r.to-1);return rangeOf(o,r.from,last,l=>o.chance(l))+(o.keep&&o.keep(last)>0?' · '+rangeOf(o,r.from,last,l=>o.keep(l))+' back':'')};
+      const matsCell=(o,used)=>o.per.map(i=>`<div class="cp-mat">${n(Math.round(i.quantity*used))}× ${item(i.id)}</div>`).join('')||'—';   // one ingredient a line
+      const matWord=barSkill?'bars':'materials';
+      const planTableHtml=rs=>{
+        if(mode==='gather')return table(['Levels','Gather','Successes','Attempts','You’ll gather'],rs.map(r=>[`${r.from} → ${r.to}`,item(r.best.id,r.best.label),n(r.succ),n(r.tries),`${n(r.items)}× ${item(r.best.id,r.best.label)}`]));
+        const head=['Levels','Make','Successes','Attempts','Success · materials back','Materials'];
+        const body=rs.map(r=>{
+          const pickMat=r.best.per.reduce((a,i)=>a+i.quantity,0)*(r.used??r.tries);
+          const altList=stretchAlts(r,planOpts,by);
+          const pick=`<tr class="cp-pick"><td class="cp-lv">${r.from} → ${r.to}</td><td><span class="cp-star cp-gold" title="Best for this stretch">★</span>${item(r.best.id,r.best.label)}</td><td>${n(r.succ)}</td><td>${n(r.tries)}</td><td>${oddsCell(r.best,r)}</td><td>${matsCell(r.best,r.used??r.tries)}</td></tr>`;
+          const alts=altList.map((a,k)=>{const aMat=a.o.per.reduce((x,i)=>x+i.quantity,0)*a.used,dc=Math.round(a.tries)-r.tries,dm=Math.round(aMat-pickMat);
+            const diff=[dc?`${dc>0?'+':'−'}${n(Math.abs(dc))} crafts`:'',dm?`${dm>0?'+':'−'}${n(Math.abs(dm))} ${matWord}`:''].filter(Boolean).join(' · ');
+            return `<tr class="cp-alt"><td class="cp-lv">${r.from} → ${r.to}</td><td><span class="cp-star ${k?'cp-bronze':'cp-silver'}" title="${k?'3rd':'2nd'} best for this stretch">★</span>${item(a.o.id,a.o.label)}${diff?`<div class="cp-diff">${diff}</div>`:''}</td><td>${n(a.succ)}</td><td>${n(Math.round(a.tries))}</td><td>${oddsCell(a.o,r)}</td><td>${matsCell(a.o,a.used)}</td></tr>`}).join('');
+          return pick+alts}).join('');
+        const key=rs.some(r=>stretchAlts(r,planOpts,by).length)?`<p class="g-note cp-key"><span class="cp-star cp-gold">★</span>best · <span class="cp-star cp-silver">★</span>2nd · <span class="cp-star cp-bronze">★</span>3rd for each stretch, by ${by==='save'?'fewest '+matWord:'fewest crafts'} (the totals use the gold one)</p>`:'';
+        return `<div class="g-scroll"><table class="g-table cp-plan"><thead><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`+key;
+      };
+      const cur=rows[0]?.best,curLv=Math.max(level,cur?cur.level:level),curKeep=cur&&cur.keep?cur.keep(curLv):0,fullAt=cur&&cur.keep?cur.sure:null;
+      let startAt=curLv;if(cur&&cur.keep)while(startAt<100&&cur.keep(startAt)<=0)startAt++;   // the first level with any refund
+      const refundLine=mode==='gather'||!cur||!cur.keep||tool<=0?'':`. On ${esc(cur.label)} at level ${curLv}: <b>${pct(cur.chance(curLv))}</b> success and ${curKeep>0?`a <b>${pct(curKeep)}</b> chance to get the materials back`:'no materials back yet'}${fullAt&&curLv<fullAt?` (${curKeep>0?'rising':`they start at level ${startAt}, rising`} to the full ${pct(Math.min(.95,tool))} at level ${fullAt}, where the ${esc(cur.label)} alone reaches 95%)`:''}`;
+      const saved=Math.round(rows.reduce((a,r)=>a+Math.max(0,r.tries-(r.used??r.tries)),0)),keepNow=mode==='gather'?0:Math.max(0,...opts.filter(o=>o.level<=level&&o.keep).map(o=>o.keep(level)));
       const totalSucc=rows.reduce((a,r)=>a+r.succ,0),totalTries=rows.reduce((a,r)=>a+r.tries,0);
       const unit=mode==='gather'?'gathers':'crafts';
       const now=opts.filter(o=>o.level<=level).map(o=>({o,c:o.chance(level),e:o.xp*o.chance(level)})).sort((a,b)=>b.e-a.e);
       const coming=opts.filter(o=>o.level>level).slice(0,6);
-      const matLine=[...m].map(([id,q])=>`${n(q)}× ${item(id)}`).join(' · ');
+      const matLine=[...m].map(([id,q])=>`${n(Math.round(q))}× ${item(id)}`).join(' · ');
       const guideLink=globalThis.bxcGuides?.forSkill(skill)?globalThis.bxcGuides.link(globalThis.bxcGuides.forSkill(skill),skill+' guide'):'';
       el('cPlanOut').innerHTML=
         (toolName&&level<toolLv?`<p class="note">A ${esc(TOOL[ti][1].toLowerCase())} ${esc(toolName.toLowerCase())} needs ${esc(skill)} at ${toolLv}; you can’t use it at level ${level} yet.</p>`:'')+
-        `<section><h2>Your plan</h2>${toolLine?`<p class="g-note">With your tool: ${toolLine}.</p>`:''}${rows.length?`<p class="tool-answer">Level <b>${level}</b> → <b>${goal}</b>: about <b>${n(totalSucc)}</b> ${unit}${totalTries>totalSucc?` (<b>${n(totalTries)}</b> attempts with misses)`:''}.</p>`+
-          table(['Levels',mode==='gather'?'Gather':'Make','Successes','Attempts',mode==='gather'?'You’ll gather':'Materials'],rows.map(r=>[`${r.from} → ${r.to}`,item(r.best.id,r.best.label),n(r.succ),n(r.tries),mode==='gather'?`${n(r.items)}× ${item(r.best.id,r.best.label)}`:(r.best.per.map(i=>`${n(i.quantity*r.tries)}× ${item(i.id)}`).join(', ')||'—')]))+
+        (baseMat&&level<matStart?`<p class="note">${esc(pretty(baseMat))} items start at level <b>${matStart}</b>: the plan below begins there.</p>`:'')+`<section><h2>Your plan</h2>${toolLine?`<p class="g-note">With your tool: ${toolLine}${refundLine}.</p>`:''}${rows.length?`<p class="tool-answer">Level <b>${level}</b> → <b>${goal}</b>: about <b>${n(totalSucc)}</b> ${unit}${totalTries>totalSucc?` (<b>${n(totalTries)}</b> attempts with misses)`:''}.</p>`+
+          planTableHtml(rows)+
           (matLine?`<p class="tool-total"><b>Bring in total:</b> ${matLine}</p>`:'')+
-          `<p class="g-note">Each stretch uses whatever gives the most XP per attempt at its start (misses included). It’s the fastest, not always the cheapest.${mode==='gather'?'':' Attempts count failures, which use up the materials.'}</p>`
+          (saved>0?`<p class="g-note">Your tool hands the materials back on about <b>${n(saved)}</b> of those attempts, so the materials above are already that much lower.</p>`:'')+`<p class="g-note">${({fast:'<b>Fewest crafts</b>: each stretch makes whatever gives the most XP per attempt.',save:`<b>${esc(saveLabel)}</b>: each stretch makes the item that uses the fewest ${barSkill?'bars':'materials'} for its XP, from the same ${barSkill?'metal':'materials'} as the fewest-crafts choice. More crafts, less to bring.`})[by]}${mode==='gather'?'':' Attempts count failures, which use up the materials; a tool’s bonus past the 95% cap is a chance for an attempt to hand them back.'}</p>`
           :'<p class="muted">Nothing to make yet at this level.</p>'}</section>`+
-        `<section><h2>What you can ${mode==='gather'?'gather':'make'} now</h2>${now.length?table(['Level','Item','XP','Success now','XP per attempt',...(mode==='gather'?[]:['Needs'])],now.map(({o,c,e},i)=>[n(o.level),(i===0?'★ ':'')+item(o.id,o.label),n(o.xp),pct(c),e.toFixed(1),...(mode==='gather'?[]:[o.per.map(x=>`${x.quantity}× ${item(x.id)}`).join(', ')||'—'])])):'<p class="muted">Nothing unlocked yet.</p>'}</section>`+
+        `<section><h2>What you can ${mode==='gather'?'gather':'make'} now</h2>${now.length?table(['Level','Item','XP','Success now','XP per attempt',...(mode==='gather'?[]:[...(keepNow>0?['Materials back']:[]),'Needs'])],now.map(({o,c,e},i)=>[n(o.level),`<span class="cp-star ${['cp-gold','cp-silver','cp-bronze'][i]||'cp-none'}"${i<3?` title="${['Most','2nd most','3rd most'][i]} XP per attempt now"`:''}>${i<3?'★':''}</span>`+item(o.id,o.label),n(o.xp),pct(c),e.toFixed(1),...(mode==='gather'?[]:[...(keepNow>0?[o.keep&&o.keep(level)>0?pct(o.keep(level)):'—']:[]),o.per.map(x=>`<div class="cp-mat">${x.quantity}× ${item(x.id)}</div>`).join('')||'—'])]),'cp-now'):'<p class="muted">Nothing unlocked yet.</p>'}</section>`+
         (mode==='gather'?gatherPathHtml(skill,gatherPath(skill,level,into,goal,tsel,el('cQual').value,+el('cCarat').value||0,pros),tsel,level,goal)+`<section>${gatherUpgradesHtml(skill,level,tsel,el('cQual').value,+el('cCarat').value||0,pros,+el('cSmith').value||0)}</section>`+gatherRatesHtml(opts,level,goal):'')+
         (coming.length?`<section><h2>Coming up</h2>${table(['Level','Item','XP'],coming.map(o=>[n(o.level),item(o.id,o.label),n(o.xp)]))}</section>`:'');
-      const best=now[0]?.o;
+      const best=rows[0]?.best||now[0]?.o;   // what the plan starts with (Fewest crafts or Fewest bars)
       el('cPlanAside').innerHTML=`${best?`<div class="wp-pic"><img src="${esc(typeof itemImg==='function'?itemImg({id:best.id,typeId:best.id,item:best.label}):'')}" alt=""></div>`:''}<h3>${esc(opt.textContent)}</h3><table>
         <tr><th>Your level</th><td>${level}</td></tr><tr><th>Goal</th><td>${goal}</td></tr><tr><th>XP to go</th><td>${n(Math.max(0,xpAtT(goal)-xpAtT(level)-into))}</td></tr>
-        ${best?`<tr><th>Best now</th><td>${item(best.id,best.label)}</td></tr>`:''}${next?`<tr><th>Next unlock</th><td>${item(next.id,next.label)} at ${next.level}</td></tr>`:''}</table>
-        <p class="g-note">${mode==='gather'?'Gathering: 50% at the tier’s level, +5% a level, up to 95%; a better tool adds to it.':'Crafting: 60% at the recipe’s level, 95% fourteen levels above. A failure uses up the materials. Your tool only changes the chance to succeed: the quality you get and when you can enchant (15 levels above the item) depend on your level alone.'}</p>
+        ${best?`<tr><th>Make now</th><td>${item(best.id,best.label)}${mode!=='gather'?` <span class="muted">(${esc(by==='save'?saveLabel:PLAN_BY[by])})</span>`:''}</td></tr>`:''}${next?`<tr><th>Next unlock</th><td>${item(next.id,next.label)} at ${next.level}</td></tr>`:''}</table>
+        <p class="g-note">${mode==='gather'?'Gathering: 50% at the tier’s level, +5% a level, up to 95%; a better tool adds to it.':'Crafting: 60% at the recipe’s level, 95% fourteen levels above. A failure uses up the materials. Your tool changes the chance to succeed and, past the 95% cap, the chance to get the materials back; the quality you get and when you can enchant (mastery: where success reaches 95%, 14 levels above the item) depend on your level alone.'}</p>
         <p class="g-aside-h">Guides</p><ul class="g-toc">${guideLink?`<li>${guideLink}</li>`:''}<li><a href="#/guide/levels-and-xp">Levels and XP</a></li>${mode==='gather'?'':'<li><a href="#/calc-quality">Quality &amp; enchanting</a></li>'}</ul>`;
     }
     el('cSkill').addEventListener('change',()=>{goalTouched=false;el('cInto').value='0';run()});
     el('cLevel').addEventListener('input',()=>{goalTouched=false;run()});
     el('cInto').addEventListener('input',run);
     el('cTarget').addEventListener('input',()=>{goalTouched=true;run()});
+    el('cMat').addEventListener('change',()=>{el('cMat').dataset.want=el('cMat').value;run()});
+    el('cGoalBy').addEventListener('change',()=>{el('cGoalBy').dataset.want=el('cGoalBy').value;run()});
     for(const id of ['cTool','cQual'])el(id).addEventListener('change',run);
     el('cCarat').addEventListener('input',run);
     el('cPros').addEventListener('input',run);el('cSmith').addEventListener('input',run);
@@ -330,7 +418,7 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
     if(kind==='gather'){const p=gatherPath(skill,level,0,100,sel,qual,carat,pros);return p.length?gatherUpgradesHtml(skill,level,sel,qual,carat,pros,v.smith)+'<h3>Level by level</h3>'+gatherPathHtml(skill,p,sel,level,100,true):'<p class="muted">Nothing to gather at this level.</p>'}
     const ti=toolIdx(sel,level),usable=level>=TOOL[ti][3],tb=usable?toolBonus(TOOL[ti][0],qual,Math.min(ti+1,carat)):0;
     const rows=plan(optionsFor(skill,'craft',tb),level,0,100);if(!rows.length)return '<p class="muted">Nothing to make at this level yet.</p>';
-    return `<p class="g-note">From level ${level} with your ${esc(TOOL[ti][1].toLowerCase())} ${esc((toolFor(skill)||'tool').toLowerCase())} (${tb>=0?'+':''}${(tb*100).toFixed(1).replace(/[.]0$/,'')}%): the recipe with the most XP per attempt at each stretch. It is the quickest, not always the cheapest.</p>`+
+    return `<p class="g-note">From level ${level} with your ${esc(TOOL[ti][1].toLowerCase())} ${esc((toolFor(skill)||'tool').toLowerCase())} (${tb>=0?'+':''}${(tb*100).toFixed(1).replace(/[.]0$/,'')}%): the recipe with the most XP per attempt at each stretch.</p>`+
       table(['Levels','Make','Successes','Attempts','Materials'],rows.map(r=>[`${r.from} → ${r.to}`,item(r.best.id,r.best.label),n(r.succ),n(r.tries),r.best.per.map(i=>`${n(i.quantity*r.tries)}× ${item(i.id)}`).join(', ')||'—']))+'<p class="g-note">Materials are for every attempt: a failed one uses them up too.</p>';
   }
   globalThis.bxcGuidePath=(kind,skill)=>{const s=savedTool(),lv=Number((s.guideLevel||{})[skill])||1;

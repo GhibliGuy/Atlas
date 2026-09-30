@@ -86,3 +86,51 @@
   new ResizeObserver(resizeMap).observe(document.getElementById('map'));
   applyWidth(desiredWidth);
 })();
+
+/* Table columns, the same way everywhere: numbers and short values (levels, counts, percentages, dates) are centred
+   under their heading - header and cells alike; names, links and longer text stay left. Decided per column from what
+   it holds, so every table in the Atlas - guides, calculators, layouts - lines up the same. Label/value boxes (no
+   headings) are left alone. Runs when a table appears or changes, once per change. */
+(() => {
+  const TABLES = 'table.g-table, table.research-table, table.qualitytable, table.xptable';
+  const isText = td => !!td.querySelector('a, img, select, input, button') || (td.innerText || '').trim().length > 28;
+  const numeric = s => /^[\s\d.,%×→·+\-−–()\/xc]*$/i.test(s);
+  // a value may carry a short word ("24% back", "Short", "0.5c") and still be a value; real text is longer
+  const letters = td => ((td.innerText || '').match(/[a-z]/gi) || []).length;
+  const headOf = t => { const h = t.tHead && t.tHead.rows[0]; return h && [...h.cells].filter(th => th.textContent.trim()).length >= 2 ? h : null; };
+  const colCells = (t, head, i) => [...t.tBodies].flatMap(b => [...b.rows]).map(r => r.cells.length === head.cells.length ? r.cells[i] : null).filter(Boolean);
+  // Tables with the same headings on one page (the quests list, one per category) decide together, so a column is
+  // centred in all of them or in none.
+  function alignGroup(tables) {
+    const head0 = headOf(tables[0]);
+    [...head0.cells].forEach((th0, i) => {
+      if (!th0.textContent.trim()) return;
+      const all = tables.flatMap(t => colCells(t, headOf(t), i)), filled = all.filter(td => (td.innerText || '').trim());
+      if (!filled.length) return;
+      const texty = filled.filter(isText).length >= filled.length / 2;
+      // the first column is a row's label unless it is plainly a number or a range ("67 → 74")
+      const centre = !texty && filled.every(td => letters(td) <= 12) && (i > 0 || filled.every(td => numeric(td.innerText.trim())));
+      for (const t of tables) { headOf(t).cells[i].classList.toggle('t-c', centre); for (const td of colCells(t, headOf(t), i)) td.classList.toggle('t-c', centre); }
+    });
+  }
+  let queued = false;
+  const run = () => {
+    queued = false;
+    const groups = new Map();
+    for (const t of document.querySelectorAll(TABLES)) {
+      const head = headOf(t); if (!head) continue;
+      const key = [...head.cells].map(th => th.textContent.trim()).join('|');
+      (groups.get(key) || groups.set(key, []).get(key)).push(t);
+    }
+    for (const tables of groups.values()) {
+      // only when something changed: a new or re-drawn table, or more rows
+      const sig = tables.map(t => [...t.tBodies].reduce((a, b) => a + b.rows.length, 0)).join(',');
+      if (tables.every(t => t.dataset.alignSig === sig)) continue;
+      alignGroup(tables); for (const t of tables) t.dataset.alignSig = sig;
+    }
+  };
+  const queue = () => { if (!queued) { queued = true; setTimeout(run, 30); } };   // a timer, not a repaint: a hidden window never repaints
+  // changes inside the map's own layers (markers moving on every pan and zoom) never hold a table
+  new MutationObserver(muts => { if (muts.some(m => !(m.target.closest && m.target.closest('.leaflet-pane')))) queue(); }).observe(document.body, { childList: true, subtree: true });
+  queue();
+})();

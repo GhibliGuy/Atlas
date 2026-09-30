@@ -3623,7 +3623,8 @@ function newsHtml(){
     const el=document.getElementById(id); if(!el)return;
     if(PUBLIC_MODE){el.textContent='';return;}   // the shared site has no collector - you just type your level
     if(!skill){el.textContent='Collector has not captured this skill yet; reload/play the game and it will fill automatically.';el.className='muted';return;}
-    el.textContent=`Collector: ${prettyId(skill.skill)} Lv ${skill.level} · ${Number(skill.experience||0).toLocaleString()} total XP`;
+    const own=el.dataset.ownLevel==='1';
+    el.innerHTML=`Collector: ${esc(prettyId(skill.skill))} Lv ${skill.level} · ${Number(skill.experience||0).toLocaleString()} total XP${own?` · <a href="#" class="collector-use-level">use it (you typed your own level)</a>`:''}`;
     el.className='good';
   }
   function autoFillSkillStarts(force=false){
@@ -3638,7 +3639,16 @@ function newsHtml(){
     ];
     for(const sp of specs){
       const sel=sp.fixed?null:document.getElementById(sp.select),level=document.getElementById(sp.level),into=sp.into?document.getElementById(sp.into):null; if((!sp.fixed&&!sel)||!level||(sp.into&&!into))continue;
-      const id=sp.fixed||normalizedSkillId(sel.value),skill=liveSkill(id); if(id==='character')sp.kind='Character'; if(sp.note)setAutoNote(sp.note,skill,sp.kind); if(!skill)continue;
+      const id=sp.fixed||normalizedSkillId(sel.value),skill=liveSkill(id); if(id==='character')sp.kind='Character';
+      // A level you type yourself stays: the collector no longer puts yours back on every XP gain (and "XP into it" starts
+      // at 0, since the collector's XP belongs to its own level). Another skill, another character or the note's "use it"
+      // hands it back to the collector.
+      const noteEl=sp.note?document.getElementById(sp.note):null;
+      if(!level.dataset.ownWatch){level.dataset.ownWatch='1';level.addEventListener('input',e=>{if(!e.isTrusted)return;level.dataset.ownLevel='1';level.dataset.ownFor=level.dataset.collectorSkill||'';if(into){into.value='0';into.dispatchEvent(new Event('input',{bubbles:true}))}if(noteEl){noteEl.dataset.ownLevel='1';setAutoNote(sp.note,liveSkill(sp.fixed||normalizedSkillId(sel.value)),sp.kind)}});
+        if(noteEl)noteEl.addEventListener('click',e=>{if(!e.target.closest('.collector-use-level'))return;e.preventDefault();delete level.dataset.ownLevel;delete noteEl.dataset.ownLevel;autoFillSkillStarts(true)})}
+      if(force||level.dataset.ownFor!==id){delete level.dataset.ownLevel;if(noteEl)delete noteEl.dataset.ownLevel}
+      if(sp.note)setAutoNote(sp.note,skill,sp.kind); if(!skill)continue;
+      if(level.dataset.ownLevel==='1'){level.dataset.collectorSkill=id;continue}
       // a page that only takes the level (no "XP into it" box) refreshes when the level changes, not on every XP gain
       const marker=`${selectedCharacterId}:${id}:${skill.level}${sp.into?':'+skill.experience:''}`;
       if(force || level.dataset.collectorSkill!==id || level.dataset.collectorMarker!==marker){
