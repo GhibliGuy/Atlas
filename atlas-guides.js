@@ -575,14 +575,13 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   // "ogre-isle-supply-crate", category quest - "Gerald's cargo, hauled off to an ogre den"; the quest's own text: ogres
   // "holed up east of Underleaf" = the Ogre Den dungeon). The count (5) is as players remember it.
   // The Broken Hammers: the quest's own text (goblins in Rustpick with Hester's broken tools) and the game's quest item
-  // "stolen-smith-tool" ("A smith's tool stamped with a bell"); the boss, as remembered - Nib the Toolkeeper is the
-  // named goblin in the mine (Lv 12, like Beyond the Point's Varruk: a named warrior, scale 1.2), not yet confirmed.
+  // "stolen-smith-tool" ("A smith's tool stamped with a bell"); 5 tools and the boss, Nib the Toolkeeper, as the user
+  // who finished it remembers (Nib: the named Lv 12 goblin in the mine).
   const QUEST_REPORTED_STEPS={'warrior-mace-the-broken-hammers':{steps:who=>{const nib=globalThis.bxcNpcByName&&globalThis.bxcNpcByName('Nib the Toolkeeper');return [
       `Kill goblins in <a href="#" class="show-on-map" data-map-kind="zone" data-map-id="-43">Rustpick Mine</a> until you have <b>5</b> ${item('stolen-smith-tool','Stolen Smith Tools')} <span class="muted">(a quest item)</span>.`,
       `Bring them back to ${who}.`,
-      `Kill the goblins’ boss: most likely ${nib?`<a href="${esc(nib.href)}">Nib the Toolkeeper</a>`:'Nib the Toolkeeper'} <span class="muted">(a level 12 goblin in Rustpick Mine)</span>.`,
-      `Go back to ${who} to finish the quest.`]},
-    note:'Steps as players who finished it remember them (5 tools, then a boss); the goblins, the Stolen Smith Tool and Nib are from the game itself. Nib being the boss is the best match, not yet recorded.'},
+      `Kill the goblins’ boss, ${nib?`<a href="${esc(nib.href)}">Nib the Toolkeeper</a>`:'Nib the Toolkeeper'} <span class="muted">(a level 12 goblin in Rustpick Mine)</span>.`,
+      `Go back to ${who} to finish the quest.`]},},
     'plymouth-cargo-for-the-isle':{steps:who=>[
       `Kill ogres in the <a href="#" class="show-on-map" data-map-kind="place" data-map-id="Ogre Den">Ogre Den</a>, east of Underleaf, until you have <b>5</b> ${item('ogre-isle-supply-crate','Crates of Ogre Isle Supplies')} <span class="muted">(a quest item)</span>. The den's ogres are level <b>29</b> at the entrance up to <b>33</b> at the bottom.`,
       `Bring them back to ${who} to finish the quest.`],
@@ -633,7 +632,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       return '<ol class="q-steps">'+steps.join('')+'</ol>'+((st[0].n||0)>0?note('Some steps in between were not recorded.'):'');
     }
     const rep=QUEST_REPORTED_STEPS[q.questId];
-    if(rep){rep.steps(who).forEach((t,k)=>steps.push(`<li value="${k+2}">${t}</li>`));return '<ol class="q-steps">'+steps.join('')+'</ol>'+note(rep.note)}
+    if(rep){rep.steps(who).forEach((t,k)=>steps.push(`<li value="${k+2}">${t}</li>`));return '<ol class="q-steps">'+steps.join('')+'</ol>'+(rep.note?note(rep.note):'')}
     const r=QUEST_REQUIRES[q.questId];
     if(r&&r.oneOf){
       {const names=r.oneOf.map(o=>item(o.id)),list=names.length>1?names.slice(0,-1).join(', ')+' or '+names[names.length-1]:names[0];
