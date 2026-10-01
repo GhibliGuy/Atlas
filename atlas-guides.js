@@ -29,6 +29,10 @@
     ['Battle spear','spear',2,16,7200,2.5,1.15],['Short bow','bow',1,8,3273,12,1],['Long bow','bow',2,12,5091,13,1],['Crossbow','crossbow',4,16,8000,14,1]
   ];
   {const GW=globalThis.BXC_GAME_DATA?.weapons;if(GW)for(const w of WEAPONS){const g=GW[slug(w[0])];if(g){w[2]=g.damageMin;w[3]=g.damageMax;w[4]=g.cooldownMs;w[5]=g.range;w[6]=g.damageMult}}}
+  // weapon skills only a quest teaches (the game's quest reward: weaponSkills), linked wherever that skill comes up
+  const WEAPON_QUEST={spear:{id:'warrior-spear-beyond-the-point',name:'Beyond the Point'}};
+  const weaponQuest=k=>{const w=WEAPON_QUEST[k];return w?`<a href="#/guide/quest-${w.id}">${w.name}</a>`:''};
+  const weaponQuestNote=k=>WEAPON_QUEST[k]?`<p class="g-note"><b>Needs a quest:</b> the ${k} skill is learned by finishing ${weaponQuest(k)} (Guard Tobin Reed near Underleaf, warriors, level 10). You can’t wield ${k}s until you have it.</p>`:'';
   // which damage type a weapon deals: maces crush; daggers, spears, crossbows and the rapier stab; the rest slash
   const dmgType=(name,skill)=>name==='Rapier'?'stab':skill==='mace'?'crush':['dagger','spear','crossbow'].includes(skill)?'stab':'slash';
   // material tiers: a weapon's roll is multiplied by 1 + bonus; wearing it needs a level and a stat
@@ -408,14 +412,14 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
           return [GU[sp.tier]||sp.tier*10,sp.name,sp.description+(bits.length?' ('+bits.join(', ')+')':''),Math.round(sp.cooldownMs/1000)+' s']})}}
     return {lede:'Each weapon family (sword, dagger, mace, spear, bow, crossbow) is a skill up to 100, trained by the damage you deal with it. Every family unlocks five special attacks along the way.'+(GS?' The specials below are the game’s own list.':''),sections:[
       ['how','How specials work',`<ul class="g-list"><li>Specials unlock at weapon skill <b>10, 20, 25, 35 and 60</b>; the 25 one is always defensive.</li><li>Drag one from the Skills panel onto one of the <b>7 action-bar slots</b>, then press its number or click it to make your next attack that special. Each weapon type has its own bar, so hold the weapon first.</li><li>Specials wind up slower than a normal hit and can miss (the cooldown still starts). They can crit. If the target dies or runs out of reach during the wind-up, the cooldown is refunded.</li><li>Bow and crossbow specials cost stamina. Melee specials are free, but each melee family’s level-60 finisher hurts you for 20% of the damage it deals.</li><li>A <b>killing blow resets</b> your weapon cooldowns.</li></ul>`],
-      ...Object.entries(S).map(([w,list])=>[slug(w),w,table(['Skill','Special','What it does','Cooldown'],list.map(([l,name,what,cd])=>[n(l),`<b>${esc(name)}</b>`,esc(what),cd]))]),
+      ...Object.entries(S).map(([w,list])=>[slug(w),w,weaponQuestNote(slug(w))+table(['Skill','Special','What it does','Cooldown'],list.map(([l,name,what,cd])=>[n(l),`<b>${esc(name)}</b>`,esc(what),cd]))]),
       ['learn','Unlocking combat skills',`<p>You can only wield the weapon types you know, and each is a skill of its own that levels with the damage you deal. You start with your class’s weapons; the rest come from <b>quests</b> or a <b>tome</b>.</p>`+
         table(['Skill','Who starts with it','How everyone else gets it','Cost'],[
           [item('titanium-sword','Sword'),'Warriors',`A <b>Sword tome</b>: study it from your pack.`,'1 skill point'],
           [item('titanium-dagger','Dagger'),'Archers',`A <b>Dagger tome</b>.`,'1 skill point'],
           [item('shagbark-longbow','Bow'),'Archers',`A <b>Bow tome</b>.`,'1 skill point'],
           [item('titanium-mace','Mace'),'—',`Quest <b>The Broken Hammers</b> from <b>Hester Bell</b> near Rustpick Mine (warriors, level 10). You also get a mace.`,'Free'],
-          [item('titanium-spear','Spear'),'—',`Quest <b>Beyond the Point</b> from <b>Tobin Reed</b> near Underleaf (warriors, level 10). You also get a spear.`,'Free'],
+          [item('titanium-spear','Spear'),'—',`Quest <b>${weaponQuest('spear')}</b> from <b>Tobin Reed</b> near Underleaf (warriors, level 10). You also get a spear.`,'Free'],
           [item('shagbark-crossbow','Crossbow'),'—',`Quest <b>The Heavy Bow</b> from the <b>Archery Vendor</b> by the targets in Underleaf (any class, level 10): bring him 6 crossbow stocks the young hill giants carried off. You also get a crossbow.`,'Free'],
           ['Wand (magic)','Mages','Any class can cast with a wand or staff and a learned spell: see the <a href="#/guide/magic">Magic guide</a> for the schools and spell scrolls.','—']])+
         `<p class="g-note">Vendors no longer sell weapon tomes; one you already own still works, and they turn up on the Exchange. The mace, spear and crossbow tomes are retired, since the quests teach those. A skill learned from a tome can be unlearned from the Skills menu for <b>5,000 gold</b>, which gives the skill point back. Quest skills are permanent. Shields need no training. (The official guide and the game’s rules.)</p>`]
@@ -449,11 +453,11 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   reg({slug:'melee',group:'Melee',title:'Melee weapons',blurb:'Swords, daggers, maces and spears: damage, reach, the stat each uses, and how to learn them.',build:()=>{
     const list=WEAPONS.filter(w=>!['bow','crossbow'].includes(w[1]));
     return {lede:'Melee weapons hit the monster in front of you. Every family levels its own skill with the damage you deal, and each has five special attacks.',sections:[
-      ['weapons','The weapons',table(['Weapon','Skill','Type','Roll','Swing every','Reach','Avg per second*'],weaponRows(list))+note('*Base roll only, before material, stats, quality and enchantments. At the same material every melee weapon does about the same damage per second: slow ones hit harder per swing. Spears reach 2.5 tiles, the rest 1.5.')],
+      ['weapons','The weapons',table(['Weapon','Skill','Type','Roll','Swing every','Reach','Avg per second*'],weaponRows(list))+weaponQuestNote('spear')+note('*Base roll only, before material, stats, quality and enchantments. At the same material every melee weapon does about the same damage per second: slow ones hit harder per swing. Spears reach 2.5 tiles, the rest 1.5.')],
       ['stats','Strength, Dexterity and crits',`<p>Swords, maces and spears add <b>${(SD().strength*100).toFixed(1)}% of their average roll per point of Strength</b>. The <b>dagger</b> is a finesse blade: it scales with <b>Dexterity</b> instead and crits more (+${CRIT_DAGGER}% crit chance on top of the ${CRIT_BASE}% base and ${CRIT_PER_DEX}% per Dexterity, capped at ${CRIT_CAP}%). A crit hits ×${CRIT_MULT}.</p>`],
       ['types','Picking by damage type',`<p>Maces <b>crush</b>, daggers, spears and the rapier <b>stab</b>, and the other swords <b>slash</b>. A monster weak to your type takes <b>${Math.round((WEAK-1)*100)}% more</b>; one that resists it takes <b>${Math.round((1-RESIST)*100)}% less</b>. <a href="#/guide/monster-families">Monster families</a> shows who is weak to what, and the <a href="#/calc-combat">Combat calculator</a> ranks monsters for your weapon.</p>`],
       ['boost','Enchants and rings',`<p>Weapon enchants: <b>Destruction</b> adds to every hit; <b>Flame</b>, <b>Freezing</b>, <b>Storm</b> and <b>Corrosion</b> add elemental damage. (Seeking is for bows and crossbows only.) Rings: <b>Brawler</b> (${esc(ringText('brawler',4)||'more melee damage')} at 4 carats), <b>Duelist</b> (${esc(ringText('duelist',4)||'more crit chance')}) and <b>Reaper</b> (${esc(ringText('reaper',4)||'more damage on low-health targets')}).</p>`],
-      ['learn','Learning them',`<p>Warriors start with the sword and archers with the dagger. Warriors learn the <b>mace</b> (The Broken Hammers, Hester Bell near Rustpick Mine) and the <b>spear</b> (Beyond the Point, Tobin Reed near Underleaf) from level-10 quests at no skill point; a sword or dagger tome costs a skill point. See <a href="#/guide/special-attacks">Weapon skills &amp; specials</a> for the full table and every special attack.</p>`]
+      ['learn','Learning them',`<p>Warriors start with the sword and archers with the dagger. Warriors learn the <b>mace</b> (The Broken Hammers, Hester Bell near Rustpick Mine) and the <b>spear</b> (${weaponQuest('spear')}, Tobin Reed near Underleaf) from level-10 quests at no skill point; a sword or dagger tome costs a skill point. See <a href="#/guide/special-attacks">Weapon skills &amp; specials</a> for the full table and every special attack.</p>`]
     ],related:['special-attacks','combat','monster-families','armor']};
   }});
   reg({slug:'ranged',group:'Ranged',title:'Ranged weapons',blurb:'Bows and crossbows: range, Dexterity, ammunition, Seeking and the Hunter ring.',build:()=>{
@@ -513,7 +517,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   const questBySlug=s=>String(s||'').startsWith('quest-')?questList().find(q=>questSlug(q)===s)||null:null;
   // Quest guides the user has confirmed as fully written (quest ids). Every other quest gets an alert: on its card on
   // the Quests page, and a banner on its own page.
-  const QUEST_COMPLETE=new Set(['wasteland-nothing-gets-through','imp-menace','plymouth-cargo-for-the-isle','plymouth-the-ogre-traitor']);
+  const QUEST_COMPLETE=new Set(['wasteland-nothing-gets-through','imp-menace','plymouth-cargo-for-the-isle','plymouth-the-ogre-traitor','warrior-spear-beyond-the-point']);
   const questDone=q=>QUEST_COMPLETE.has(q.questId);
   const ALERT_SVG='<svg class="q-alert-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20z" fill="currentColor"/><path d="M12 10v5M12 17.6v.4" stroke="#1b1300" stroke-width="2.2" stroke-linecap="round"/></svg>';
   const questLink=q=>`<a href="#/guide/${enc(questSlug(q))}">${esc(q.name)}</a>`;
@@ -544,7 +548,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const choice=(r.choice||[]).map(i=>item(i.typeId)+(i.quantity>1?' ×'+qn(i.quantity):''));
     if(choice.length)rows.push(['Choose one',choice.join('<br><span class="muted">or</span> ')]);
     const skillLink=k=>byslug.has(slug(k))?`<a href="#/guide/${esc(slug(k))}">${esc(pretty(k))}</a>`:esc(pretty(k));
-    const unlocks=(QUEST_SKILLS[q.questId]?.unlocks||(r.skills||[]).map(x=>x.skill||x)).map(x=>'the '+skillLink(x)+' skill').concat([...(r.weaponSkills||[]).map(x=>pretty(x.skill||x)+' (weapon skill)'),...(r.spellSchools||[]).map(x=>pretty(x.school||x)+' magic'),...(r.spells||[]).map(x=>pretty(x.spell||x)),...(r.unlockPackMule?['a pack mule']:[]),...(r.unlockMounts||[]).map(x=>pretty(x))].map(esc));
+    const unlocks=(QUEST_SKILLS[q.questId]?.unlocks||(r.skills||[]).map(x=>x.skill||x)).map(x=>'the '+skillLink(x)+' skill').concat([...(r.weaponSkills||[]).map(x=>''+(x.skill||x)),...(r.spellSchools||[]).map(x=>pretty(x.school||x)+' magic'),...(r.spells||[]).map(x=>pretty(x.spell||x)),...(r.unlockPackMule?['a pack mule']:[]),...(r.unlockMounts||[]).map(x=>pretty(x))].map(x=>x.startsWith('')?`the <a href="#/guide/special-attacks">${esc(pretty(x.slice(1)))}</a> weapon skill`:esc(x)));
     if(unlocks.length)rows.push(['Unlocks',unlocks.join(', ')]);
     return rows.length?table(['Reward',''],rows,'q-rewards'):'<p class="muted">No rewards recorded.</p>';
   }
@@ -553,7 +557,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   // while someone was on the quest (numbered after it); with none recorded, what players reported (QUEST_REQUIRES).
   // Quests whose every step is known: the recorded steps are all of them, and handIn - the last step is going back to
   // the quest-giver (as players who finished it reported).
-  const QUEST_STEPS_KNOWN={'imp-menace':{handIn:true},'plymouth-the-ogre-traitor':{handIn:true}};
+  const QUEST_STEPS_KNOWN={'imp-menace':{handIn:true},'plymouth-the-ogre-traitor':{handIn:true},'warrior-spear-beyond-the-point':{handIn:true}};
   // Steps the game sent while someone was on the quest, recovered from older collector backups (the quest log of
   // 19-20 Sep 2026) where today's data has none: The Ogre Traitor's stage 1, objective "Kill the Ogre Traitor" (1).
   // Steps players reported for a quest with none recorded; the items and places named are the game's own (its catalog:
@@ -577,7 +581,11 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     return `<div class="q-chain" role="note"><b>Quest chain</b> <span class="muted">· part ${i+1} of ${c.ids.length}${left?`, ${left} more after this one`:', the last one'}</span>
       <div class="q-chain-row">${c.ids.map(step).join('<span class="q-chain-arrow">→</span>')}<span class="q-chain-arrow">→</span><span class="q-chain-step end">🔓 ${esc(c.ends)}</span></div></div>`;
   }
-  const QUEST_STAGES_RECOVERED={'plymouth-the-ogre-traitor':[{n:0,text:'Kill the Ogre Traitor',objectives:[{text:'Kill the Ogre Traitor',required:1,npc:'Ogre Traitor',waypoints:[{z:-58,x:49,y:155}],after:'a level 34 boss at the bottom of the den (level 45 before 26 Sep 2026)'}]}]};
+  const QUEST_STAGES_RECOVERED={'warrior-spear-beyond-the-point':[
+      {n:0,text:'Kill orcs near the Orc Lair for 8',objectives:[{text:'Kill orcs near the Orc Lair for 8',required:1,itemTypeId:'stolen-patrol-fitting',after:'each orc drops one'}]},
+      {n:1,text:'Bring the fittings back to Guard Tobin Reed',objectives:[{text:'Bring the fittings back to Guard Tobin Reed',required:1,npc:'Guard Tobin Reed',after:'he tells you who leads the raids'}]},
+      {n:2,text:'Kill Varruk the Raider',objectives:[{text:'Kill Varruk the Raider',required:1,npc:'Varruk the Raider',waypoints:[{z:0,x:-145,y:82}],after:'a level 10 orc at the southwest edge of the same camp'}]}],
+    'plymouth-the-ogre-traitor':[{n:0,text:'Kill the Ogre Traitor',objectives:[{text:'Kill the Ogre Traitor',required:1,npc:'Ogre Traitor',waypoints:[{z:-58,x:49,y:155}],after:'a level 34 boss at the bottom of the den (level 45 before 26 Sep 2026)'}]}]};
   // an objective's text, with a person it names (o.npc, or a recorded named NPC whose name it contains) linked to them
   const objText=o=>{const t=String(o.text||''),nm=o.npc||null,p=nm&&globalThis.bxcNpcByName?globalThis.bxcNpcByName(nm):null;
     if(!p||!t.includes(nm))return esc(t);const i=t.indexOf(nm);return esc(t.slice(0,i))+`<a href="${esc(p.href)}">${esc(nm)}</a>`+esc(t.slice(i+nm.length))};
@@ -638,6 +646,8 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       +(a.news?note('Since 26 Sep 2026 Ogre Isle is a level 30 area (it was 45). From the Binxonia news: '+a.news.map(([u,t,d])=>`<a href="https://binxonia.com/news/${u}" target="_blank" rel="noopener">${esc(t)}</a> (${esc(d)})`).join(', ')+'.'):'')}
   function questUnlocks(q){
     const u=QUEST_UNLOCKS[q.questId];
+    const ws=(q.rewards?.weaponSkills||[]).map(x=>x.skill||x);
+    if(!u&&ws.length)return ws.map(k=>`<p>The <b><a href="#/guide/special-attacks">${esc(pretty(k))}</a> weapon skill</b>: this quest is how you learn it (the ${esc(k)} tome is retired). Once you have it you can wield ${esc(k)}s, the skill levels with the damage you deal, and it unlocks five special attacks along the way.</p>`).join('');
     if(!u){const c=QUEST_CHAINS.find(c=>c.ids.includes(q.questId)),i=c?c.ids.indexOf(q.questId):-1;
       if(c&&i<c.ids.length-1){const id=c.ids[i+1],p=questList().find(x=>x.questId===id);
         return `<p><a href="#/guide/quest-${esc(slug(id))}">${esc(p?p.name:pretty(id))}</a>, the next quest in the chain to <b>${esc(c.ends.replace(/^Access to /,''))}</b>.</p>`}
