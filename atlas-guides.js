@@ -449,7 +449,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const NO_SCROLL={'acid-bolt':'comes with the Dark Witch’s Acid quest',mend:'comes with the Priest’s Restoration training'};
     const bySchool='<div class="sp-grid">'+schools.map(sc=>`<div class="sp-card"><h4>${esc(pretty(sc))}</h4>${SP.filter(x=>x.school===sc).sort((a,b)=>a.level-b.level).map(x=>{const id=slug(x.name),lv=`<span class="sp-lv">${x.level}</span>`;
       return NO_SCROLL[id]?`<div class="sp-spell">${lv}<span><b>${esc(x.name)}</b><small class="muted">No scroll: ${NO_SCROLL[id]}</small></span></div>`
-        :`<button type="button" class="gg-pop-btn sp-spell" data-pop="spell" data-spell="${esc(x.id||id)}" data-gem="" title="The spell and where its scroll comes from">${lv}${icon('scroll-'+id)}<span><b>${esc(x.name)}</b><small class="muted">${esc(x.name)} scroll</small></span></button>`}).join('')}</div>`).join('')+'</div>';
+        :`<button type="button" class="gg-pop-btn sp-spell" data-pop="spell" data-spell="${esc(x.id||id)}" data-gem="" title="The spell and where its scroll comes from">${lv}${icon('scroll-'+id)}<span><b>${esc(x.name)}</b><small class="muted">${x.level===1?'Starting spell or quest':(x.school==='restoration'?'Any caster':esc(pretty(x.school))+' casters')+', level '+({2:8,3:18,4:30})[x.level]+'+'}</small></span></button>`}).join('')}</div>`).join('')+'</div>';
     return {levels,bySchool};
   }
   // ---- Melee and Ranged: the weapon families on each side, from the game's own numbers ---------------------------

@@ -5045,6 +5045,27 @@ function newsHtml(){
     if(!groups.length&&!toolFor)return '';
     return `<h2>Related</h2>${toolFor?`<p><b>A tool for</b> ${toolFor.map(sk=>esc(prettyId(sk))).join(', ')}${guideLinks(toolFor.map(prettyId))?'':''}. Better metal and quality raise its bonus: see the skill guide’s tool box.</p>`:''}${groups.map(([h,l])=>`<p class="rel-row"><b>${h}</b> ${[...new Set(l)].map(chip).join('')}</p>`).join('')}`;
   }
+  // A spell scroll: the spell it teaches and where it drops - casters of its school (restoration: any caster), the
+  // level picking the spell level 8+/18+/30+ (official guide, the game's rules, players' drop logs; magic guide)
+  function scrollSpell(id){const m=/^scroll-(.+)$/.exec(id||'');return m?(globalThis.BXC_GAME_DATA?.spells||[]).find(x=>x.id===m[1])||null:null}
+  function scrollDropText(sp){
+    const lv={2:8,3:18,4:30}[sp.level],sc=prettyId(sp.school);
+    if(!lv)return '';
+    return sp.school==='restoration'?`Drops from any monster that casts spells, level ${lv}+.`:`Drops from monsters that cast ${sc} spells, level ${lv}+.`;
+  }
+  function scrollInfoHtml(id){
+    const sp=scrollSpell(id);if(!sp)return '';
+    const need=['','','5','15','25'][sp.level],sc=prettyId(sp.school);
+    // quest rewards that hand out this scroll (the guide's "Unlocking schools and spells")
+    const QUEST={'fire-blast':'the Fire school’s level-10 quest','ice-zap':'the Ice school’s level-10 quest','sparkbolt':'the Shock school’s level-10 quest','caustic-blast':'the Dark Witch’s Acid quest'}[sp.id];
+    const drop=scrollDropText(sp);
+    return `<p><b>Teaches</b> ${esc(sp.name)}, a level-${sp.level} ${esc(sc)} spell. Needs ${sp.intRequirement} Intellect${need?' and '+esc(sc)+' skill '+need:''} to learn and to cast.</p>`
+      +(drop?`<p><b>${esc(drop)}</b></p><ul class="wp-list">
+          <li>${sp.school==='restoration'?'Restoration scrolls come from any caster, whatever school it casts.':`A monster that casts spells drops scrolls of its own school, so look for ${esc(sc)} casters.`}</li>
+          <li>The monster’s level picks the spell level: <b>8+</b> drops level-2 scrolls, <b>18+</b> level-3 and <b>30+</b> level-4.</li>
+          ${QUEST?`<li>Also a reward choice from ${QUEST}.</li>`:''}</ul>`
+        :`<p>Level-1 spells don’t drop from monsters: a mage starts with the first spell of their school, and the other schools’ first spells come with learning them (a level-10 quest, the Dark Witch or the Priest).</p>`);
+  }
   function itemPageHtml(id){
     const r=state.items?.get(id),name=prettyId(id);
     const recipe=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);
@@ -5053,10 +5074,11 @@ function newsHtml(){
     const hasSources=!!(r&&r.monsterSources.size)||res.length>0;
     const ing=rec=>(rec.ingredients||[]).map(i=>`${esc(i.quantity)}× <a href="${pageHref('item',i.id)}">${esc(prettyId(i.id))}</a>`).join(', ');
     return `<article class="wp"><div class="wp-main">
-      ${(()=>{let t=r?itemSourcesText(r):'';const craft=recipe?`Crafted (${recipe.skill} Lv ${recipe.level})`:'';if(craft&&!/Crafted/.test(t))t=/not yet observed/i.test(t)||!t?craft:craft+' · '+t;return t?`<p class="wp-lede">${esc(t)}</p>`:'<p class="wp-lede muted">Not seen in the game yet.</p>'})()}
+      ${(()=>{let t=r?itemSourcesText(r):'';const craft=recipe?`Crafted (${recipe.skill} Lv ${recipe.level})`:'';if(craft&&!/Crafted/.test(t))t=/not yet observed/i.test(t)||!t?craft:craft+' · '+t;if(scrollSpell(id)&&(!t||/not yet observed/i.test(t)))t=scrollDropText(scrollSpell(id))?'A spell scroll that drops from monsters.':'Not a monster drop.';return t?`<p class="wp-lede">${esc(t)}</p>`:'<p class="wp-lede muted">Not seen in the game yet.</p>'})()}
       ${PUBLIC_MODE?'':`<section class="mk-box" data-mk-slug="${esc(id)}" data-mk-name="${esc(name)}"><button type="button" class="mk-load">Market prices</button><div class="mk-out"></div></section>`}
       ${questItem(id)?`<p class="wp-quest"><b>Quest item.</b> Asked for by ${esc(questItem(id).quests.join(' / '))}.</p>`:''}
       <h2>How to get it</h2>
+      ${scrollInfoHtml(id)}
       ${recipe?`<p><b>Crafted</b> with ${esc(recipe.skill)} at level ${esc(recipe.level)}${recipe.xp?` <span class="muted">(${esc(recipe.xp)} XP)</span>`:''} from ${ing(recipe)||'—'}.</p>`:''}
       ${res.length?`<p><b>Gathered</b> from ${res.map(x=>`<a href="${pageHref('resource',x.key)}">${esc(resourceDisplayName(x))}</a>`).join(', ')}.</p>`:(r&&r.gatherSkill?`<p><b>Gathered</b> with ${esc(prettyId(r.gatherSkill))}.</p>`:'')}
       ${caveList(cavesFor('item',id))}
