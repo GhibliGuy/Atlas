@@ -907,3 +907,5 @@ td.t-c .gg-chips{justify-content:center}
 .gg-none{color:#e05555;font-weight:700;font-size:15px;line-height:1}
 /* a pill that runs over several lines in a table lines up by its first line like the cells beside it */
 #content td .tag-chip{vertical-align:top}
+.gg-bands{display:inline-flex;flex-wrap:wrap;gap:4px;vertical-align:baseline}
+.gg-pop-btn.gg-chip.gg-band{font-size:12.5px}

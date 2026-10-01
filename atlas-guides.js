@@ -79,8 +79,13 @@
       const plan=trainingPlan(tiers,(t,l)=>gatherChance(l,t.level),t=>item(t.id,t.item));
       const uses=[...new Map(tiers.flatMap(t=>usesOf(t.id)).map(r=>[r.id,r])).values()].sort((a,b)=>a.skill.localeCompare(b.skill)||a.level-b.level);
       const useSkills=[...new Set(uses.map(r=>r.skill))];
+      // a skill that finds gems (Mining, Lumberjack, Fishing - the game's own gem table) says so at the top, with a link
+      // to the Gems guide
+      const EG=typeof ENCHANT_GEMS!=='undefined'?ENCHANT_GEMS:{};
+      const gemsHere=Object.entries(EG).filter(([,g])=>String(g.found||'').toLowerCase()===String(o.skill).toLowerCase());
+      const gemAlert=gemsHere.length?`<span class="q-alert-banner gg-alert" role="note">${ALERT_SVG}<span><b>Gems can be found while ${esc(o.verb||(o.skill==='lumberjack'?'chopping':o.skill==='fishing'?'fishing':o.skill==='mining'?'mining':'gathering'))}:</b> ${gemsHere.map(([id,g])=>item('gem-'+id,g.name)).join(', ')}. See ${guide('gems')} for what they are worth and what they make.</span></span>`:'';
       return {
-        lede:o.lede,
+        lede:gemAlert+(o.lede||''),
         sections:[
           ['how','How it works',`<ul class="g-list"><li>Hold the ${esc(o.tool||'tool')} in your <b>off-hand</b> and click the ${esc(o.node)}.${o.learn?' '+o.learn:''}</li><li>Each success gives <b>10% more</b> for every level past mastery (9 levels above the ${esc(o.node)}’s level, where you hit 95%). A tool that would push you past 95% adds the extra to your haul instead, and <b>Prospector</b> rings (amber) add 2% per carat. The <a href="#/calc-crafting">Crafting XP planner</a> shows your rates level by level.</li><li>Better tools raise your chance: silver <b>+3%</b>, gold <b>+7%</b>, titanium <b>+12%</b> (they need the skill at 15, 30 and 45), plus 5% per carat of an Artisan gem. See ${guide('tool-smithing')}.</li><li>Used-up ${esc(o.node)}s come back after a while; rarer ones take longer.${o.nodeLine?' '+o.nodeLine:''}</li></ul>`],
           ['tiers','Tiers at a glance',table(['Level','Gives','XP each','Per success','Spots on the map','Most in',''],rows)+note('Spots are the ones players have recorded; the map fills in as more of the world is visited.')],
@@ -265,7 +270,13 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const chips=`<div class="q-picker gg-pick" role="group" aria-label="Carat">${CS.map(c=>`<button type="button" class="q-chip q-${RQ[rar(c)]}${c===pick?' on':''}" data-gg-c="${c}">${c}c</button>`).join('')}</div><p class="gg-size">${CS.map(sizeLine).join('')}</p>`;
     const GT=typeof GATHERABLES!=='undefined'?GATHERABLES:[],tier=(sk,i)=>{const t=GT.filter(x=>x.skill===sk).sort((a,b)=>a.level-b.level)[i];return t?item(slug(t.item),t.item):'—'};
     const tiers=[.5,.6,.75,1].map((p,i)=>[`Tier ${i+1}`,tier('mining',i),tier('fishing',i),tier('lumberjack',i),`<b>${p}%</b>`]);
-    return {lede:'Gems turn up while gathering and from humanoid monsters. Set in a ring or pendant a gem gives a lasting bonus, three of them make an enchantment, and the witch can build small ones into bigger ones.',sections:[
+    // where gems come from: each gathering skill that finds them (its guide), and monsters by level (the official guide's rule)
+    const finders=[...new Set(Object.values(EG).map(g=>g.found).filter(Boolean))].map(skillGuideLink).join(', ').replace(/, ([^,]*)$/,' and $1');
+    // monsters: the official guide's carat-by-level rule; each level opens the monsters the game marks as dropping gems
+    // (dropsGems in its rules) in that band
+    const BANDS=[[10,19,'0.5c'],[20,29,'1c'],[30,39,'1.5c'],[40,null,'2c']];
+    const band=([lo,hi,c])=>`<button type="button" class="gg-pop-btn gg-chip gg-band" data-pop="mons" data-lo="${lo}" data-hi="${hi??''}" data-c="${c}" title="See the monsters level ${lo}${hi?'–'+hi:'+'} that can drop gems">Lv ${lo}${hi?'–'+hi:'+'} · up to ${c}</button>`;
+    return {lede:`Found by gathering: ${finders} - the only way to get gems above 2c.<br>Dropped by monsters, by level: <span class="gg-bands">${BANDS.map(band).join('')}</span>`,sections:[
       ['list','The nine gems',`<div class="gg-wrap" data-c="${pick}">`+chips+table(['Gem','Weapon','Armor','Tool','Ring','Pendant'],rows,'gg-used')+'</div>'+note('Click a chip for what it does at each carat. Rings take a gem of 1c or more (up to 1/2/3/4c for iron/silver/gold/titanium); any one gem set while forging a tool makes it of the Artisan; and any gem can be the third gem of an armour enchantment (Titan, Camel, Weasel, Leopard, Sage, Mage). Up to 2c can be built at the witch, so those count as common; bigger gems only come from gathering.')],
       ['finding','Finding gems',`<p>Every successful gather has a chance of a gem from that skill, higher for better resources (for fishing, the fish that bit). Which of the skill’s gems you get is random.</p>`+table(['','Mining','Fishing','Lumberjack','Chance'],tiers)+`<p>Monsters of level 10+ that can drop gems have a flat <b>1%</b>, with the biggest carat set by their level: 0.5c from level 10, 1c from 20, 1.5c from 30, 2c from 40.</p>`],
       ['witch','Building a gem at the witch',globalThis.bxcGemWitchHtml?globalThis.bxcGemWitchHtml():''],
@@ -669,7 +680,14 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const id=b.dataset.gem,kind=b.dataset.pop,EG=typeof ENCHANT_GEMS!=='undefined'?ENCHANT_GEMS:{},ER=typeof ENCHANT_RECIPES!=='undefined'?ENCHANT_RECIPES:{},GD=globalThis.BXC_GAME_DATA||{};
     const gemName=g=>g==='any'?'any gem':EG[g]?.name||pretty(g),gname=gemName(id);
     let title,body;
-    if(kind==='one'){
+    if(kind==='mons'){
+      // monsters the game marks as dropping gems (dropsGems in its rules), in one level band
+      const lo=+b.dataset.lo,hi=b.dataset.hi?+b.dataset.hi:Infinity;
+      const list=(typeof D!=='undefined'&&D.catalog||[]).filter(m=>m.dropsGems&&+m.baseLevel>=lo&&+m.baseLevel<=hi).sort((a,c)=>a.baseLevel-c.baseLevel||String(a.name).localeCompare(c.name));
+      title=`Monsters level ${lo}${hi===Infinity?'+':'–'+hi} that drop gems`;
+      body=(list.length?table(['Monster','Level','Family'],list.map(m=>[monster(m.typeId,m.name),String(m.baseLevel),esc(pretty(m.family||''))])):'<p class="muted">None.</p>')
+        +`<p class="g-note">Gems up to <b>${esc(b.dataset.c)}</b> from these (official guide). Whether a monster drops gems at all is the game's own flag for it; its level here is its usual level - one met at a higher level counts by that.</p>`;
+    }else if(kind==='one'){
       // one enchantment: its gems, and what it does at each carat (the game's own wording)
       const fam=b.dataset.kind,x=(ER[fam]||[]).find(r=>r.name===b.dataset.ench)||{name:b.dataset.ench,gems:[],effect:''};
       const g=(GD.enchants||[]).find(r=>r.name===x.name&&r.family===fam),t=g&&g.effect||{};
