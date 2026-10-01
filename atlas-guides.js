@@ -30,9 +30,12 @@
   ];
   {const GW=globalThis.BXC_GAME_DATA?.weapons;if(GW)for(const w of WEAPONS){const g=GW[slug(w[0])];if(g){w[2]=g.damageMin;w[3]=g.damageMax;w[4]=g.cooldownMs;w[5]=g.range;w[6]=g.damageMult}}}
   // weapon skills only a quest teaches (the game's quest reward: weaponSkills), linked wherever that skill comes up
-  const WEAPON_QUEST={spear:{id:'warrior-spear-beyond-the-point',name:'Beyond the Point'}};
-  const weaponQuest=k=>{const w=WEAPON_QUEST[k];return w?`<a href="#/guide/quest-${w.id}">${w.name}</a>`:''};
-  const weaponQuestNote=k=>WEAPON_QUEST[k]?`<p class="g-note"><b>Needs a quest:</b> the ${k} skill is learned by finishing ${weaponQuest(k)} (Guard Tobin Reed near Underleaf, warriors, level 10). You can’t wield ${k}s until you have it.</p>`:'';
+  // (id: null = no one has recorded the quest yet, so it has no page to link)
+  const WEAPON_QUEST={spear:{id:'warrior-spear-beyond-the-point',name:'Beyond the Point',from:'Guard Tobin Reed near Underleaf, warriors, level 10'},
+    mace:{id:'warrior-mace-the-broken-hammers',name:'The Broken Hammers',from:'Hester Bell near Rustpick Mine, warriors, level 11'},
+    crossbow:{id:null,name:'The Heavy Bow',from:'the Archery Vendor by the targets in Underleaf, any class, level 10'}};
+  const weaponQuest=k=>{const w=WEAPON_QUEST[k];return !w?'':w.id?`<a href="#/guide/quest-${w.id}">${w.name}</a>`:w.name};
+  const weaponQuestNote=k=>WEAPON_QUEST[k]?`<p class="g-note"><b>Needs a quest:</b> the ${k} skill is learned by finishing ${weaponQuest(k)} (${WEAPON_QUEST[k].from}). You can’t wield ${k}s until you have it.</p>`:'';
   // which damage type a weapon deals: maces crush; daggers, spears, crossbows and the rapier stab; the rest slash
   const dmgType=(name,skill)=>name==='Rapier'?'stab':skill==='mace'?'crush':['dagger','spear','crossbow'].includes(skill)?'stab':'slash';
   // material tiers: a weapon's roll is multiplied by 1 + bonus; wearing it needs a level and a stat
@@ -418,9 +421,9 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
           [item('titanium-sword','Sword'),'Warriors',`A <b>Sword tome</b>: study it from your pack.`,'1 skill point'],
           [item('titanium-dagger','Dagger'),'Archers',`A <b>Dagger tome</b>.`,'1 skill point'],
           [item('shagbark-longbow','Bow'),'Archers',`A <b>Bow tome</b>.`,'1 skill point'],
-          [item('titanium-mace','Mace'),'—',`Quest <b>The Broken Hammers</b> from <b>Hester Bell</b> near Rustpick Mine (warriors, level 10). You also get a mace.`,'Free'],
+          [item('titanium-mace','Mace'),'—',`Quest <b>${weaponQuest('mace')}</b> from <b>Hester Bell</b> near Rustpick Mine (warriors, level 11). You also get a mace.`,'Free'],
           [item('titanium-spear','Spear'),'—',`Quest <b>${weaponQuest('spear')}</b> from <b>Tobin Reed</b> near Underleaf (warriors, level 10). You also get a spear.`,'Free'],
-          [item('shagbark-crossbow','Crossbow'),'—',`Quest <b>The Heavy Bow</b> from the <b>Archery Vendor</b> by the targets in Underleaf (any class, level 10): bring him 6 crossbow stocks the young hill giants carried off. You also get a crossbow.`,'Free'],
+          [item('shagbark-crossbow','Crossbow'),'—',`Quest <b>${weaponQuest('crossbow')}</b> from the <b>Archery Vendor</b> by the targets in Underleaf (any class, level 10): bring him 6 crossbow stocks the young hill giants carried off. You also get a crossbow.`,'Free'],
           ['Wand (magic)','Mages','Any class can cast with a wand or staff and a learned spell: see the <a href="#/guide/magic">Magic guide</a> for the schools and spell scrolls.','—']])+
         `<p class="g-note">Vendors no longer sell weapon tomes; one you already own still works, and they turn up on the Exchange. The mace, spear and crossbow tomes are retired, since the quests teach those. A skill learned from a tome can be unlearned from the Skills menu for <b>5,000 gold</b>, which gives the skill point back. Quest skills are permanent. Shields need no training. (The official guide and the game’s rules.)</p>`]
     ],related:['combat','attributes-and-classes']};
@@ -453,22 +456,22 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   reg({slug:'melee',group:'Melee',title:'Melee weapons',blurb:'Swords, daggers, maces and spears: damage, reach, the stat each uses, and how to learn them.',build:()=>{
     const list=WEAPONS.filter(w=>!['bow','crossbow'].includes(w[1]));
     return {lede:'Melee weapons hit the monster in front of you. Every family levels its own skill with the damage you deal, and each has five special attacks.',sections:[
-      ['weapons','The weapons',table(['Weapon','Skill','Type','Roll','Swing every','Reach','Avg per second*'],weaponRows(list))+weaponQuestNote('spear')+note('*Base roll only, before material, stats, quality and enchantments. At the same material every melee weapon does about the same damage per second: slow ones hit harder per swing. Spears reach 2.5 tiles, the rest 1.5.')],
+      ['weapons','The weapons',table(['Weapon','Skill','Type','Roll','Swing every','Reach','Avg per second*'],weaponRows(list))+weaponQuestNote('mace')+weaponQuestNote('spear')+note('*Base roll only, before material, stats, quality and enchantments. At the same material every melee weapon does about the same damage per second: slow ones hit harder per swing. Spears reach 2.5 tiles, the rest 1.5.')],
       ['stats','Strength, Dexterity and crits',`<p>Swords, maces and spears add <b>${(SD().strength*100).toFixed(1)}% of their average roll per point of Strength</b>. The <b>dagger</b> is a finesse blade: it scales with <b>Dexterity</b> instead and crits more (+${CRIT_DAGGER}% crit chance on top of the ${CRIT_BASE}% base and ${CRIT_PER_DEX}% per Dexterity, capped at ${CRIT_CAP}%). A crit hits ×${CRIT_MULT}.</p>`],
       ['types','Picking by damage type',`<p>Maces <b>crush</b>, daggers, spears and the rapier <b>stab</b>, and the other swords <b>slash</b>. A monster weak to your type takes <b>${Math.round((WEAK-1)*100)}% more</b>; one that resists it takes <b>${Math.round((1-RESIST)*100)}% less</b>. <a href="#/guide/monster-families">Monster families</a> shows who is weak to what, and the <a href="#/calc-combat">Combat calculator</a> ranks monsters for your weapon.</p>`],
       ['boost','Enchants and rings',`<p>Weapon enchants: <b>Destruction</b> adds to every hit; <b>Flame</b>, <b>Freezing</b>, <b>Storm</b> and <b>Corrosion</b> add elemental damage. (Seeking is for bows and crossbows only.) Rings: <b>Brawler</b> (${esc(ringText('brawler',4)||'more melee damage')} at 4 carats), <b>Duelist</b> (${esc(ringText('duelist',4)||'more crit chance')}) and <b>Reaper</b> (${esc(ringText('reaper',4)||'more damage on low-health targets')}).</p>`],
-      ['learn','Learning them',`<p>Warriors start with the sword and archers with the dagger. Warriors learn the <b>mace</b> (The Broken Hammers, Hester Bell near Rustpick Mine) and the <b>spear</b> (${weaponQuest('spear')}, Tobin Reed near Underleaf) from level-10 quests at no skill point; a sword or dagger tome costs a skill point. See <a href="#/guide/special-attacks">Weapon skills &amp; specials</a> for the full table and every special attack.</p>`]
+      ['learn','Learning them',`<p>Warriors start with the sword and archers with the dagger. Warriors learn the <b>mace</b> (${weaponQuest('mace')}, Hester Bell near Rustpick Mine) and the <b>spear</b> (${weaponQuest('spear')}, Tobin Reed near Underleaf) from level 10–11 quests at no skill point; a sword or dagger tome costs a skill point. See <a href="#/guide/special-attacks">Weapon skills &amp; specials</a> for the full table and every special attack.</p>`]
     ],related:['special-attacks','combat','monster-families','armor']};
   }});
   reg({slug:'ranged',group:'Ranged',title:'Ranged weapons',blurb:'Bows and crossbows: range, Dexterity, ammunition, Seeking and the Hunter ring.',build:()=>{
     const list=WEAPONS.filter(w=>['bow','crossbow'].includes(w[1]));
     const ammo=(typeof RECIPES!=='undefined'?RECIPES:[]).filter(r=>/^(arrow|bolt|bodkin-arrow|bodkin-bolt)$/.test(r.id));
     return {lede:'Ranged weapons fire from a distance, so a monster has to cross the ground to reach you. They level their own skill with the damage you deal, with five special attacks each.',sections:[
-      ['weapons','The weapons',table(['Weapon','Skill','Type','Roll','Shot every','Range','Avg per second*'],weaponRows(list))+note('*Base roll only, before material, Dexterity, quality and enchantments. Bows slash and the crossbow stabs.')],
+      ['weapons','The weapons',table(['Weapon','Skill','Type','Roll','Shot every','Range','Avg per second*'],weaponRows(list))+weaponQuestNote('crossbow')+note('*Base roll only, before material, Dexterity, quality and enchantments. Bows slash and the crossbow stabs.')],
       ['stats','Dexterity and crits',`<p>Bows and crossbows add <b>${(SD().dexterity*100).toFixed(2)}% of their average roll per point of Dexterity</b>, and Dexterity also raises crit chance (${CRIT_PER_DEX}% a point on top of ${CRIT_BASE}%, capped at ${CRIT_CAP}%; a crit hits ×${CRIT_MULT}). Wooden weapons need Dexterity to equip.</p>`],
       ['ammo','Arrows and bolts',ammo.length?`<p>A <b>Bowyer</b> makes the ammunition:</p>`+table(['Item','Level','Makes','From'],ammo.map(r=>[item(r.id,r.item),n(r.level),'×'+(r.out||1),(r.ingredients||[]).map(i=>`${i.quantity}× ${item(i.id)}`).join(', ')])):'<p>A Bowyer makes arrows and bolts.</p>'],
       ['boost','Seeking, enchants and rings',`<p><b>Seeking</b> is the ranged enchant: +2% chance to hit per carat, and only bows and crossbows take it. The other weapon enchants work too. The <b>Hunter</b> ring (emerald) adds ${esc(ringText('hunter',4)||'more damage to arrows and bolts')} at 4 carats; <b>Duelist</b> adds crit chance and <b>Reaper</b> damage on low-health targets.</p>`],
-      ['learn','Learning them',`<p>Archers start with the bow. Any class can learn the <b>crossbow</b> from level 10: the <b>Archery Vendor</b> by the targets in Underleaf offers <b>The Heavy Bow</b> (bring him 6 crossbow stocks the young hill giants carried off), free of skill points. A bow tome costs a skill point. See <a href="#/guide/special-attacks">Weapon skills &amp; specials</a> for every special attack.</p>`]
+      ['learn','Learning them',`<p>Archers start with the bow. Any class can learn the <b>crossbow</b> from level 10: the <b>Archery Vendor</b> by the targets in Underleaf offers <b>${weaponQuest('crossbow')}</b> (bring him 6 crossbow stocks the young hill giants carried off), free of skill points. A bow tome costs a skill point. See <a href="#/guide/special-attacks">Weapon skills &amp; specials</a> for every special attack.</p>`]
     ],related:['special-attacks','combat','bowyer','monster-families']};
   }});
   reg({slug:'magic',group:'Magic',title:'Magic',blurb:'Schools, the four spell levels, what each school does, and healing.',build:()=>({lede:'Spells need a wand-type item in your main hand and a spell learned from a scroll. Each school is a skill trained by the damage it deals.',sections:[
@@ -517,7 +520,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   const questBySlug=s=>String(s||'').startsWith('quest-')?questList().find(q=>questSlug(q)===s)||null:null;
   // Quest guides the user has confirmed as fully written (quest ids). Every other quest gets an alert: on its card on
   // the Quests page, and a banner on its own page.
-  const QUEST_COMPLETE=new Set(['wasteland-nothing-gets-through','imp-menace','plymouth-cargo-for-the-isle','plymouth-the-ogre-traitor','warrior-spear-beyond-the-point']);
+  const QUEST_COMPLETE=new Set(['wasteland-nothing-gets-through','imp-menace','plymouth-cargo-for-the-isle','plymouth-the-ogre-traitor','warrior-spear-beyond-the-point','warrior-mace-the-broken-hammers']);
   const questDone=q=>QUEST_COMPLETE.has(q.questId);
   const ALERT_SVG='<svg class="q-alert-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20z" fill="currentColor"/><path d="M12 10v5M12 17.6v.4" stroke="#1b1300" stroke-width="2.2" stroke-linecap="round"/></svg>';
   const questLink=q=>`<a href="#/guide/${enc(questSlug(q))}">${esc(q.name)}</a>`;
@@ -571,7 +574,16 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   // Steps players reported for a quest with none recorded; the items and places named are the game's own (its catalog:
   // "ogre-isle-supply-crate", category quest - "Gerald's cargo, hauled off to an ogre den"; the quest's own text: ogres
   // "holed up east of Underleaf" = the Ogre Den dungeon). The count (5) is as players remember it.
-  const QUEST_REPORTED_STEPS={'plymouth-cargo-for-the-isle':{steps:who=>[
+  // The Broken Hammers: the quest's own text (goblins in Rustpick with Hester's broken tools) and the game's quest item
+  // "stolen-smith-tool" ("A smith's tool stamped with a bell"); the boss, as remembered - Nib the Toolkeeper is the
+  // named goblin in the mine (Lv 12, like Beyond the Point's Varruk: a named warrior, scale 1.2), not yet confirmed.
+  const QUEST_REPORTED_STEPS={'warrior-mace-the-broken-hammers':{steps:who=>{const nib=globalThis.bxcNpcByName&&globalThis.bxcNpcByName('Nib the Toolkeeper');return [
+      `Kill goblins in <a href="#" class="show-on-map" data-map-kind="zone" data-map-id="-43">Rustpick Mine</a> until you have <b>5</b> ${item('stolen-smith-tool','Stolen Smith Tools')} <span class="muted">(a quest item)</span>.`,
+      `Bring them back to ${who}.`,
+      `Kill the goblins’ boss: most likely ${nib?`<a href="${esc(nib.href)}">Nib the Toolkeeper</a>`:'Nib the Toolkeeper'} <span class="muted">(a level 12 goblin in Rustpick Mine)</span>.`,
+      `Go back to ${who} to finish the quest.`]},
+    note:'Steps as players who finished it remember them (5 tools, then a boss); the goblins, the Stolen Smith Tool and Nib are from the game itself. Nib being the boss is the best match, not yet recorded.'},
+    'plymouth-cargo-for-the-isle':{steps:who=>[
       `Kill ogres in the <a href="#" class="show-on-map" data-map-kind="place" data-map-id="Ogre Den">Ogre Den</a>, east of Underleaf, until you have <b>5</b> ${item('ogre-isle-supply-crate','Crates of Ogre Isle Supplies')} <span class="muted">(a quest item)</span>. The den's ogres are level <b>29</b> at the entrance up to <b>33</b> at the bottom.`,
       `Bring them back to ${who} to finish the quest.`],
     note:'Steps 2 and 3 are as reported by players who finished it; the crate and the Ogre Den are from the game itself, the den’s levels from the news (<a href="https://binxonia.com/news/update-ogre-isle-opens-at-thirty" target="_blank" rel="noopener">Ogre Isle Opens at Thirty</a>, 26 Sep 2026: they were 35 to 40 before).'}};
