@@ -603,15 +603,7 @@ html[data-theme="light"] .splash-ico-wrap{background:#2a2b30}
 @keyframes enchPulse{0%,100%{filter:drop-shadow(0 0 2px var(--eg)) drop-shadow(0 0 4px var(--eg))}50%{filter:drop-shadow(0 0 3px var(--eg)) drop-shadow(0 0 10px var(--eg))}}
 .wp-pic[class*="e-glow-"] img,.splash-ico-wrap[class*="e-glow-"] img{animation:enchPulse 2.6s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.wp-pic[class*="e-glow-"] img,.splash-ico-wrap[class*="e-glow-"] img,.splash-arrow,.splash-feature-pic img,img[data-ico="monsters"]{animation:none}}
-.gc-prices{margin-top:10px}
 /* the Gems guide: carat chips pick which ring / pendant wording shows */
-.gg-wrap .gg-at{display:none}
-.gg-wrap[data-c="0.5"] .gg-at[data-c="0.5"],.gg-wrap[data-c="1"] .gg-at[data-c="1"],.gg-wrap[data-c="1.5"] .gg-at[data-c="1.5"],.gg-wrap[data-c="2"] .gg-at[data-c="2"],.gg-wrap[data-c="2.5"] .gg-at[data-c="2.5"],.gg-wrap[data-c="3"] .gg-at[data-c="3"],.gg-wrap[data-c="3.5"] .gg-at[data-c="3.5"],.gg-wrap[data-c="4"] .gg-at[data-c="4"]{display:inline}
-.gg-size{margin:0 0 10px;padding:8px 12px;background:var(--panel);border:1px solid var(--edge);border-radius:4px;line-height:1.7}
-.gg-pick{margin:4px 0 8px}
-.gg-pick button.q-chip{cursor:pointer;font:inherit}
-#gcPlan{margin:8px 0}
-.gc-need{display:flex;align-items:center;min-width:96px;height:36px;box-sizing:border-box;padding:0 12px;border:1px solid var(--accent-soft);border-radius:4px;color:var(--accent);font-weight:700}
 .gc-result{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0 4px;padding:10px 14px;background:var(--panel);border:1px solid var(--edge);border-left:3px solid var(--accent);border-radius:4px}
 .gc-result-h{color:var(--muted,#9a9486);font-size:13px;margin-right:2px}
 .gc-pill{padding:3px 10px;border:1px solid var(--accent-soft);border-radius:999px;color:var(--accent);white-space:nowrap}
@@ -876,16 +868,6 @@ dialog.gg-pop::backdrop{background:rgba(0,0,0,.55)}
 .gg-chips{display:flex;flex-wrap:wrap;gap:4px}
 .gg-pop-btn.gg-chip{display:inline-block;padding:2px 9px;border:1px solid var(--edge);border-radius:999px;background:var(--panel2);color:var(--ink);font-size:12.5px;line-height:1.5;text-decoration:none;white-space:nowrap}
 .gg-pop-btn.gg-chip:hover,.gg-pop-btn.gg-chip:focus-visible{border-color:var(--accent);color:var(--accent)}
-/* Gems guide "what it goes into": the gem (and the skill that finds it, under it) and five chip columns, sized to fit
-   the width (no sideways scroll). Alignment comes from the rules every table follows (end of this file). */
-table.gg-used{table-layout:fixed;width:100%}
-table.gg-used th:first-child{width:16%}
-table.gg-used th:nth-child(2){width:26%}
-table.gg-used th:nth-child(3){width:19%}
-table.gg-used th:nth-child(4){width:11%}
-table.gg-used th:nth-child(n+5){width:14%}
-table.gg-used .gg-chip{white-space:normal;padding:2px 8px;font-size:12px}
-.gg-found{font-size:12px;margin-top:2px;padding-left:28px}   /* under the name, past its 22px icon + 6px gap */
 
 /* Every Atlas table, one way (2026-10-01, from the gems guide):
    - a row lines up on its first line: every cell's first line of text (or chip, or icon and name) shares one baseline,
@@ -907,5 +889,45 @@ td.t-c .gg-chips{justify-content:center}
 .gg-none{color:#e05555;font-weight:700;font-size:15px;line-height:1}
 /* a pill that runs over several lines in a table lines up by its first line like the cells beside it */
 #content td .tag-chip{vertical-align:top}
-.gg-bands{display:inline-flex;flex-wrap:wrap;gap:4px;vertical-align:baseline}
+/* Gems guide "Where gems come from": a label column and its text, a row each, spaced apart */
+.gg-sources{display:grid;gap:0;border:1px solid var(--edge);border-radius:6px;background:var(--panel);overflow:hidden}
+.gg-src{display:grid;grid-template-columns:120px 1fr;gap:14px;padding:11px 14px;align-items:baseline}
+.gg-src+.gg-src{border-top:1px solid var(--edge)}
+.gg-src-k{font:italic 15px/1.3 var(--serif);color:var(--accent)}
+.gg-src-v{line-height:1.55}
+.gg-bands{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+@media (max-width:560px){.gg-src{grid-template-columns:1fr;gap:4px}}
 .gg-pop-btn.gg-chip.gg-band{font-size:12.5px}
+/* Gems guide: rarity by carat, one tile per size in the rarity's colour */
+.gg-rarity{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;margin:4px 0 6px}
+.gg-rar{--rc:#9d9d9d;display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 4px 7px;border:1px solid color-mix(in srgb,var(--rc) 45%,transparent);border-top:3px solid var(--rc);border-radius:6px;background:color-mix(in srgb,var(--rc) 9%,var(--panel));text-align:center}
+.gg-rar b{font:400 20px/1.1 var(--serif);color:var(--ink)}
+.gg-rar-name{font-size:11.5px;font-weight:600;color:var(--rc);white-space:nowrap}
+.gg-rar-pct{margin-top:3px;font-size:13px;font-weight:600;color:var(--ink)}
+.gg-rar.rar-uncommon{--rc:#7fc98a}.gg-rar.rar-semi-rare{--rc:#5fb8dd}.gg-rar.rar-rare{--rc:#b98cf0}.gg-rar.rar-very-rare{--rc:#ffc861}
+.gg-rar.rar-very-rare{box-shadow:0 0 12px -4px var(--rc)}
+html[data-theme="light"] .gg-rar.rar-uncommon{--rc:#2f8a41}html[data-theme="light"] .gg-rar.rar-semi-rare{--rc:#1f78a3}html[data-theme="light"] .gg-rar.rar-rare{--rc:#7a45c2}html[data-theme="light"] .gg-rar.rar-very-rare{--rc:#a86f00}
+@media (max-width:640px){.gg-rarity{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.gg-to-witch{background:none;border:0;padding:0;font:inherit;color:var(--accent);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+/* Gems guide: one card per gem, the same six labelled lines on each, a rule between them */
+.gg-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;margin:4px 0 8px}
+.gg-card{display:flex;flex-direction:column;gap:0;padding:10px 12px 4px;background:var(--panel);border:1px solid var(--edge);border-radius:6px}
+.gg-card-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;padding-bottom:6px;margin-bottom:2px;border-bottom:1px solid var(--edge);font:400 17px/1.2 var(--serif)}
+.gg-card-head .g-ico{width:24px;height:24px}
+.gg-card-skill{font:12px var(--sans);color:var(--muted)}
+.gg-line{display:grid;grid-template-columns:62px 1fr;gap:8px;align-items:baseline;padding:6px 0}
+.gg-line+.gg-line{border-top:1px solid var(--edge)}
+.gg-line-k{font-size:12px;color:var(--muted)}
+.gg-line .gg-chips{gap:4px}
+.gg-card .gg-chip{font-size:12px;padding:1px 8px}
+/* an enchant's carats in its popup: a line where the gear tier changes (every 3c) */
+table.gg-tiers tbody tr:nth-child(3n+1):not(:first-child) td{border-top:2px solid var(--accent-soft)}
+/* Gems guide, Dark Witch: the combine calculator in one card - inputs, four result tiles, then every step */
+.gc-card{margin:8px 0 14px;padding:12px 14px 6px;background:var(--panel);border:1px solid var(--edge);border-top:2px solid var(--accent-soft);border-radius:6px}
+.gc-card .tool-form.gc-inputs{margin:0 0 12px;padding:0;background:none;border:0}
+.gc-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:0 0 6px}
+.gc-stat{display:flex;flex-direction:column;align-items:center;gap:1px;padding:8px 6px;background:var(--panel2);border:1px solid var(--edge);border-radius:6px;text-align:center}
+.gc-stat b{font:400 20px/1.15 var(--serif);color:var(--accent)}
+.gc-stat span{font-size:12px;color:var(--muted)}
+.gc-card .g-scroll{margin:6px 0 0}
+@media (max-width:560px){.gc-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}

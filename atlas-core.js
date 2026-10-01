@@ -478,7 +478,10 @@ function calcGather(){
    const e=enchantInfo(r);
    if(e.kind==='tool')return [{label:'Artisan (one gem)'}];
    if(e.kind==='ring')return Object.entries(ENCHANT_GEMS).map(([g,v])=>({label:v.name+' ('+v.ring.split(':')[0]+')',gem:g}));
-   return (ENCHANT_RECIPES[e.kind]||[]).map(x=>({label:x.name.replace(/^of (the )?/,'')+' - '+x.effect,rec:x}));
+   // a bow or crossbow takes the weapon enchants as well as Seeking: weapon enchants go on any main-hand weapon but a
+   // wand (binxonia.com/guide/enchanting); a staff (the game's wand) takes only the staff ones
+   const list=e.kind==='bow'?[...(ENCHANT_RECIPES.weapon||[]),...(ENCHANT_RECIPES.bow||[])]:(ENCHANT_RECIPES[e.kind]||[]);
+   return list.map(x=>({label:x.name.replace(/^of (the )?/,'')+' - '+x.effect,rec:x}));
  }
  function enchFillItems(){
    const previous=q('enItem').selectedOptions[0]?.dataset.id,rs=enchRecipes(),metal=q('enMaterial').value;
@@ -671,8 +674,8 @@ function calcGather(){
 }
 
 // ---- Gem combiner --------------------------------------------------------------------------------------------
-// The witch takes three gems of one carat and hands back one gem half a carat higher for a flat fee, and stops at
-// 2 carats. Every figure on the page comes from the four numbers below, so a change at the bench is a change here
+// The witch takes three gems of the same kind and carat and hands back one of that kind half a carat higher for a flat
+// fee, and stops at 2 carats (the game's own witch window: "Give three gems of the same kind and carat"). Every figure on the page comes from the four numbers below, so a change at the bench is a change here
 // and nothing else. This is separate from transmuting, which swaps a gem's kind without touching its carat.
 const GEM_COMBINE_DEFAULTS={base:1000,fee:2500,per:3,step:.5,cap:2};
 const GEM_COMBINE_KEY='bxc-gem-combiner';
@@ -741,33 +744,37 @@ globalThis.bxcGemRarity=gemRarity;globalThis.bxcGemRarityChip=gemRarityChip;glob
 
 function gemWitchLadderRows(){const s=gemCombineSettings(),rows=gemLadder(s);return rows.map(r=>`<tr${r.k===rows.length-1?' class="gc-top"':''}><td>${r.carat}c</td><td>${r.gems.toLocaleString()}</td><td>${r.combines.toLocaleString()}</td><td>${gemCoin(r.fees)}</td><td>${gemCoin(r.value)}</td></tr>`).join('')}
 function gemWitchPlan(){
- const el=id=>document.getElementById(id);if(!el('gcPlan'))return;
+ const el=id=>document.getElementById(id);if(!el('gcStats'))return;
  const now=gemCombineSettings(),ladder=gemLadder(now);
  const k=Math.max(1,Math.min(ladder.length-1,Math.round(+el('gcTarget').value)||ladder.length-1)),n=Math.max(1,Math.min(999,Math.round(+el('gcHow').value)||1));
  const r=ladder[k],need=r.gems*n,cb=r.combines*n;
- if(el('gcNeed'))el('gcNeed').textContent=need.toLocaleString();
- el('gcPlan').innerHTML=`<b>${n} × ${r.carat}c</b>: <b>${need.toLocaleString()}</b> 0.5c gems, <b>${cb.toLocaleString()}</b> combine${cb===1?'':'s'}, <b>${gemCoin(cb*now.fee)}</b> in fees, worth <b>${gemCoin(r.value*n)}</b> at the prices below.`;
+ const tile=(v,l)=>`<div class="gc-stat"><b>${v}</b><span>${l}</span></div>`;
+ el('gcStats').innerHTML=tile(need.toLocaleString(),'0.5c gems of one kind')+tile(cb.toLocaleString(),'combine'+(cb===1?'':'s'))+tile(gemCoin(cb*now.fee),'in fees')+tile(gemCoin(r.value*n),'total cost');
 }
 function gemWitchHtml(){
  const s=gemCombineSettings(),rows=gemLadder(s);
- return `<p class="g-note">The witch is the <a href="#/npc/dark-witch">Dark Witch</a>, in her hut in Midland Forest - open her page to see it on the map.</p><p>The witch takes <b>3</b> gems of one carat and gives back <b>one</b> gem half a carat bigger, for <b>${gemCoin(s.fee)}</b> each time. She goes up to <b>2c</b>; bigger gems only come from gathering. Combining changes the carat, transmuting changes the kind.</p>
- <div class="calcgrid tool-form">
-  <div><label for="gcTarget">Carat you want</label><select id="gcTarget">${rows.slice(1).map(r=>`<option value="${r.k}"${r.k===rows.length-1?' selected':''}>${r.carat}c</option>`).join('')}</select></div>
-  <div><label for="gcHow">How many</label><input id="gcHow" type="number" min="1" max="999" step="1" value="1"></div>
-  <div><label for="gcNeed">0.5c gems needed</label><output id="gcNeed" class="gc-need" for="gcTarget gcHow"></output></div>
- </div><div id="gcPlan" class="note"></div>
- <div class="g-scroll"><table class="g-table"><thead><tr><th>Carat</th><th>0.5c gems</th><th>Combines</th><th>Fees</th><th>Worth</th></tr></thead><tbody id="gcLadder">${gemWitchLadderRows()}</tbody></table></div>
- <div class="calcgrid tool-form gc-prices">
-  <div><label for="gcBase">Price of a 0.5c gem</label><input id="gcBase" type="number" min="0" step="1" value="${s.base}"></div>
+ return `<p>The <a href="#/npc/dark-witch">Dark Witch</a> lives in a hut in Midland Forest (her page shows it on the map). She does two things with gems: makes them bigger, and changes their kind.</p>
+ <h3>Combine: one size bigger</h3>
+ <p>Give her <b>3</b> gems of the <b>same kind and size</b> and <b>${gemCoin(s.fee)}</b> coins; you get back one gem of that kind, half a carat bigger. She goes up to <b>2c</b>.</p>
+ <div class="gc-card">
+  <div class="tool-form gc-inputs">
+   <div><label for="gcTarget">Carat you want</label><select id="gcTarget">${rows.slice(1).map(r=>`<option value="${r.k}"${r.k===rows.length-1?' selected':''}>${r.carat}c</option>`).join('')}</select></div>
+   <div><label for="gcHow">How many</label><input id="gcHow" type="number" min="1" max="999" step="1" value="1"></div>
+   <div><label for="gcBase">Price paid per 0.5c gem</label><input id="gcBase" type="number" min="0" step="1" value="${s.base}"></div>
+  </div>
+  <div id="gcStats" class="gc-stats" aria-live="polite"></div>
+  <div class="g-scroll"><table class="g-table gc-ladder"><thead><tr><th>Carat</th><th>0.5c gems</th><th>Combines</th><th>Fees</th><th>Total cost</th></tr></thead><tbody id="gcLadder">${gemWitchLadderRows()}</tbody></table></div>
  </div>
- <h3>What yours could become</h3>
+ <h3>Transmute: a different kind</h3>
+ <p>Give her two gems of the <b>same size</b>; you get back one gem of that size, never the same kind as either. It is how spare gems become the kind you need.</p>
+ <h3>What your gems could become</h3>
+ <p>Pick a gem, its size and how many you have, to see what they turn into when you combine them as far as she goes.</p>
  <div class="calcgrid tool-form gc-mine">
-  <div><label for="gsKind">Gem</label><select id="gsKind">${Object.keys(ENCHANT_GEMS).map(k=>`<option value="${k}">${ENCHANT_GEMS[k].name||prettyId(k)}</option>`).join('')}<option value="*">Any kind</option></select></div>
+  <div><label for="gsKind">Gem</label><select id="gsKind">${Object.keys(ENCHANT_GEMS).map(k=>`<option value="${k}">${ENCHANT_GEMS[k].name||prettyId(k)}</option>`).join('')}</select></div>
   <div><label for="gsCarat">Carat</label><select id="gsCarat">${gemLadder(s).slice(0,-1).map(r=>`<option value="${r.carat}">${r.carat}c</option>`).join('')}</select></div>
   <div><label for="gsHave">How many you have</label><input id="gsHave" type="number" min="0" step="1" value="0"></div>
  </div>
- <div id="gsResult" class="gc-result"></div>
- <p class="g-note">The witch's fee is always <b>${gemCoin(s.fee)}</b> a combine. Worth = the gems that went in plus the fees, at your 0.5c price (remembered on this computer). If a 2c sells for less than the 2c row, buying beats building.</p>`;
+ <div id="gsResult" class="gc-result"></div>`;
 }
 // "What yours could become": that many gems of one carat, combined as far as the witch goes. In the app the count
 // starts at what the collector recorded for that gem and carat (bxcGemCount); typing your own number wins until the
