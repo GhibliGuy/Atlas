@@ -1,4 +1,7 @@
 [
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":true,"time":1790879690483,"iso":"2026-10-01T18:34:50.483Z","sessionId":"466caf91-655f-4a8d-b519-8666347da0af","key":220},
+{"type":"gem.found","typeId":"gem-emerald","carat":2.5,"dropped":false,"time":1790879467508,"iso":"2026-10-01T18:31:07.508Z","sessionId":"466caf91-655f-4a8d-b519-8666347da0af","key":219},
+{"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"time":1790879440756,"iso":"2026-10-01T18:30:40.756Z","sessionId":"466caf91-655f-4a8d-b519-8666347da0af","key":218},
 {"type":"gem.found","typeId":"gem-iolite","carat":2.5,"dropped":false,"time":1790866216057,"iso":"2026-10-01T14:50:16.057Z","sessionId":"87ddbd0c-21ee-40c5-b63f-88ce8f39caca","key":217},
 {"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"time":1790865394959,"iso":"2026-10-01T14:36:34.959Z","sessionId":"c7fae7c5-a157-4f05-8a98-19ccba9dcf0e","key":216},
 {"type":"gem.found","typeId":"gem-iolite","carat":2.5,"dropped":false,"time":1790863587071,"iso":"2026-10-01T14:06:27.071Z","sessionId":"ee8beb7a-4c49-42d7-94e9-f323b31a56c1","key":215},
