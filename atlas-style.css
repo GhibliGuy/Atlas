@@ -971,3 +971,15 @@ table.gg-tiers tbody tr:nth-child(3n+1):not(:first-child) td{border-top:2px soli
 .npc-edit{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
 .npc-edit button{flex:1;min-width:120px}
 .bxc-questgiver .qg-n{position:absolute;top:-6px;right:-7px;min-width:14px;height:14px;padding:0 3px;box-sizing:border-box;border-radius:7px;background:#2a1d05;color:#ffd24a;border:1px solid #7a5a12;font:700 9.5px/12px var(--sans);text-align:center}
+/* zone layout: monsters named with their level, linked to their rows below; a pick highlights both */
+.zmon{cursor:pointer}
+.zmon-lbl{fill:#fff4dc;stroke:#120d07;stroke-width:0.14px;paint-order:stroke;font-weight:600;pointer-events:none;font-family:var(--sans);user-select:none;-webkit-user-select:none}
+#zoneDetailViewport svg{user-select:none;-webkit-user-select:none}   /* dragging to pan must not select the labels */
+.zmon.zmon-on image,.zmon.zmon-on circle{filter:drop-shadow(0 0 .25px #ffd54a) drop-shadow(0 0 .6px #ffd54a)}
+.zmon.zmon-on .zmon-lbl{fill:#ffd54a}
+tr[data-zmon-type],tr[data-zmon-name]{cursor:pointer}
+tr.zmon-on td{background:rgba(255,213,74,.12)}
+tr.zmon-on td:first-child{box-shadow:inset 3px 0 0 #ffd54a}
+.zmon-pop{position:absolute;z-index:5;width:min(380px,90%);max-height:60vh;overflow:auto;padding:10px 12px;background:var(--panel,#1d1a16);border:1px solid var(--accent-soft,#8a6430);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.55)}
+.zmon-pop-head{display:flex;align-items:baseline;gap:6px;margin-bottom:6px}
+.zmon-pop-x{margin-left:auto;background:none;border:0;color:var(--muted);font-size:18px;line-height:1;cursor:pointer}

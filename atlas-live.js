@@ -1856,9 +1856,11 @@ function zoneDetailSvg(z){
       return `<circle cx="${cx}" cy="${cy}" r="0.8" fill="${style.fillColor}" stroke="${style.color}" stroke-width="0.15" ${shadow}><title>${escXml(resourceLabel(o))}</title></circle>`;
     }
     if(it.kind==='npc'){
-      const o=it.o,url=npcIconUrl(o.typeId,o.name);
-      if(url)return `<image href="${url}" x="${cx-1.1}" y="${cy-1.1}" width="2.2" height="2.2" preserveAspectRatio="xMidYMid meet" ${shadow}><title>${escXml(o.name||prettyId(o.typeId))}${o.level!=null?' Lv '+o.level:''}</title></image>`;
-      return `<circle cx="${cx}" cy="${cy}" r="0.9" fill="#ff5a5a" stroke="#3a0a0a" stroke-width="0.15" ${shadow}><title>${escXml(o.name||prettyId(o.typeId))}${o.level!=null?' Lv '+o.level:''}</title></circle>`;
+      // each one named, with its level, above it; click it (or its row below) for what it drops
+      const o=it.o,url=npcIconUrl(o.typeId,o.name),nm=o.name||prettyId(o.typeId),lv=o.level!=null?o.level:null;
+      const body=url?`<image href="${url}" x="${cx-1.1}" y="${cy-1.1}" width="2.2" height="2.2" preserveAspectRatio="xMidYMid meet" ${shadow}/>`:`<circle cx="${cx}" cy="${cy}" r="0.9" fill="#ff5a5a" stroke="#3a0a0a" stroke-width="0.15" ${shadow}/>`;
+      const lbl=`<text class="zmon-lbl" x="${cx}" y="${cy-1.3}" text-anchor="middle" font-size="0.5">${escXml(nm)}${lv!=null?' · Lv '+lv:''}</text>`;
+      return `<g class="zmon" data-zmon-type="${escXml(o.typeId||'')}" data-zmon-name="${escXml(nm)}" data-lv="${lv??''}">${body}${lbl}</g>`;
     }
     if(it.kind==='exit')return exitMarkup(it.ex,allObjsHere,cx,cy,shadow);
     return `<circle cx="${cx}" cy="${cy}" r="1.1" fill="#ffd54a" stroke="#3a2c05" stroke-width="0.2" ${shadow}><title>${escXml(it.s.name||'You')}</title></circle>`;
@@ -1941,6 +1943,30 @@ function zoneModeBarHtml(z,parentName){
     :child!=null?'Click the layout where the way into <b>'+esc(state.zones.get(child)?.name||('Zone '+child))+'</b> is.':'';
   return msg?`<div class="zn-mode"><span>${msg}</span><button type="button" id="zoneOverlayCancelMode">Cancel</button></div>`:'';
 }
+// A monster in the room layout and its row in "Monsters seen here" (or a person and their row) go together: picking
+// either highlights both, brings the other into view, and opens what it drops (people: a link to their page).
+function zmonSelect(el,ev){
+  const root=zoneOverlayEl;if(!root)return;
+  root.querySelectorAll('.zmon-on').forEach(x=>x.classList.remove('zmon-on'));root.querySelector('.zmon-pop')?.remove();
+  if(!el)return;
+  const nm=el.dataset.zmonName,ty=el.dataset.zmonType;
+  const person=nm&&root.querySelector(`tr[data-zmon-name="${CSS.escape(nm)}"]`);
+  const key=person||(el.tagName==='TR'&&nm&&!ty)?{a:'data-zmon-name',v:nm}:{a:'data-zmon-type',v:ty};
+  const all=[...root.querySelectorAll(`[${key.a}="${CSS.escape(key.v)}"]`)],sprites=all.filter(x=>x.classList.contains('zmon')),row=all.find(x=>x.tagName==='TR');
+  all.forEach(x=>x.classList.add('zmon-on'));
+  if(el.tagName==='TR'){const vp=root.querySelector('#zoneDetailViewport'),sp=sprites[0];if(vp&&sp){const a=vp.getBoundingClientRect(),b=sp.getBoundingClientRect();vp.scrollLeft+=b.left-a.left-a.width/2+b.width/2;vp.scrollTop+=b.top-a.top-a.height/2+b.height/2}}
+  else row?.scrollIntoView({block:'nearest'});
+  const lvs=[...new Set(sprites.map(x=>x.dataset.lv).filter(Boolean).map(Number))].sort((a,b)=>a-b);
+  const name=(sprites[0]?.dataset.zmonName)||(row?.innerText||'').trim().split('\n')[0]||prettyId(key.v);
+  const isPerson=key.a==='data-zmon-name';
+  const drops=!isPerson&&typeof globalThis.bxcMonsterDrops==='function'?globalThis.bxcMonsterDrops(key.v):'';
+  const pop=document.createElement('div');pop.className='zmon-pop';
+  pop.innerHTML=`<div class="zmon-pop-head"><b>${esc(name)}</b>${lvs.length?`<span class="muted"> · Lv ${lvs[0]}${lvs.length>1?'–'+lvs[lvs.length-1]:''}</span>`:''}<button type="button" class="zmon-pop-x" aria-label="Close">×</button></div>`
+    +(isPerson?`<p><a href="#/npc/${encodeURIComponent(String(name).toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""))}">Open their page</a></p>`:(drops||'<p class="muted">No drops recorded yet.</p>')+`<p><span class="monsterlink" data-monster="${esc(key.v)}" style="cursor:pointer;text-decoration:underline">Open in the Bestiary</span></p>`);
+  root.appendChild(pop);
+  const r=root.getBoundingClientRect(),at=(ev&&ev.clientX!=null)?{x:ev.clientX,y:ev.clientY}:(()=>{const b=(sprites[0]||el).getBoundingClientRect();return {x:b.right,y:b.top}})();
+  pop.style.left=Math.max(8,Math.min(r.width-pop.offsetWidth-8,at.x-r.left+12))+'px';pop.style.top=Math.max(root.scrollTop+8,Math.min(root.scrollTop+root.clientHeight-pop.offsetHeight-8,at.y-r.top+root.scrollTop+12))+'px';   // inside the part of the panel you can see
+}
 function zoneOverlayContent(z){
   const r=zoneSummaryRow(z);
   const {monsterRows:allRows,objectRows}=zoneRowsHere(z);
@@ -1971,8 +1997,8 @@ function zoneOverlayContent(z){
   ${zoneHasLayout(z)?'':`<div class="note" style="margin:0 0 8px"><b>Nothing recorded inside this one yet.</b> ${r.entrance?.manual||state.zones.get(z)?.manual?'You placed this entrance by hand, so it has no layout of its own. Walk inside with the collector running and it fills in automatically. If this place is already recorded under another zone, use <b>Edit ▾ → Link to a recorded place</b> to attach this entrance to it (nothing recorded is deleted).':'The layout will appear as data for it comes in.'}</div>`}
   ${zoneDetailSvg(z)}
   <div class="g-note">Floors use the game's own colours. Walls are drawn from the wall pieces recorded so far, and counters, doors and furniture with their captured art. Items lying on the ground aren't shown. Anything not recorded yet is missing. Red = monsters, gold = you; only confirmed-gatherable resources are shown as resources.</div>
-  ${peopleRows.length?`<details open class="zn-details"><summary>People here (${peopleRows.length})</summary><table class="g-table"><tbody>${peopleRows.map(m=>`<tr><td><span class="monsterlink" data-monster="${esc(m.typeId||m.id)}"${m.npc?` data-npc="${esc(m.npc)}"`:''} title="Open their page" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><img class="thumb monsterthumb" src="${esc(monsterImg({typeId:m.typeId||m.id,name:m.name}))}" alt="" style="width:22px;height:22px;flex:none;border-radius:5px"><span>${esc(m.name)}</span></span></td></tr>`).join('')}</tbody></table></details>`:''}
-  <details open class="zn-details${monsterRows.length?'':' zn-hide'}"><summary>Monsters seen here (${monsterRows.length})</summary><table class="g-table"><thead><tr><th>Monster</th><th>Observations</th><th>Last seen</th></tr></thead><tbody>${monsterRows.map(m=>`<tr><td><span class="monsterlink" data-monster="${esc(m.typeId||m.id)}"${m.npc?` data-npc="${esc(m.npc)}"`:''} title="${m.npc?'Open their page':'Show in Bestiary'}" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><img class="thumb monsterthumb" src="${esc(monsterImg({typeId:m.typeId||m.id,name:m.name}))}" alt="" style="width:22px;height:22px;flex:none;border-radius:5px"><span>${esc(prettyId(m.name||m.id))}</span></span></td><td>${fmt(m.count)}</td><td>${when(m.lastSeen)}</td></tr>`).join('')||'<tr><td colspan="3">None observed yet.</td></tr>'}</tbody></table></details>
+  ${peopleRows.length?`<details open class="zn-details"><summary>People here (${peopleRows.length})</summary><table class="g-table"><tbody>${peopleRows.map(m=>`<tr data-zmon-name="${esc(m.name||'')}"><td><span class="monsterlink" data-monster="${esc(m.typeId||m.id)}"${m.npc?` data-npc="${esc(m.npc)}"`:''} title="Open their page" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><img class="thumb monsterthumb" src="${esc(monsterImg({typeId:m.typeId||m.id,name:m.name}))}" alt="" style="width:22px;height:22px;flex:none;border-radius:5px"><span>${esc(m.name)}</span></span></td></tr>`).join('')}</tbody></table></details>`:''}
+  <details open class="zn-details${monsterRows.length?'':' zn-hide'}"><summary>Monsters seen here (${monsterRows.length})</summary><table class="g-table"><thead><tr><th>Monster</th><th>Observations</th><th>Last seen</th></tr></thead><tbody>${monsterRows.map(m=>`<tr data-zmon-type="${esc(m.typeId||m.id)}"><td><span class="monsterlink" data-monster="${esc(m.typeId||m.id)}"${m.npc?` data-npc="${esc(m.npc)}"`:''} title="${m.npc?'Open their page':'Show in Bestiary'}" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><img class="thumb monsterthumb" src="${esc(monsterImg({typeId:m.typeId||m.id,name:m.name}))}" alt="" style="width:22px;height:22px;flex:none;border-radius:5px"><span>${esc(prettyId(m.name||m.id))}</span></span></td><td>${fmt(m.count)}</td><td>${when(m.lastSeen)}</td></tr>`).join('')||'<tr><td colspan="3">None observed yet.</td></tr>'}</tbody></table></details>
   <details open class="zn-details${objectRows.length?'':' zn-hide'}"><summary>Resources seen here (${objectRows.length})</summary><table class="g-table"><thead><tr><th>Resource</th><th>Distinct seen</th><th>Last seen</th></tr></thead><tbody>${objectRows.map(o=>`<tr><td>${o.yieldItem?`<span class="dropicon-link" data-item="${esc(o.yieldItem)}" title="Show in Items tab" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><img class="thumb itemthumb" src="${esc(itemImgFor(o.yieldItem))}" alt="" style="width:22px;height:22px;flex:none;border-radius:5px"><span>${esc(prettyId(o.name))} (${esc(prettyId(o.yieldItem))})</span></span>`:esc(prettyId(o.name))}</td><td>${fmt(o.count)}</td><td>${when(o.lastSeen)}</td></tr>`).join('')||'<tr><td colspan="3">None observed yet.</td></tr>'}</tbody></table></details>`;
 }
 let zoneOverlayEl=null;
@@ -1996,6 +2022,8 @@ function ensureZoneOverlay(){
   zoneOverlayEl.addEventListener('click',e=>{
     if(suppressNextOverlayClick){suppressNextOverlayClick=false;return;}
     if(e.target.closest('#zoneOverlayClose')){closeZoneOverlay();return;}
+    if(e.target.closest('.zmon-pop-x')){zmonSelect(null);return;}
+    { const zm=!e.target.closest('.zmon-pop')&&e.target.closest('.zmon,tr[data-zmon-type],tr[data-zmon-name]');if(zm){zmonSelect(zm,e);return;} }
     const monsterRow=e.target.closest('.monsterlink');
     if(monsterRow&&monsterRow.dataset.npc){closeZoneOverlay();location.hash='#/npc/'+encodeURIComponent(monsterRow.dataset.npc);return;}
     if(monsterRow){goToMonsterCard(monsterRow.dataset.monster);return;}
@@ -3370,6 +3398,7 @@ function newsHtml(){
     if(questCache.src!==src){questCache={src,map:new Map((Array.isArray(src)?src:[]).filter(q=>q&&q.itemTypeId).map(q=>[q.itemTypeId,q]))}}
     return questCache.map.get(itemTypeId)||null;
   }
+  globalThis.bxcMonsterDrops=t=>monsterDropsHtml(t);
   function monsterDropsHtml(typeId){
     const rows=dropRowsForMonster(typeId);
     const killsLine=killsLineHtml(typeId),lt=state.looted?.get(typeId);
