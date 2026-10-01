@@ -103,6 +103,10 @@ function slugId(v){return String(v||'').trim().toLowerCase().replace(/[^a-z0-9]+
 // 14 levels over). Cooking: a burn chance that falls to nothing at the level it stops, never below 5%. Grinding never fails.
 const CRAFT_BASE=globalThis.BXC_GAME_RECIPES?.craftChance?.base??.6,CRAFT_SPAN=globalThis.BXC_GAME_RECIPES?.craftChance?.span??15,CRAFT_CAP=.95;
 const craftSureAt=r=>r.chance==='always'?r.level:r.chance==='cooking'?r.stop:r.level+Math.ceil((CRAFT_CAP-CRAFT_BASE)/(1-CRAFT_BASE)*CRAFT_SPAN);
+// Two separate levels: crafting reaches 95% success at +14 (craftSureAt), and you can enchant an item from +15
+// (craftEnchantAt) - the game's own rule (game-rules `ue=15`: the same piece one metal up, else the recipe + 15).
+const ENCHANT_OVER=15;
+const craftEnchantAt=r=>r.level+ENCHANT_OVER;
 function craftChance(r,level){
  if(r.chance==='cooking'){
    if(level>=r.stop)return .95;
@@ -431,7 +435,7 @@ function calcGather(){
    const mine=(Array.isArray(snap?.crafts)?snap.crafts:[]).filter(x=>slugId(x.itemTypeId||'')===id);
    const mineGood=mine.filter(x=>QUALITY_TIERS.indexOf(x.quality||'ordinary')>=QUALITY_TIERS.indexOf('good')).length;
    const mineLine=mine.length?`<div class="muted" style="margin-top:6px">You have crafted ${prettyId(r.item)} ${mine.length} time${mine.length===1?'':'s'} so far: ${(mineGood/mine.length*100).toFixed(0)}% came out Good or better.</div>`:'';
-   const ref=CRAFT_QUALITY_TABLE.filter(t=>t.levelsOver%5===0).map(t=>`<tr><td>+${t.levelsOver}${t.levelsOver===15?' (mastery from +14)':t.levelsOver===30?' (cap)':''}</td>${QUALITY_TIERS.map(q=>`<td>${pct(t[q]||0)}</td>`).join('')}</tr>`).join('');
+   const ref=CRAFT_QUALITY_TABLE.filter(t=>t.levelsOver%5===0).map(t=>`<tr><td>+${t.levelsOver}${t.levelsOver===15?' (you can enchant)':t.levelsOver===30?' (cap)':''}</td>${QUALITY_TIERS.map(q=>`<td>${pct(t[q]||0)}</td>`).join('')}</tr>`).join('');
    // The headline: the best quality you have even odds or better of reaching (see likelyTier), and the split at the next
    // quality up - how close the next step is.
    const bandP=Object.fromEntries(QUALITY_TIERS.map((t,i)=>[t,bands[i]?bands[i][1]:0]));
@@ -444,17 +448,18 @@ function calcGather(){
    <details class="craft-more"><summary>More detail</summary><div class="muted" style="margin:6px 0">Per craft: Good or better ${oneIn(p.goodPlus)} · Superior or better ${oneIn(p.superiorPlus)} · Flawless ${oneIn(p.flawless)}. Quality depends on how many levels you are <b>over</b> the item's level, and stops improving at +30.</div>${miles?`<div class="muted">Getting better:</div><ul style="margin:4px 0 8px 18px;padding:0">${miles}</ul>`:''}<div class="muted" style="margin-top:6px">The developer's full table:</div><div class="table-scroll"><table class="qualitytable"><thead><tr><th>Levels over</th>${QUALITY_TIERS.map(q=>`<th>${prettyId(q)}</th>`).join('')}</tr></thead><tbody><tr style="font-weight:700"><td>You: +${capped}</td>${QUALITY_TIERS.map(q=>`<td>${pct(p[q]||0)}</td>`).join('')}</tr>${ref}</tbody></table></div><div class="muted">Values between the listed rows are interpolated.</div></details>`;
  }
  // Mastery is a different system from craft quality: it is the chance the craft succeeds at all (60% at the
- // recipe's level, capped at 95% fifteen levels over - the same curve the Crafting XP calculator uses), not what
- // quality tier it lands on. Shown only for enchantable items, since that is what "mastery" is quoted against.
+ // recipe's level, capped at 95% fourteen levels over - the same curve the Crafting XP calculator uses), not what
+ // quality tier it lands on. Enchanting opens one level later, fifteen over (craftEnchantAt). Shown only for
+ // enchantable items.
  function masteryChartHtml(rec,lvl){
-   const chance=craftChance(rec,lvl),masteryLevel=craftSureAt(rec),short=lvl<rec.level;   // mastery = where success reaches 95%
+   const chance=craftChance(rec,lvl),enchLevel=craftEnchantAt(rec),sureLevel=craftSureAt(rec),short=lvl<rec.level;
    const pct=v=>(v*100).toFixed(1)+'%';
    const status=short
      ?`<div class="note" style="border-color:#b5574b"><b>You are ${rec.level-lvl} level${rec.level-lvl===1?'':'s'} short.</b> ${rec.item} needs ${rec.skill} level ${rec.level} before you can attempt this craft at all.</div>`
-     :lvl>=masteryLevel?`<div class="note muted">You are at or past mastery (level ${masteryLevel}); success chance is capped at 95%.</div>`:'';
+     :lvl>=enchLevel?`<div class="note muted">Success is at its best, 95%, and you can enchant it (from level ${enchLevel}).</div>`:lvl>=sureLevel?`<div class="note muted">Success is at its best, 95%. One more level (${enchLevel}) and you can enchant it.</div>`:'';
    const color=chance>=.95?'#5fae6f':chance>=.75?'#d9b878':'#b5574b';
    return `${status}
-   <div class="qualitygrid"><div class="qualitymetric"><b>${pct(chance)}</b>chance to succeed at Lv ${lvl}</div><div class="qualitymetric"><b>${masteryLevel}</b>mastery level (95% cap)</div><div class="qualitymetric"><b>${Math.max(0,masteryLevel-lvl)}</b>levels to mastery</div></div>
+   <div class="qualitygrid"><div class="qualitymetric"><b>${pct(chance)}</b>chance to succeed at Lv ${lvl}</div><div class="qualitymetric"><b>${sureLevel}</b>95% success from (+14)</div><div class="qualitymetric"><b>${enchLevel}</b>enchant from (+15)</div></div>
    <div class="qualitybar" style="height:14px"><span style="width:${(chance*100).toFixed(2)}%;background:${color}"></span></div>`;
  }
  // ---- Craft quality & enchanting: tradeskill -> item -> the quality odds above, plus (if it can be enchanted)
@@ -544,10 +549,10 @@ function calcGather(){
    const e=enchantInfo(r),opts=enchOptions(r),sel=opts[Number(q('enEnchant').value)||0]||opts[0];
    const tool=e.kind==='tool'?enchToolNeed(r):null;
    const masteryRec=r;
-   // Every enchant needs "Mastery": the level where crafting reaches its 95% success (the dev; with the game's own
-   // formula that is 14 levels past the recipe) - a tool too: mastery of that tool itself (the gem is set as it is forged).
+   // Every enchant needs 15 levels past the item's recipe (the game's own rule; craftEnchantAt) - a tool too: 15 past
+   // that tool's own recipe (the gem is set as it is forged).
    const toolUp=false;
-   const masteryLevel=craftSureAt(masteryRec),chance=craftChance(masteryRec,lvl);
+   const masteryLevel=craftEnchantAt(masteryRec),sureLevel=craftSureAt(masteryRec),chance=craftChance(masteryRec,lvl);
    const per=(e.kind==='tool'||e.kind==='ring')?1:3,maxC=e.tier?per*e.tier:null;
    const pickC=maxC?Math.max(1,Math.min(maxC,enCaratPick||Math.min(maxC,2*per))):0;
    const none=enNone&&!!e.kind;
@@ -577,13 +582,13 @@ function calcGather(){
    else{
      const mastered=lvl>=masteryLevel,left=masteryLevel-lvl,prog=Math.max(0,Math.min(1,(lvl-(toolUp?r.level:masteryRec.level))/Math.max(1,masteryLevel-(toolUp?r.level:masteryRec.level))));
      const over=masteryLevel-masteryRec.level;
-     const need=[toolUp?`Mastery: ${masteryRec.skill} level <b>${masteryLevel}</b> (95% success on a ${masteryRec.item}, one metal up: ${over} levels past it)`:`Mastery: ${masteryRec.skill} level <b>${masteryLevel}</b> (95% success: ${over} levels past ${e.kind==='tool'?`the ${r.item}`:`the item's own level`})`];
+     const need=[`Level: ${masteryRec.skill} <b>${masteryLevel}</b> (${over} levels past ${e.kind==='tool'?`the ${r.item}`:`the item's own level`})`];
      if(maxC)need.push(e.kind==='tool'?`Gem: one stone, up to <b>${maxC} carat${maxC===1?'':'s'}</b>`:`Gems: ${per===1?'one stone':'three stones'}, up to <b>${maxC} carat${maxC===1?'':'s'}</b> in total`);
      if(maxC&&e.kind!=='tool')need.push(`Intellect: <b>${5*maxC}</b> to wear it at full strength (5 per carat)`);
-     s2=step(2,'Can you enchant it?',`<div class="craft-answer ${mastered?'ok':'no'}">${mastered?(toolUp?`Yes - you've mastered the ${masteryRec.item} (level ${masteryLevel}), so you can set a gem while forging this one.`:`Yes - you've mastered it (level ${masteryLevel}).`):toolUp?`Not yet - setting a gem needs mastery of the ${masteryRec.item}, one metal up: <b>${masteryRec.skill} level ${masteryLevel}</b>. You're level ${lvl}: ${left} to go.`:`Not yet - enchanting needs mastery: <b>${masteryRec.skill} level ${masteryLevel}</b>. You're level ${lvl}: ${left} to go.`}</div>
-       <div class="craft-progress" title="Progress to mastery"><span style="width:${(prog*100).toFixed(1)}%"></span></div>
+     s2=step(2,'Can you enchant it?',`<div class="craft-answer ${mastered?'ok':'no'}">${mastered?(e.kind==='tool'?`Yes - you're level ${lvl}, so you can set a gem while forging it (from ${masteryLevel}).`:`Yes - you're level ${lvl}, and enchanting it needs ${masteryLevel}.`):`Not yet - enchanting it needs <b>${masteryRec.skill} level ${masteryLevel}</b>, 15 levels past the item. You're level ${lvl}: ${left} to go.`}</div>
+       <div class="craft-progress" title="Progress to enchanting"><span style="width:${(prog*100).toFixed(1)}%"></span></div>
        <div class="muted" style="margin-top:4px">What it takes:</div><ul class="craft-needs">${need.map(x=>'<li>'+x+'</li>').join('')}</ul>
-       <details class="craft-more"><summary>More detail</summary><div class="muted" style="margin:6px 0">Mastery is also where a craft stops failing as often: ${(chance*100).toFixed(0)}% success at your level now, 95% (the most anything ever gets) from level ${masteryLevel}.${e.kind==='tool'?' A tool\'s gem is set while it is being forged, so it can\'t be added to a tool you already have, and an enchanted tool needs no Intellect.':''}</div></details>`);
+       <details class="craft-more"><summary>More detail</summary><div class="muted" style="margin:6px 0">Success to craft it: ${(chance*100).toFixed(0)}% at your level now, 95% (the most anything ever gets) from level ${sureLevel}. Enchanting opens one level after that, at ${masteryLevel}.${e.kind==='tool'?' A tool\'s gem is set while it is being forged, so it can\'t be added to a tool you already have, and an enchanted tool needs no Intellect.':''}</div></details>`);
    }
    // quality: step 4 when there is an enchant to pick first, else step 3
    const s3=step(e.kind?4:3,'What quality will you get?',qualityChartHtml(r,lvl));

@@ -195,10 +195,10 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
     // under 10% is very rare - excellent, superior and flawless - so it is not what to plan on
     // the odds come from the best smith's Tool Smithing over the tool's recipe (unknown: assume 10 levels over)
     const sm=smithLevel(smithIn),over=t=>{const rl=toolRecipeLevel(skill,t);return rl==null?10:sm?sm.lv-rl:10};
-    // an Artisan gem is set while the tool is forged, by a smith who has mastered that tool (95% success, 14 levels past
-    // its recipe) - the same rule as any other enchant. Unknown smith: assumed able.
-    const artisanOk=t=>{const rl=toolRecipeLevel(skill,t);return !sm||rl==null||sm.lv>=rl+14};
-    const noArtisan=t=>{const rl=toolRecipeLevel(skill,t);return `no smith can set a gem in it yet: needs Tool Smithing ${rl+14} (mastery; best is ${sm.lv})`};
+    // an Artisan gem is set while the tool is forged, by a smith 15 levels past that tool's recipe (the game's own
+    // rule) - the same rule as any other enchant. Unknown smith: assumed able.
+    const artisanOk=t=>{const rl=toolRecipeLevel(skill,t);return !sm||rl==null||sm.lv>=rl+(typeof ENCHANT_OVER!=='undefined'?ENCHANT_OVER:15)};
+    const noArtisan=t=>{const rl=toolRecipeLevel(skill,t);return `no smith can set a gem in it yet: needs Tool Smithing ${rl+(typeof ENCHANT_OVER!=='undefined'?ENCHANT_OVER:15)}, 15 past the tool; best is ${sm.lv}`};
     const qOdds=(q,t=ti)=>{if(typeof interpolateCraftQuality!=='function')return null;const o=over(t);return o<0?0:(interpolateCraftQuality(Math.min(30,o))[q]||0)};
     const qRare=(q,t=ti)=>{const o=qOdds(q,t);return o!=null&&QUALITIES.findIndex(x=>x[0]===q)>3&&o<.10};
     const oddsTxt=o=>o<.005?'almost never':'about '+(o*100).toFixed(o<.1?1:0)+'%';
@@ -322,7 +322,7 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
       const rows=plan(planOpts,level,into,goal,by),m=mats(rows);
       const matStart=baseMat&&planOpts.length?Math.min(...planOpts.map(o=>o.level)):0;
       // The refund on what the plan makes now: only what your level and tool together push past 95% - the full tool bonus
-      // only once the item alone reaches 95% (its mastery), 14 levels past it.
+      // only once the item alone reaches 95%, 14 levels past it.
       // The plan table. Crafting: each stretch's pick outlined, with a couple of other things you could make instead (same
       // materials) under it and what they cost or save against the pick.
       const rangeOf=(o,a,b,f)=>{const x=f(a),y=f(b);return Math.abs(x-y)<.005?pct(x):pct(x)+' → '+pct(y)};
