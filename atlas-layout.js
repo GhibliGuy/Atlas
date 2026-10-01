@@ -93,7 +93,10 @@
    headings) are left alone. Runs when a table appears or changes, once per change. */
 (() => {
   const TABLES = 'table.g-table, table.research-table, table.qualitytable, table.xptable';
-  const isText = td => !!td.querySelector('a, img, select, input, button') || (td.innerText || '').trim().length > 28;
+  // a cell of chips only (the gem guide's Weapon/Armor/..., tags) holds values too: centred like numbers
+  const CHIPS = '.gg-chip, .tag-chip, .q-chip, .zn-room, .quest-badge';
+  const chipsOnly = td => !!td.querySelector(CHIPS) && [...td.querySelectorAll(CHIPS)].every(c => (c.innerText || '').trim().length <= 24) && [...td.querySelectorAll('a, img, select, input, button')].every(el => el.closest(CHIPS));   // (short chips only: a sentence in a pill is text)
+  const isText = td => !chipsOnly(td) && (!!td.querySelector('a, img, select, input, button') || (td.innerText || '').trim().length > 28);
   const numeric = s => /^[\s\d.,%×→·+\-−–()\/xc]*$/i.test(s);
   // a value may carry a short word ("24% back", "Short", "0.5c") and still be a value; real text is longer
   const letters = td => ((td.innerText || '').match(/[a-z]/gi) || []).length;
@@ -109,9 +112,27 @@
       if (!filled.length) return;
       const texty = filled.filter(isText).length >= filled.length / 2;
       // the first column is a row's label unless it is plainly a number or a range ("67 → 74")
-      const centre = !texty && filled.every(td => letters(td) <= 12) && (i > 0 || filled.every(td => numeric(td.innerText.trim())));
+      const centre = !texty && filled.every(td => chipsOnly(td) || letters(td) <= 12) && (i > 0 || filled.every(td => numeric(td.innerText.trim())));
       for (const t of tables) { headOf(t).cells[i].classList.toggle('t-c', centre); for (const td of colCells(t, headOf(t), i)) td.classList.toggle('t-c', centre); }
     });
+  }
+  // A range ("30–44", "1,000 → 1,200" stays as is) or a hyphenated word ("Man-at-Arms", "4-carat") never splits at its
+  // dash: each is wrapped in a no-wrap span, once (the text itself is unchanged).
+  const NB = /\d[\d,.]*%?\s?[–-]\s?\d[\d,.]*%?|[A-Za-z0-9]+(?:-[A-Za-z0-9]+)+/g;
+  function holdDashes(t) {
+    const w = document.createTreeWalker(t.tBodies[0] || t, NodeFilter.SHOW_TEXT), hits = [];
+    let n; while ((n = w.nextNode())) { if (!n.parentElement.closest('.t-nb') && /[–-]/.test(n.textContent) && NB.test(n.textContent)) hits.push(n); NB.lastIndex = 0; }
+    for (const node of hits) {
+      const text = node.textContent, frag = document.createDocumentFragment(); let last = 0;
+      for (const m of text.matchAll(NB)) {
+        if (!/[–-]/.test(m[0])) continue;
+        frag.append(text.slice(last, m.index));
+        const sp = document.createElement('span'); sp.className = 't-nb'; sp.textContent = m[0]; frag.append(sp);
+        last = m.index + m[0].length;
+      }
+      if (!last) continue;
+      frag.append(text.slice(last)); node.replaceWith(frag);
+    }
   }
   let queued = false;
   const run = () => {
@@ -126,7 +147,7 @@
       // only when something changed: a new or re-drawn table, or more rows
       const sig = tables.map(t => [...t.tBodies].reduce((a, b) => a + b.rows.length, 0)).join(',');
       if (tables.every(t => t.dataset.alignSig === sig)) continue;
-      alignGroup(tables); for (const t of tables) t.dataset.alignSig = sig;
+      alignGroup(tables); for (const t of tables) { holdDashes(t); t.dataset.alignSig = sig; }
     }
   };
   const queue = () => { if (!queued) { queued = true; setTimeout(run, 30); } };   // a timer, not a repaint: a hidden window never repaints

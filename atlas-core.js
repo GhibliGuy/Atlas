@@ -750,7 +750,7 @@ function gemWitchPlan(){
 }
 function gemWitchHtml(){
  const s=gemCombineSettings(),rows=gemLadder(s);
- return `<p>The witch takes <b>3</b> gems of one carat and gives back <b>one</b> gem half a carat bigger, for <b>${gemCoin(s.fee)}</b> each time. She goes up to <b>2c</b>; bigger gems only come from gathering. Combining changes the carat, transmuting changes the kind.</p>
+ return `<p class="g-note">The witch is the <a href="#/npc/dark-witch">Dark Witch</a>, in her hut in Midland Forest - open her page to see it on the map.</p><p>The witch takes <b>3</b> gems of one carat and gives back <b>one</b> gem half a carat bigger, for <b>${gemCoin(s.fee)}</b> each time. She goes up to <b>2c</b>; bigger gems only come from gathering. Combining changes the carat, transmuting changes the kind.</p>
  <div class="calcgrid tool-form">
   <div><label for="gcTarget">Carat you want</label><select id="gcTarget">${rows.slice(1).map(r=>`<option value="${r.k}"${r.k===rows.length-1?' selected':''}>${r.carat}c</option>`).join('')}</select></div>
   <div><label for="gcHow">How many</label><input id="gcHow" type="number" min="1" max="999" step="1" value="1"></div>

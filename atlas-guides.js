@@ -249,12 +249,24 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const sizeLine=c=>{const sh=shares&&shares.total?shares.share(c):null;
       return `<span class="gg-at" data-c="${c}"><b>${c} carat</b> ${globalThis.bxcGemRarityChip?globalThis.bxcGemRarityChip(c):''}${sh!=null?` · ${(sh*100).toFixed(sh<.1?1:0)}% of gems found <span class="muted">(${shares.count(c)} of ${shares.total})</span>`:''}<br>${esc(typeof gemHowText==='function'?gemHowText(c):'')}${Number.isInteger(c)?'':'. <span class="muted">Rings and pendants take whole carats.</span>'}</span>`};
     const atC=(list,gem,fb)=>{const t=(list||[]).find(x=>x.gem===gem)?.text;return t?CS.map(c=>`<span class="gg-at" data-c="${c}">${Number.isInteger(c)&&t[c]?esc(t[c]):'<span class="muted">—</span>'}</span>`).join(''):esc(fb||'')};
-    const rows=Object.entries(EG).map(([id,g])=>[item('gem-'+id,g.name),skillGuideLink(g.found),atC(GD&&GD.rings,id,g.ring),...(GD?[atC(GD.pendants,id,g.pendant)]:[])]);
+    // which enchantments each gem goes into (the game's own gem patterns; "any" = any gem as an armour enchant's third)
+    const ER=typeof ENCHANT_RECIPES!=='undefined'?ENCHANT_RECIPES:{};
+    // what each gem goes into, as chips by where it ends up: weapon (bows and staves too), armour and tool enchantments
+    // (any one gem set while forging a tool makes it "of the Artisan"), and its ring and pendant. Each chip opens a popup
+    // with what it does at every carat.
+    const NONE='<span class="gg-none" title="Not used for this" aria-label="None">✗</span>';   // nothing in this column: a red cross
+    const chip=(id,attrs,label,tip)=>`<button type="button" class="gg-pop-btn gg-chip" data-gem="${esc(id)}" ${attrs} title="${esc(tip)}">${esc(label)}</button>`;
+    const enchChips=(id,fams)=>Object.entries(ER).filter(([k])=>fams.includes(k)).flatMap(([kind,l])=>l.filter(e=>e.gems.includes(id)).map(e=>chip(id,`data-pop="one" data-kind="${esc(kind)}" data-ench="${esc(e.name)}"`,e.name.replace(/^of (the )?/,'')+(kind==='bow'||kind==='staff'?' ('+kind+')':''),pretty(kind)+': '+e.effect))).join('')||NONE;
+    const artisan=(GD&&GD.enchants||[]).find(e=>e.family==='tool');
+    const wornChip=(id,arr,what)=>{const t=(arr||[]).find(x=>x.gem===id)?.text;if(!t)return NONE;const w=t[3]||t[1]||'',[nm,...rest]=w.split(': ');return '<div class="gg-chips">'+chip(id,`data-pop="${what}"`,rest.length?nm:pretty(what),(rest.length?rest.join(': '):w)+' (at 3 carats)')+'</div>'};
+    const rows=Object.entries(EG).map(([id,g])=>[`${item('gem-'+id,g.name)}<div class="gg-found">${skillGuideLink(g.found)}</div>`,`<div class="gg-chips">${enchChips(id,['weapon','bow','staff'])}</div>`,`<div class="gg-chips">${enchChips(id,['armor'])}</div>`,
+      artisan?'<div class="gg-chips">'+chip(id,`data-pop="one" data-kind="tool" data-ench="${esc(artisan.name)}"`,'Artisan','Tool: '+(artisan.effect[4]||'')+' (any one gem, set while forging)')+'</div>':NONE,
+      wornChip(id,GD&&GD.rings,'ring'),wornChip(id,GD&&GD.pendants,'pendant')]);
     const chips=`<div class="q-picker gg-pick" role="group" aria-label="Carat">${CS.map(c=>`<button type="button" class="q-chip q-${RQ[rar(c)]}${c===pick?' on':''}" data-gg-c="${c}">${c}c</button>`).join('')}</div><p class="gg-size">${CS.map(sizeLine).join('')}</p>`;
     const GT=typeof GATHERABLES!=='undefined'?GATHERABLES:[],tier=(sk,i)=>{const t=GT.filter(x=>x.skill===sk).sort((a,b)=>a.level-b.level)[i];return t?item(slug(t.item),t.item):'—'};
     const tiers=[.5,.6,.75,1].map((p,i)=>[`Tier ${i+1}`,tier('mining',i),tier('fishing',i),tier('lumberjack',i),`<b>${p}%</b>`]);
     return {lede:'Gems turn up while gathering and from humanoid monsters. Set in a ring or pendant a gem gives a lasting bonus, three of them make an enchantment, and the witch can build small ones into bigger ones.',sections:[
-      ['list','The nine gems',`<div class="gg-wrap" data-c="${pick}">`+chips+table(['Gem','Found by','As a ring',...(GD?['As a pendant']:[])],rows)+'</div>'+(GD?note('Up to 2c can be built at the witch, so those count as common; bigger gems only come from gathering. Rings take a gem of 1c or more: up to 1/2/3/4c for iron/silver/gold/titanium.'):'')],
+      ['list','The nine gems',`<div class="gg-wrap" data-c="${pick}">`+chips+table(['Gem','Weapon','Armor','Tool','Ring','Pendant'],rows,'gg-used')+'</div>'+note('Click a chip for what it does at each carat. Rings take a gem of 1c or more (up to 1/2/3/4c for iron/silver/gold/titanium); any one gem set while forging a tool makes it of the Artisan; and any gem can be the third gem of an armour enchantment (Titan, Camel, Weasel, Leopard, Sage, Mage). Up to 2c can be built at the witch, so those count as common; bigger gems only come from gathering.')],
       ['finding','Finding gems',`<p>Every successful gather has a chance of a gem from that skill, higher for better resources (for fishing, the fish that bit). Which of the skill’s gems you get is random.</p>`+table(['','Mining','Fishing','Lumberjack','Chance'],tiers)+`<p>Monsters of level 10+ that can drop gems have a flat <b>1%</b>, with the biggest carat set by their level: 0.5c from level 10, 1c from 20, 1.5c from 30, 2c from 40.</p>`],
       ['witch','Building a gem at the witch',globalThis.bxcGemWitchHtml?globalThis.bxcGemWitchHtml():''],
       ['uses','Using them',`<p>Enchantments take three gems each; the recipes are on ${guide('quality-and-enchanting')}.</p>`]
@@ -650,4 +662,34 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     forSkill:skill=>{const s=skillGuideSlug(skill);return byslug.has(s)?s:null},
     link:(s,label)=>byslug.has(s)?guide(s,label):''
   };
+  // Gems guide: one enchantment, or a gem's ring or pendant, at every carat in a popup. One listener for the page; the popup is built on each click.
+  document.addEventListener('click',e=>{
+    const b=e.target.closest&&e.target.closest('.gg-pop-btn');if(!b)return;
+    e.preventDefault();
+    const id=b.dataset.gem,kind=b.dataset.pop,EG=typeof ENCHANT_GEMS!=='undefined'?ENCHANT_GEMS:{},ER=typeof ENCHANT_RECIPES!=='undefined'?ENCHANT_RECIPES:{},GD=globalThis.BXC_GAME_DATA||{};
+    const gemName=g=>g==='any'?'any gem':EG[g]?.name||pretty(g),gname=gemName(id);
+    let title,body;
+    if(kind==='one'){
+      // one enchantment: its gems, and what it does at each carat (the game's own wording)
+      const fam=b.dataset.kind,x=(ER[fam]||[]).find(r=>r.name===b.dataset.ench)||{name:b.dataset.ench,gems:[],effect:''};
+      const g=(GD.enchants||[]).find(r=>r.name===x.name&&r.family===fam),t=g&&g.effect||{};
+      const cs=Object.keys(t).map(Number).filter(c=>t[c]).sort((a,c)=>a-c);
+      title=`${esc(pretty(fam))} ${esc(x.name)}`;
+      body=(g&&g.flavor?`<p class="g-note"><i>${esc(String(g.flavor).replace(/^./,c=>c.toUpperCase()))}</i></p>`:'')
+        +(fam==='tool'?'<p>Gems: <b>any one gem</b>, set while the tool is forged (up to 1/2/3/4c for iron/silver/gold/titanium).</p>':`<p>Gems: ${x.gems.map(q=>q===id?`<b>${esc(gemName(q))}</b>`:esc(gemName(q))).join(' + ')}</p>`)
+        +(cs.length?table(['Carat','What it does'],cs.map(c=>[`<b>${c}c</b>`,esc(t[c])])):`<p>${esc(x.effect)}</p>`)
+        +`<p class="g-note">${fam==='tool'?'The gem\'s carat decides the strength. See '+guide('tool-smithing')+'.':`The three gems' carats added up decide the strength. Every enchantment is in ${guide('quality-and-enchanting')}.`}</p>`;
+    }else{
+      const t=((kind==='ring'?GD.rings:GD.pendants)||[]).find(x=>x.gem===id)?.text||{};
+      const cs=Object.keys(t).map(Number).filter(c=>t[c]).sort((a,c)=>a-c),nm=String(t[cs[0]]||'').split(': ')[0];
+      title=`${esc(nm)} - ${esc(gname)} ${kind}`;
+      body=table(['Carat','What it does'],cs.map(c=>[`<b>${c}c</b>`,esc(String(t[c]).split(': ').slice(1).join(': ')||t[c])]))
+        +(kind==='ring'?'<p class="g-note">Forged at an anvil with one gem of 1c or more: up to 1/2/3/4c for iron/silver/gold/titanium. You wear two, and two of the same kind stack.</p>':'');
+    }
+    let d=document.getElementById('ggPop');
+    if(!d){d=document.createElement('dialog');d.id='ggPop';d.className='gg-pop';document.body.append(d);
+      d.addEventListener('click',ev=>{if(ev.target===d||ev.target.closest('.gg-pop-x,a'))d.close()})}
+    d.innerHTML=`<div class="gg-pop-in"><div class="gg-pop-head"><h3>${title}</h3><button type="button" class="gg-pop-x" aria-label="Close">×</button></div>${body}</div>`;
+    if(!d.open)d.showModal();
+  });
 })();

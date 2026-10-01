@@ -855,3 +855,55 @@ html[data-theme="light"] .q-alert,html[data-theme="light"] .q-alert-ico{color:#8
 .cp-mat{white-space:nowrap;line-height:1.55}
 .cp-plan td,.cp-now td{vertical-align:middle}
 .g-table th.t-c,.g-table td.t-c,.research-table th.t-c,.research-table td.t-c,.qualitytable th.t-c,.qualitytable td.t-c,.xptable th.t-c,.xptable td.t-c{text-align:center}
+/* Start page: the sections share the centred column of the creature of the day, three equal tiles a row, so every
+   tile lines up under the one above it and short rows no longer leave a gap at the right of a wider grid. */
+.splash-group{max-width:800px;margin-left:auto;margin-right:auto}
+.splash-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:760px){.splash-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.splash-grid{grid-template-columns:1fr}}
+/* Gems guide popups (atlas-guides.js): a gem's enchantments, ring or pendant */
+.gg-pop-btn{background:none;border:0;padding:0;font:inherit;color:var(--accent);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.gg-pop-btn.gg-pop-name{color:var(--ink);font-weight:700;text-decoration-style:dotted}
+.gg-pop-btn:hover,.gg-pop-btn:focus-visible{color:var(--accent);text-decoration-style:solid}
+dialog.gg-pop{width:min(720px,94vw);max-height:86vh;padding:0;background:var(--panel);color:var(--ink);border:1px solid var(--accent-soft);border-radius:10px;box-shadow:0 18px 50px rgba(0,0,0,.6)}
+dialog.gg-pop::backdrop{background:rgba(0,0,0,.55)}
+.gg-pop-in{padding:14px 18px 16px}
+.gg-pop-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;border-bottom:1px solid var(--edge);padding-bottom:6px}
+.gg-pop-head h3{margin:0;font:400 22px/1.2 var(--serif)}
+.gg-pop-x{background:none;border:0;font-size:22px;line-height:1;color:var(--muted);cursor:pointer;padding:2px 6px}
+.gg-pop-x:hover{color:var(--ink)}
+/* Gems guide: what each gem goes into, as chips */
+.gg-chips{display:flex;flex-wrap:wrap;gap:4px}
+.gg-pop-btn.gg-chip{display:inline-block;padding:2px 9px;border:1px solid var(--edge);border-radius:999px;background:var(--panel2);color:var(--ink);font-size:12.5px;line-height:1.5;text-decoration:none;white-space:nowrap}
+.gg-pop-btn.gg-chip:hover,.gg-pop-btn.gg-chip:focus-visible{border-color:var(--accent);color:var(--accent)}
+/* Gems guide "what it goes into": the gem (and the skill that finds it, under it) and five chip columns, sized to fit
+   the width (no sideways scroll). Alignment comes from the rules every table follows (end of this file). */
+table.gg-used{table-layout:fixed;width:100%}
+table.gg-used th:first-child{width:16%}
+table.gg-used th:nth-child(2){width:26%}
+table.gg-used th:nth-child(3){width:19%}
+table.gg-used th:nth-child(4){width:11%}
+table.gg-used th:nth-child(n+5){width:14%}
+table.gg-used .gg-chip{white-space:normal;padding:2px 8px;font-size:12px}
+.gg-found{font-size:12px;margin-top:2px;padding-left:28px}   /* under the name, past its 22px icon + 6px gap */
+
+/* Every Atlas table, one way (2026-10-01, from the gems guide):
+   - a row lines up on its first line: every cell's first line of text (or chip, or icon and name) shares one baseline,
+     however many lines the others run to - no cell floating in the middle of a tall row;
+   - a word or number never splits across lines (it had "1,000" and "Cleanbloo-d"): a column is at least as wide as
+     its longest word, and the table scrolls sideways only if it really cannot fit;
+   - value columns (numbers, short values, chips) are centred, heading and cells alike (atlas-layout.js adds .t-c),
+     chips included. */
+#content table th,#content table td{overflow-wrap:normal;word-break:normal}
+.g-table td,.research-table td,.qualitytable td,.xptable td,.cp-plan td,.cp-now td{vertical-align:baseline}
+.g-table th,.research-table th,.qualitytable th,.xptable th{vertical-align:bottom}
+td.t-c .gg-chips{justify-content:center}
+.g-table th.t-c,.g-table td.t-c{text-align:center}
+/* ...an icon stays beside its name (the name wraps next to it, never onto a line of its own under the icon), and a
+   range or hyphenated word stays whole ("30–44", "Man-at-Arms": .t-nb from atlas-layout.js) */
+.g-table td a:has(>img.g-ico),.research-table td a:has(>img.g-ico){display:inline-flex;align-items:baseline;max-width:100%}
+.g-table td a>img.g-ico,.research-table td a>img.g-ico{flex:none;align-self:center}
+.t-nb{white-space:nowrap}
+.gg-none{color:#e05555;font-weight:700;font-size:15px;line-height:1}
+/* a pill that runs over several lines in a table lines up by its first line like the cells beside it */
+#content td .tag-chip{vertical-align:top}
