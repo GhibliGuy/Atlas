@@ -251,7 +251,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     // but a wand - bows and crossbows too; Seeking on bows and crossbows only; staff enchants on staves, the game's wands)
     const GDE=(globalThis.BXC_GAME_DATA||{}).enchants||[];
     const gemChip=g=>g==='any'?'<span class="ec-gem ec-any">any gem</span>':`<span class="ec-gem">${icon('gem-'+g)}${esc(gemName(g))}</span>`;
-    const ON={weapon:'Any weapon but a staff, bows and crossbows included.',bow:'Bows and crossbows only. They take the weapon enchants above too.',staff:'Staves only: this is what makes a staff a school staff.',armor:'Any armour piece, a cape or a shield; the bonuses add up across them. A cape holds up to 3c.',tool:'Any trade tool, from pickaxes to sewing kits. The gem is added when the tool is crafted.'};
+    const ON={weapon:'Any weapon but a staff, bows and crossbows included.',bow:'Bows and crossbows only. They take the weapon enchants above too.',staff:'Staves only: this is what makes a staff a school staff.',armor:'Any armour piece, a cape or a shield; the bonuses add up across them.',tool:'Any trade tool, from pickaxes to sewing kits. The gem is added when the tool is crafted.'};
     // An enchant's strength at every carat it can hold, by gear tier (3 carats each; a tool, by metal): the numbers only,
     // the unit ("base burn", "DEX") said once. Values from the game's rule (enchEffectAt).
     const chart=(fam,g,x,max)=>{const vals=Array.from({length:max},(_,i)=>g?enchEffectAt(g,i+1):x.effect);
