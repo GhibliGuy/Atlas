@@ -992,3 +992,16 @@ tr.zmon-on td:first-child{box-shadow:inset 3px 0 0 #ffd54a}
 .q-chain-step.on i{background:#ffd54a;color:#1a140c}
 .q-chain-step.end{border-color:#6fbf73;color:#8fd492;font-weight:600}
 .q-chain-arrow{color:var(--muted)}
+/* magic guide: every spell, a card per school, each spell linking to its scroll */
+.sp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin:8px 0 14px}
+.sp-card{padding:10px 12px;background:var(--panel);border:1px solid var(--edge);border-top:2px solid var(--accent-soft);border-radius:6px}
+.sp-card h4{margin:0 0 6px}
+.sp-spell{display:flex;align-items:center;gap:8px;padding:5px 4px;border-top:1px solid var(--edge);color:var(--ink)!important;text-decoration:none}
+.sp-spell:first-of-type{border-top:0}
+a.sp-spell:hover{background:rgba(255,213,74,.06)}
+.sp-spell>span:last-child{display:flex;flex-direction:column;line-height:1.25}
+.sp-spell small{font-size:11px}
+.sp-lv{flex:none;width:20px;height:20px;display:inline-grid;place-items:center;border-radius:50%;background:var(--edge);font-size:11px;font-weight:700}
+.sp-spell.gg-pop-btn{width:100%;text-align:left;text-decoration:none;color:var(--ink)}
+.sp-spell.gg-pop-btn:hover{background:rgba(255,213,74,.06);color:var(--ink)}
+.sp-spell.gg-pop-btn b{text-decoration:underline dotted;text-underline-offset:2px}

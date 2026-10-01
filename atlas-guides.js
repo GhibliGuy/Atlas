@@ -444,7 +444,12 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const dmg=SP.filter(x=>x.effect==='damage'),byLevel=new Map();for(const x of dmg)if(!byLevel.has(x.level))byLevel.set(x.level,x);
     const levels=table(['Level','Damage','Per 10 MAG','Mana','Cooldown','Cast','INT'],[...byLevel.values()].sort((a,b)=>a.level-b.level).map(x=>[n(x.level),x.baseDamageMin+'–'+x.baseDamageMax,'+'+x.magScale,n(x.manaCost),(x.cooldownMs/1000).toFixed(1)+' s',(x.castTimeMs/1000).toFixed(2)+' s',n(x.intRequirement)]));
     const schools=[...new Set(SP.map(x=>x.school))];
-    const bySchool=table(['School','Spells by level'],schools.map(sc=>[esc(pretty(sc)),SP.filter(x=>x.school===sc).sort((a,b)=>a.level-b.level).map(x=>esc(x.name)+' <span class="muted">('+x.level+')</span>').join(', ')]));
+    // one card per school; each spell links to the scroll that teaches it (the game's item "scroll-<spell>"). Acid Bolt
+    // and Mend have no scroll: they come with learning the school.
+    const NO_SCROLL={'acid-bolt':'comes with the Dark Witch’s Acid quest',mend:'comes with the Priest’s Restoration training'};
+    const bySchool='<div class="sp-grid">'+schools.map(sc=>`<div class="sp-card"><h4>${esc(pretty(sc))}</h4>${SP.filter(x=>x.school===sc).sort((a,b)=>a.level-b.level).map(x=>{const id=slug(x.name),lv=`<span class="sp-lv">${x.level}</span>`;
+      return NO_SCROLL[id]?`<div class="sp-spell">${lv}<span><b>${esc(x.name)}</b><small class="muted">No scroll: ${NO_SCROLL[id]}</small></span></div>`
+        :`<button type="button" class="gg-pop-btn sp-spell" data-pop="spell" data-spell="${esc(x.id||id)}" data-gem="" title="The spell and where its scroll comes from">${lv}${icon('scroll-'+id)}<span><b>${esc(x.name)}</b><small class="muted">${esc(x.name)} scroll</small></span></button>`}).join('')}</div>`).join('')+'</div>';
     return {levels,bySchool};
   }
   // ---- Melee and Ranged: the weapon families on each side, from the game's own numbers ---------------------------
@@ -482,11 +487,19 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
           ['<b>Restoration</b> (healing)','Taught by the <b>Priest</b> to a mage of level 10 or higher; mages only. It adds to the school the mage already has.']])+
         table(['Spell level','Needs INT','Needs school skill'],[['1','10','—'],['2','20','5'],['3','30','15'],['4 (area)','40','25']])+
         `<p class="g-note">Both needs are checked when you learn the scroll and again on every cast, so moving your points can lock a spell. Casting needs a wand or a staff in your main hand, and any metal armor or metal shield makes the cast fizzle. (The official guide.)</p>`],
-    ...(gameSpellTables()?[['spells','Every spell (the game’s list)',gameSpellTables().bySchool]]:[]),
+    ...(gameSpellTables()?[['spells','Every spell',gameSpellTables().bySchool]]:[]),
+    // The official guide (healing scrolls: any caster, tier by the dropper's level 8/18/30), the game's own rules (a
+    // scroll is picked by school and tier, tiers 2-4, for every school) and the drop logs (damage scrolls: every
+    // level-3 from monsters level 25-31, every level-4 from 28 up and only level-4s past 31; the dropper a caster).
+    ['scrolls','Where scrolls drop',`<p>Spell scrolls drop from <b>monsters that cast spells</b>, and only for spell levels 2 to 4: level-1 spells come from your class or a quest. Which scroll drops depends on two things:</p>
+      <ul class="g-list"><li><b>The school the monster casts.</b> A fire caster drops fire scrolls, an ice caster ice scrolls, and so on. Restoration scrolls are the exception: any caster can drop those, whatever school it casts.</li>
+      <li><b>The monster’s level</b> picks the spell level: level <b>8+</b> drops level-2 scrolls, <b>18+</b> level-3 and <b>30+</b> level-4.</li></ul>`
+      +table(['Monster level','Scroll','Fire','Ice','Shock','Acid','Restoration'],[['8+','Level 2','Fire Blast','Ice Zap','Sparkbolt','Caustic Blast','Renew'],['18+','Level 3','Firepit','Ice Grasp','Lightning','Acid Pit','Ward'],['30+','Level 4','Fireball','Blizzard','Thunderstorm','Acid Rain','Sanctuary']])
+      +note('The level rule and the restoration exception are from the official guide. The game’s own rules pick a scroll by school and level. Players’ drop logs fit both: every level-3 scroll came from monsters level 25–31, and every level-4 from monsters level 28 and up (most of them 30+). No level-2 scroll has been logged yet.')],
     ['levels','Spell levels',gameSpellTables()?gameSpellTables().levels+note('From the game’s own spell table. Casting is cancelled by moving; level-4 spells hit an area you place. Cooldowns are shared by spell level across schools.'):table(['Level','Damage','Per 10 MAG','Mana','Cooldown','INT','School skill'],[['1','4–6','+0.5','3','2.4 s','10','—'],['2','5–9','+0.7','4','3.2 s','20','5'],['3','7–11','+0.9','8','4.8 s','30','15'],['4','7–11 each (area)','+0.9','30','6.4 s','40','25']])+note('Casting takes 0.6 s (level 1) to 1.3 s (level 4) and moving cancels it. Level-4 spells hit an area you place. Cooldowns are shared by spell level across schools, with a 2.4 s global cooldown; a killing blow resets them all.')],
     ['schools','What each school adds',`<p>From spell level 2, a hit can add its school’s effect: a 20% chance, rising with MAG up to 90%.</p>`+table(['School','Effect','Spells'],[['Fire','Burn: another 25% of the hit as fire over 4 s','Burning Arrow, Fire Blast, Firepit, Fireball'],['Ice','Chill: 30% slower movement and attacks','Ice Bolt, Ice Zap, Ice Grasp, Blizzard'],['Shock','Stun for 1 s, then a short immunity','Shockbolt, Sparkbolt, Lightning, Thunderstorm'],['Acid','Corroded: takes up to 12% more damage from everything','Acid Bolt, Caustic Blast, Acid Pit, Acid Rain'],['Restoration','Heals, and may remove one debuff','Mend, Renew, Ward, Sanctuary']])],
     ['damage','Damage and mana',`<p>Every full 10 MAG above 10 raises spell damage; the wand itself does not. Mana does not come back during a fight; damage spells still cast at 0 mana but weaker, heals do not. A <b>staff</b> (made by Bowyers) enchanted to a school adds school damage too. Metal armor stops all casting (see ${guide('armor')}).</p>`],
-    ['healing','Healing',`<p>Mend heals at once; Renew heals over 6 s (about 1.5 Mends); Ward is a shield that lasts 8 s or one big hit; Sanctuary heals everyone in an area four times over 6 s. Healing yourself does half. Healing someone under attack draws the monsters to you. Renew, Ward and Sanctuary scrolls drop from spellcasting monsters (level 8+, 18+ and 30+).</p>`]
+    ['healing','Healing',`<p>Mend heals at once; Renew heals over 6 s (about 1.5 Mends); Ward is a shield that lasts 8 s or one big hit; Sanctuary heals everyone in an area four times over 6 s. Healing yourself does half. Healing someone under attack draws the monsters to you. Renew, Ward and Sanctuary scrolls drop from any monster that casts spells (see Where scrolls drop above).</p>`]
   ],related:['combat','attributes-and-classes','quality-and-enchanting']})});
 
   reg({slug:'shearing',group:'Gathering skills',title:'Shearing',blurb:'Wool from sheep, and what it is used for.',build:()=>{
@@ -806,7 +819,31 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const id=b.dataset.gem,kind=b.dataset.pop,EG=typeof ENCHANT_GEMS!=='undefined'?ENCHANT_GEMS:{},ER=typeof ENCHANT_RECIPES!=='undefined'?ENCHANT_RECIPES:{},GD=globalThis.BXC_GAME_DATA||{};
     const gemName=g=>g==='any'?'any gem':EG[g]?.name||pretty(g),gname=gemName(id);
     let title,body;
-    if(kind==='filler'){
+    if(kind==='spell'){
+      // one spell: the game's numbers, and where its scroll has come from (recorded drops, quest rewards)
+      const sp=(GD.spells||[]).find(x=>x.id===b.dataset.spell);if(!sp)return;
+      const sid='scroll-'+sp.id,S=globalThis.BINXONIA_COLLECTOR_SNAPSHOT||{};
+      const need=['—','—','5','15','25'][sp.level]||'—';
+      const rows=[['School',esc(pretty(sp.school))],['Spell level',String(sp.level)],['Needs',`${sp.intRequirement} INT${need!=='—'?', '+esc(pretty(sp.school))+' skill '+need:''}`]];
+      if(sp.effect==='damage')rows.push(['Damage',`${sp.baseDamageMin}–${sp.baseDamageMax} <span class="muted">+${sp.magScale} per 10 MAG</span>`]);
+      rows.push(['Mana',String(sp.manaCost)],['Cooldown',(sp.cooldownMs/1000).toFixed(1)+' s'],['Cast',(sp.castTimeMs/1000).toFixed(2)+' s']);
+      if(sp.range)rows.push(['Range',sp.range+' tiles']);
+      const by=new Map();for(const d of S.drops||[])if(d.itemTypeId===sid&&d.monsterName){const k=d.monsterTypeId||d.monsterName;const v=by.get(k)||{name:d.monsterName,type:d.monsterTypeId,n:0};v.n+=d.quantity||1;by.set(k,v)}
+      const mons=[...by.values()].sort((a,b)=>b.n-a.n);
+      const quests=questList().filter(q=>[...(q.rewards?.items||[]),...(q.rewards?.choice||[])].some(i=>i.typeId===sid));
+      // the official guide's rules for where scrolls come from (see "Unlocking schools and spells" and "Healing")
+      const RULE={'burning-arrow':'Fire mages start with it; the Fire school’s level-10 quest teaches it too.','ice-bolt':'Ice mages start with it; the Ice school’s level-10 quest teaches it too.','shockbolt':'Shock mages start with it; the Shock school’s level-10 quest teaches it too.',
+        'fire-blast':'A reward choice from the Fire school’s level-10 quest.','ice-zap':'A reward choice from the Ice school’s level-10 quest.','sparkbolt':'A reward choice from the Shock school’s level-10 quest.',
+        'caustic-blast':'A reward choice from the Dark Witch’s Acid quest.',renew:'Drops from spellcasting monsters level 8+.',ward:'Drops from spellcasting monsters level 18+.',sanctuary:'Drops from spellcasting monsters level 30+.'}[sp.id];
+      const minLv={2:8,3:18,4:30}[sp.level];
+      const DROP=minLv?(sp.school==='restoration'?`Drops from any monster that casts spells, level ${minLv}+.`:`Drops from monsters that cast ${esc(pretty(sp.school))} spells, level ${minLv}+.`):null;
+      const from=[...(DROP?[DROP]:[]),...(RULE&&!/^Drops from spellcasting/.test(RULE)?[esc(RULE)]:[]),...(mons.length?[`Recorded drops: ${mons.slice(0,8).map(m=>m.type?monster(m.type,m.name):esc(m.name)).join(', ')}${mons.length>8?' and '+(mons.length-8)+' more':''}.`]:[]),
+        ...(quests.length?[`A reward from ${quests.map(q=>`<a href="#/guide/${enc(questSlug(q))}">${esc(q.name)}</a>`).join(', ')}.`]:[])];
+      title=`${icon(sid)}${esc(sp.name)}`;
+      body=table(['',''],rows,'q-facts')+`<h4>Getting the scroll</h4>`+(from.length?from.map(t=>`<p>${t}</p>`).join(''):'<p class="muted">No one has recorded where it comes from yet.</p>')
+        +`<p><a href="#/item/${enc(sid)}">Open the ${esc(sp.name)} scroll’s page</a></p>`;
+    }
+    else if(kind==='filler'){
       // a gem with no armour recipe of its own still completes one: every armour enchant takes any gem as its third
       const list=(ER.armor||[]).filter(x=>x.gems.includes('any'));
       title=`${esc(gname)} as filler`;
