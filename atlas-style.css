@@ -951,3 +951,12 @@ table.gg-tiers tbody tr:nth-child(3n+1):not(:first-child) td{border-top:2px soli
 .ec-c b{font-weight:600;color:var(--ink);white-space:nowrap}
 .gg-pop-btn.ec-g-h{display:block;width:100%;background:none;border:0;padding:0;font-size:10.5px;color:var(--accent);text-align:center;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;cursor:pointer}
 .gg-pop-btn.ec-g-h:hover{text-decoration-style:solid}
+/* Quality & enchanting, Mastery: craft success by levels over the item, mastery marked */
+.ms-chart{display:grid;grid-template-columns:repeat(15,minmax(0,1fr));gap:3px;margin:8px 0 4px;align-items:end}
+.ms-t{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:10.5px}
+.ms-l{color:var(--muted)}
+.ms-bar{display:flex;align-items:flex-end;width:100%;height:60px;background:var(--panel2);border:1px solid var(--edge);border-radius:3px;overflow:hidden}
+.ms-bar i{display:block;width:100%;background:color-mix(in srgb,var(--accent) 45%,transparent)}
+.ms-t b{font-weight:600;font-size:10.5px;white-space:nowrap}
+.ms-m .ms-bar{border-color:var(--accent)}.ms-m .ms-bar i{background:var(--accent)}.ms-m b,.ms-m .ms-l{color:var(--accent)}
+@media (max-width:560px){.ms-chart{grid-template-columns:repeat(8,minmax(0,1fr))}}

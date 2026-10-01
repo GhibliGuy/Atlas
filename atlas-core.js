@@ -214,7 +214,9 @@ function enchantInfo(r){
  const name=r.item;let kind=null;
  if(r.skill==='Weapon Smithing')kind='weapon';
  else if(r.skill==='Bowyer')kind=/Staff$/.test(name)?'staff':/(Bow|Longbow|Crossbow)$/.test(name)?'bow':null;
- else if(r.skill==='Armor Smithing')kind=/Shield$/.test(name)?null:/Ring$/.test(name)?'ring':'armor';
+ // shields take the armour enchants too (game rules Ud: armor family = head/arms/torso/legs/feet, back (capes) and an
+ // off-hand shield)
+ else if(r.skill==='Armor Smithing')kind=/Ring$/.test(name)?'ring':'armor';
  else if(r.skill==='Tailoring'||r.skill==='Leatherworking')kind='armor';
  else if(r.skill==='Tool Smithing')kind='tool';
  const low=name.toLowerCase();
