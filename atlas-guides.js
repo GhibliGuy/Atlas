@@ -537,6 +537,14 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   // Scriptorium Apprentice needs Herblore and unlocks Scribing (the game lists Herblore as what it unlocks).
   const QUEST_SKILLS={};   // none needed now: The Scriptorium Apprentice unlocks Herblore, as the game says
   const questRequiresSkills=q=>(QUEST_SKILLS[q.questId]?.requires||[]).map(k=>`<a href="#/guide/${esc(k)}">${esc(pretty(k))}</a>`);
+  // what finishing a quest opens up, short, for the About box: skills, weapon skills, an area or a dungeon
+  function questUnlockFacts(q){
+    const r=q.rewards||{},sk=k=>byslug.has(slug(k))?`<a href="#/guide/${esc(slug(k))}">${esc(pretty(k))}</a>`:esc(pretty(k));
+    return [...(QUEST_SKILLS[q.questId]?.unlocks||(r.skills||[]).map(x=>x.skill||x)).map(x=>'the '+sk(x)+' skill'),
+      ...(r.weaponSkills||[]).map(x=>`the <a href="#/guide/special-attacks">${esc(pretty(x.skill||x))}</a> weapon skill`),
+      ...(QUEST_AREAS[q.questId]?['access to '+esc(QUEST_AREAS[q.questId].place)]:[]),
+      ...(QUEST_UNLOCKS[q.questId]?[esc(QUEST_UNLOCKS[q.questId].name)]:[])];
+  }
   function questRewards(q){
     const r=q.rewards||{},rows=[];
     if(r.gold)rows.push(['Gold',qn(r.gold)]);
@@ -712,7 +720,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   function questGuide(s){
     const q=questBySlug(s);if(!q)return null;
     return {slug:s,group:'Quests',title:q.name,blurb:q.lore||'',build:()=>{
-      const facts=table(['',''],[['Given by',questGiver(q)],['Level',String(q.recommendedLevel||'?')],['Length',esc(pretty(q.lengthTag||'?'))],['Kind',esc((Q_CATS.find(c=>c[0]===questCat(q))||[])[1]||'Side quests').replace(/ quests$/,'')],['Quest points',String(q.questPoints||0)],...(questRequiresSkills(q).length?[['Requires',questRequiresSkills(q).join(', ')+' skill']]:[]),
+      const facts=table(['',''],[['Given by',questGiver(q)],['Level',String(q.recommendedLevel||'?')],['Length',esc(pretty(q.lengthTag||'?'))],['Kind',esc((Q_CATS.find(c=>c[0]===questCat(q))||[])[1]||'Side quests').replace(/ quests$/,'')],['Quest points',String(q.questPoints||0)],...(questUnlockFacts(q).length?[['Unlocks',questUnlockFacts(q).join(', ').replace(/^./,c=>c.toUpperCase())]]:[]),...(questRequiresSkills(q).length?[['Requires',questRequiresSkills(q).join(', ')+' skill']]:[]),
         ...((QUEST_PREREQS[q.questId]||[]).length?[['Requires',(QUEST_PREREQS[q.questId]).map(id=>{const p=questList().find(x=>x.questId===id);return p?`<a href="#/guide/quest-${esc(slug(id))}">${esc(p.name)}</a>`:esc(pretty(id))}).join(', ')+' finished first']]:[])],'q-facts');
       return {lede:(questDone(q)?'':`<span class="q-alert-banner" role="alert">${ALERT_SVG}<span><b>This quest is not fully written yet.</b> Steps, items or dialogue may be missing.</span></span>`)+questChain(q)+(q.lore?esc(q.lore):''),sections:[
         ['about','About',facts],
