@@ -513,7 +513,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   const questBySlug=s=>String(s||'').startsWith('quest-')?questList().find(q=>questSlug(q)===s)||null:null;
   // Quest guides the user has confirmed as fully written (quest ids). Every other quest gets an alert: on its card on
   // the Quests page, and a banner on its own page.
-  const QUEST_COMPLETE=new Set(['wasteland-nothing-gets-through','imp-menace']);
+  const QUEST_COMPLETE=new Set(['wasteland-nothing-gets-through','imp-menace','plymouth-cargo-for-the-isle','plymouth-the-ogre-traitor']);
   const questDone=q=>QUEST_COMPLETE.has(q.questId);
   const ALERT_SVG='<svg class="q-alert-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20z" fill="currentColor"/><path d="M12 10v5M12 17.6v.4" stroke="#1b1300" stroke-width="2.2" stroke-linecap="round"/></svg>';
   const questLink=q=>`<a href="#/guide/${enc(questSlug(q))}">${esc(q.name)}</a>`;
@@ -553,9 +553,25 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   // while someone was on the quest (numbered after it); with none recorded, what players reported (QUEST_REQUIRES).
   // Quests whose every step is known: the recorded steps are all of them, and handIn - the last step is going back to
   // the quest-giver (as players who finished it reported).
-  const QUEST_STEPS_KNOWN={'imp-menace':{handIn:true}};
+  const QUEST_STEPS_KNOWN={'imp-menace':{handIn:true},'plymouth-the-ogre-traitor':{handIn:true}};
+  // Steps the game sent while someone was on the quest, recovered from older collector backups (the quest log of
+  // 19-20 Sep 2026) where today's data has none: The Ogre Traitor's stage 1, objective "Kill the Ogre Traitor" (1).
+  // Steps players reported for a quest with none recorded; the items and places named are the game's own (its catalog:
+  // "ogre-isle-supply-crate", category quest - "Gerald's cargo, hauled off to an ogre den"; the quest's own text: ogres
+  // "holed up east of Underleaf" = the Ogre Den dungeon). The count (5) is as players remember it.
+  const QUEST_REPORTED_STEPS={'plymouth-cargo-for-the-isle':{steps:who=>[
+      `Kill ogres in the <a href="#" class="show-on-map" data-map-kind="place" data-map-id="Ogre Den">Ogre Den</a>, east of Underleaf, until you have <b>5</b> ${item('ogre-isle-supply-crate','Crates of Ogre Isle Supplies')} <span class="muted">(a quest item)</span>. The den's ogres are level <b>29</b> at the entrance up to <b>33</b> at the bottom.`,
+      `Bring them back to ${who} to finish the quest.`],
+    note:'Steps 2 and 3 are as reported by players who finished it; the crate and the Ogre Den are from the game itself, the den’s levels from the news (<a href="https://binxonia.com/news/update-ogre-isle-opens-at-thirty" target="_blank" rel="noopener">Ogre Isle Opens at Thirty</a>, 26 Sep 2026: they were 35 to 40 before).'}};
+  // A quest that needs another one finished first (the story runs on: Cargo for the Isle, then The Ogre Traitor - same
+  // quest-giver, and the second picks up where the first ends)
+  const QUEST_PREREQS={'plymouth-the-ogre-traitor':['plymouth-cargo-for-the-isle']};
+  const QUEST_STAGES_RECOVERED={'plymouth-the-ogre-traitor':[{n:0,text:'Kill the Ogre Traitor',objectives:[{text:'Kill the Ogre Traitor',required:1,npc:'Ogre Traitor',waypoints:[{z:-58,x:49,y:155}],after:'a level 34 boss at the bottom of the den (level 45 before 26 Sep 2026)'}]}]};
+  // an objective's text, with a person it names (o.npc, or a recorded named NPC whose name it contains) linked to them
+  const objText=o=>{const t=String(o.text||''),nm=o.npc||null,p=nm&&globalThis.bxcNpcByName?globalThis.bxcNpcByName(nm):null;
+    if(!p||!t.includes(nm))return esc(t);const i=t.indexOf(nm);return esc(t.slice(0,i))+`<a href="${esc(p.href)}">${esc(nm)}</a>`+esc(t.slice(i+nm.length))};
   function questSteps(q){
-    const st=(q.stages||[]).filter(s=>s.objectives&&s.objectives.length);
+    const st=((q.stages||[]).some(s=>s.objectives&&s.objectives.length)?q.stages:(QUEST_STAGES_RECOVERED[q.questId]||[])).filter(s=>s.objectives&&s.objectives.length);
     const placeOf=w=>(globalThis.bxcPlaceAt&&globalThis.bxcPlaceAt(w.z,w.x,w.y))||questZone(w.z);   // the building or dungeon it is in, not just its zone number
     // a named place links to it on the map: the game's own marker (Imp Tree), else the building's or cave's entrance
     const placeLink=w=>{const n=placeOf(w);if(!n)return '';const poi=(typeof D!=='undefined'&&D.pois||[]).find(p=>p.name===n);return `<a href="#" class="show-on-map" data-map-kind="${poi?'place':'zone'}" data-map-id="${esc(poi?poi.name:String(w.z))}">${esc(n)}</a>`};
@@ -569,14 +585,16 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     // every step known (players who finished it said so): the recorded ones in order, then handing it back in
     const known=QUEST_STEPS_KNOWN[q.questId];
     if(st.length&&known){
-      st.forEach((s,k)=>steps.push(`<li value="${k+2}">${s.text&&!s.objectives.some(o=>o.text===s.text)?`<b>${esc(s.text)}</b><br>`:''}${s.objectives.map(o=>`${esc(o.text)}${o.required>1?` <span class="muted">(${qn(o.required)})</span>`:''}${o.itemTypeId?' - '+item(o.itemTypeId):''}${where((o.waypoints||[])[0])}`).join('<br>')}</li>`));
+      st.forEach((s,k)=>steps.push(`<li value="${k+2}">${s.text&&!s.objectives.some(o=>o.text===s.text)?`<b>${esc(s.text)}</b><br>`:''}${s.objectives.map(o=>`${objText(o)}${o.required>1?` <span class="muted">(${qn(o.required)})</span>`:''}${o.itemTypeId?' - '+item(o.itemTypeId):''}${where((o.waypoints||[])[0])}${o.after?` <span class="muted">- ${esc(o.after)}</span>`:''}`).join('<br>')}</li>`));
       if(known.handIn)steps.push(`<li value="${st.length+2}">Go back to ${who} to finish the quest.${mapBtn}</li>`);
       return '<ol class="q-steps">'+steps.join('')+'</ol>';
     }
     if(st.length){
-      for(const s of st)steps.push(`<li value="${(s.n||0)+2}">${s.text&&!s.objectives.some(o=>o.text===s.text)?`<b>${esc(s.text)}</b><br>`:''}${s.objectives.map(o=>`${esc(o.text)}${o.required>1?` <span class="muted">(${qn(o.required)})</span>`:''}${o.itemTypeId?' - '+item(o.itemTypeId):''}${where((o.waypoints||[])[0])}`).join('<br>')}</li>`);
+      for(const s of st)steps.push(`<li value="${(s.n||0)+2}">${s.text&&!s.objectives.some(o=>o.text===s.text)?`<b>${esc(s.text)}</b><br>`:''}${s.objectives.map(o=>`${objText(o)}${o.required>1?` <span class="muted">(${qn(o.required)})</span>`:''}${o.itemTypeId?' - '+item(o.itemTypeId):''}${where((o.waypoints||[])[0])}${o.after?` <span class="muted">- ${esc(o.after)}</span>`:''}`).join('<br>')}</li>`);
       return '<ol class="q-steps">'+steps.join('')+'</ol>'+((st[0].n||0)>0?note('Some steps in between were not recorded.'):'');
     }
+    const rep=QUEST_REPORTED_STEPS[q.questId];
+    if(rep){rep.steps(who).forEach((t,k)=>steps.push(`<li value="${k+2}">${t}</li>`));return '<ol class="q-steps">'+steps.join('')+'</ol>'+note(rep.note)}
     const r=QUEST_REQUIRES[q.questId];
     if(r&&r.oneOf){
       {const names=r.oneOf.map(o=>item(o.id)),list=names.length>1?names.slice(0,-1).join(', ')+' or '+names[names.length-1]:names[0];
@@ -597,7 +615,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   // for the zone pages and layouts: the quests needed to get into a zone
   globalThis.bxcZoneQuests=z=>Object.entries(QUEST_UNLOCKS).filter(([,u])=>Number(u.z)===Number(z)).map(([id,u])=>{const q=questList().find(x=>x.questId===id);return {name:q?q.name:u.questName,href:'#/guide/quest-'+slug(id),giver:q&&q.giverName||null}});
   // a whole area a quest opens (the game's own region; atlas-live QUEST_REGIONS draws its lock): its monsters and places
-  const QUEST_AREAS={'plymouth-the-ogre-traitor':{place:'Ogre Isle',text:'Finishing it earns the crossing to Ogre Isle, so the whole island and everything on it opens up. Gerald Seabroden sends you to the dock: “You’ve earned the crossing.”'}};
+  const QUEST_AREAS={'plymouth-the-ogre-traitor':{place:'Ogre Isle',text:'Finishing it earns the crossing to Ogre Isle, so the whole island and everything on it opens up. Gerald Seabroden sends you to the dock: “You’ve earned the crossing.” The ferry out costs 50 gold, and the way back is free.',news:[['update-the-exchange-opens','The Exchange Opens','13 Sep 2026'],['update-ogre-isle-opens-at-thirty','Ogre Isle Opens at Thirty','26 Sep 2026']]}};
   function questAreaUnlocks(q){const a=QUEST_AREAS[q.questId];if(!a)return '';
     const S=globalThis.BINXONIA_COLLECTOR_SNAPSHOT||{},at=globalThis.bxcQuestRegionAt;if(typeof at!=='function')return `<p>${esc(a.text)}</p>`;
     const by=new Map();for(const o of [...(S.npcObservations||[]),...(S.npcs||[])]){const p=o&&o.position;if(!p||p.z)continue;const v=by.get(o.typeId)||[0,0];v[1]++;if(at(p.x,p.y))v[0]++;by.set(o.typeId,v)}
@@ -605,7 +623,8 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const places=(typeof D!=='undefined'&&D.pois||[]).filter(p=>at(+p.x,+p.y));
     return `<p><b>${esc(a.place)}</b></p><p>${esc(a.text)}</p>`
       +(only.length?`<p>Found only there: ${only.map(m=>monster(m.typeId,m.name)+(m.baseLevel?' <span class="muted">Lv '+esc(m.baseLevel)+'</span>':'')).join(', ')}.</p>`:'')
-      +(places.length?`<p>Places: ${places.map(p=>esc(p.name)).join(', ')}.</p>`:'')}
+      +(places.length?`<p>Places: ${places.map(p=>esc(p.name)).join(', ')}.</p>`:'')
+      +(a.news?note('Since 26 Sep 2026 Ogre Isle is a level 30 area (it was 45). From the Binxonia news: '+a.news.map(([u,t,d])=>`<a href="https://binxonia.com/news/${u}" target="_blank" rel="noopener">${esc(t)}</a> (${esc(d)})`).join(', ')+'.'):'')}
   function questUnlocks(q){
     const u=QUEST_UNLOCKS[q.questId];if(!u)return questAreaUnlocks(q);
     const S=globalThis.BINXONIA_COLLECTOR_SNAPSHOT||{},z=Number(u.z);
@@ -668,7 +687,9 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   function questGuide(s){
     const q=questBySlug(s);if(!q)return null;
     return {slug:s,group:'Quests',title:q.name,blurb:q.lore||'',build:()=>{
-      const facts=table(['',''],[['Given by',questGiver(q)],['Level',String(q.recommendedLevel||'?')],['Length',esc(pretty(q.lengthTag||'?'))],['Kind',esc((Q_CATS.find(c=>c[0]===questCat(q))||[])[1]||'Side quests').replace(/ quests$/,'')],['Quest points',String(q.questPoints||0)],...(questRequiresSkills(q).length?[['Requires',questRequiresSkills(q).join(', ')+' skill']]:[])],'q-facts');
+      const facts=table(['',''],[['Given by',questGiver(q)],['Level',String(q.recommendedLevel||'?')],['Length',esc(pretty(q.lengthTag||'?'))],['Kind',esc((Q_CATS.find(c=>c[0]===questCat(q))||[])[1]||'Side quests').replace(/ quests$/,'')],['Quest points',String(q.questPoints||0)],...(questRequiresSkills(q).length?[['Requires',questRequiresSkills(q).join(', ')+' skill']]:[]),
+        ...((QUEST_PREREQS[q.questId]||[]).length?[['Requires',(QUEST_PREREQS[q.questId]).map(id=>{const p=questList().find(x=>x.questId===id);return p?`<a href="#/guide/quest-${esc(slug(id))}">${esc(p.name)}</a>`:esc(pretty(id))}).join(', ')+' finished first']]:[]),
+        ...(Object.entries(QUEST_PREREQS).filter(([,need])=>need.includes(q.questId)).length?[['Leads to',Object.entries(QUEST_PREREQS).filter(([,need])=>need.includes(q.questId)).map(([id])=>{const p=questList().find(x=>x.questId===id);return p?`<a href="#/guide/quest-${esc(slug(id))}">${esc(p.name)}</a>`:esc(pretty(id))}).join(', ')]]:[])],'q-facts');
       return {lede:(questDone(q)?'':`<span class="q-alert-banner" role="alert">${ALERT_SVG}<span><b>This quest is not fully written yet.</b> Steps, items or dialogue may be missing.</span></span>`)+(q.lore?esc(q.lore):''),sections:[
         ['about','About',facts],
         ['needs','What you need',questNeeds(q)],
