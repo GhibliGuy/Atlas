@@ -224,6 +224,12 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       ['reading','Reading a scroll',`<p>Takes about 1.5 seconds and breaks if you move, are hit or stunned. It is refused within 10 seconds of dealing or taking damage.</p>`]],lede:'Write scrolls on parchment: warps that take you across the world, buffs, and XP boosts.',related:['herblore','travel','gems']})});
 
   // ---- Gear, gems & enchanting -------------------------------------------------------------------------------------
+  // An enchant's effect at c carats, the game's own rule (eu in game-rules): an element or Destruction adds
+  // round(c/4.5*100)% base damage, a stat +5c, a school +c, Seeking +2c% to-hit, the Artisan +5c% success - the 1c wording
+  // with its number scaled (the percentages from the rule itself, since 22% x 4 is not 89%). g: a BXC_GAME_DATA enchant.
+  function enchEffectAt(g,c){const one=String(g&&g.effect&&g.effect[1]||'');if(!one)return '';
+    if(g.element||(!g.school&&!g.attribute&&/base damage/.test(one)))return one.replace(/\d+(\.\d+)?/,String(Math.round(c*100/4.5)));
+    return one.replace(/\d+(\.\d+)?/,m=>String(+m*c))}
   reg({slug:'quality-and-enchanting',group:'Gear, gems & enchanting',title:'Quality & enchanting',blurb:'Quality tiers and their odds, mastery, carat caps and every enchantment.',build:()=>{
     const qm=typeof QUALITY_MULT!=='undefined'?QUALITY_MULT:{},qt=typeof QUALITY_TIERS!=='undefined'?QUALITY_TIERS:[];
     const qRows=qt.map(t=>[esc(pretty(t)),(qm[t]>0?'+':'')+Math.round((qm[t]||0)*100)+'%']);
@@ -231,7 +237,31 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const odds=(typeof CRAFT_QUALITY_TABLE!=='undefined'?CRAFT_QUALITY_TABLE:[]).filter(t=>t.levelsOver%5===0).map(t=>[`<b>+${t.levelsOver}</b>${t.levelsOver===15?' (mastery from +14)':t.levelsOver===30?' (cap)':''}`,...QT.map(q=>q==='flawless'&&!t[q]?'~0%':((t[q]||0)*100).toFixed(1)+'%')]);
     const ER=typeof ENCHANT_RECIPES!=='undefined'?ENCHANT_RECIPES:{},EG=typeof ENCHANT_GEMS!=='undefined'?ENCHANT_GEMS:{};
     const gemName=g=>g==='any'?'any gem':EG[g]?.name||pretty(g);
-    const eRows=Object.entries(ER).flatMap(([kind,list])=>list.map(e=>[esc(pretty(kind)),`<b>${esc(e.name)}</b>`,esc(e.effect),e.gems.map(gemName).map(esc).join(' + ')]));
+    // every enchantment as a card (like the Gems guide's gem cards), grouped by what it goes on: its gems, what it does
+    // per carat and at the most it can hold, and what it goes on (official guide: weapon enchants on any main-hand weapon
+    // but a wand - bows and crossbows too; Seeking on bows and crossbows only; staff enchants on staves, the game's wands)
+    const GDE=(globalThis.BXC_GAME_DATA||{}).enchants||[];
+    const gemChip=g=>g==='any'?'<span class="ec-gem ec-any">any gem</span>':`<span class="ec-gem">${icon('gem-'+g)}${esc(gemName(g))}</span>`;
+    const ON={weapon:'Any weapon but a staff, bows and crossbows included.',bow:'Bows and crossbows only. They take the weapon enchants above too.',staff:'Staves only: this is what makes a staff a school staff.',armor:'Any of the five armour pieces; the bonuses add up across them.',tool:'One gem, set while the tool is forged; up to 1c iron, 2c silver, 3c gold, 4c titanium.'};
+    // An enchant's strength at every carat it can hold, by gear tier (3 carats each; a tool, by metal): the numbers only,
+    // the unit ("base burn", "DEX") said once. Values from the game's rule (enchEffectAt).
+    const chart=(fam,g,x,max)=>{const vals=Array.from({length:max},(_,i)=>g?enchEffectAt(g,i+1):x.effect);
+      const num=t=>(String(t).match(/[+-]?\d+(\.\d+)?%?/)||[''])[0],unit=String(vals[0]||'').replace(/[+-]?\d+(\.\d+)?%?/,'').replace(/\s+/g,' ').trim();
+      const cell=c=>`<div class="ec-c"><span>${c}c</span><b>${esc(num(vals[c-1]))}</b></div>`;
+      // each tier heading opens that tier's gear of this enchant's kind (the same popup as in the Gems guide)
+      const th=(t,label)=>`<button type="button" class="gg-pop-btn ec-g-h" data-pop="tier" data-tier="${t}" data-back-kind="${esc(fam)}" data-back-ench="${esc(x.name)}" data-gem="" title="What tier ${t} ${fam==='tool'?'tools':'gear'} is">${label}</button>`;
+      const groups=fam==='tool'?['Iron','Silver','Gold','Titanium'].map((m,i)=>`<div class="ec-g">${th(i+1,m)}${cell(i+1)}</div>`)
+        :[1,2,3,4].map(t=>`<div class="ec-g">${th(t,'Tier '+t)}${[3*t-2,3*t-1,3*t].map(cell).join('')}</div>`);
+      return `<div class="ec-chart-h">${esc(unit.replace(/^./,c=>c.toUpperCase()))} by carat</div><div class="ec-chart${fam==='tool'?' ec-chart-tool':''}">${groups.join('')}</div>`};
+    const ecard=(fam,x)=>{const g=GDE.find(e=>e.name===x.name&&e.family===fam),max=fam==='tool'?4:12;
+      const ln=(k,v)=>`<div class="gg-line"><span class="gg-line-k">${k}</span><span>${v}</span></div>`;
+      return `<div class="gg-card ec-card"><div class="gg-card-head"><button type="button" class="gg-pop-btn ec-name" data-pop="one" data-kind="${esc(fam)}" data-ench="${esc(x.name)}" data-gem="" title="What it does at every carat">${esc(x.name)}</button><span class="gg-card-skill">${esc(pretty(fam))}</span></div>`
+        +ln('Gems',fam==='tool'?'<span class="ec-gem ec-any">any one gem</span>':`<span class="ec-gems">${x.gems.map(gemChip).join('<span class="ec-plus">+</span>')}</span>`)
+        +chart(fam,g,x,max)+'</div>'};
+    const ART=GDE.find(e=>e.family==='tool');
+    const GROUPS=[['Weapons',['weapon']],['Bows and crossbows',['bow']],['Staves',['staff']],['Armour',['armor']]];
+    const enchCards=GROUPS.map(([h,fams])=>{const cs=fams.flatMap(f=>(ER[f]||[]).map(x=>ecard(f,x)));return cs.length?`<h3>${h}</h3><p class="g-note ec-on">${esc(ON[fams[0]])}</p><div class="gg-cards ec-cards">${cs.join('')}</div>`:''}).join('')
+      +(ART?`<h3>Tools</h3><p class="g-note ec-on">${esc(ON.tool)}</p><div class="gg-cards ec-cards">${ecard('tool',{name:ART.name,gems:[],effect:ART.effect[4]||''})}</div>`:'');
     return {lede:'Crafted gear rolls a quality that scales its stats, and can then be enchanted with gems for extra damage, stats or accuracy.',sections:[
       ['quality','Quality tiers',table(['Quality','Stats'],qRows)],
       ['odds','Quality odds',`<p>The quality you get depends on how many levels you are <b>above</b> the item’s level, and stops improving at +30. Nothing you wear or hold changes it: a better tool (metal, quality, Artisan enchant) only raises your chance to succeed, and no ring or pendant affects crafting.</p>`+table(['Levels over recipe',...QT.map(q=>`<span class="q-name q-${q}">${esc(pretty(q))}</span>`)],odds)+note('The game developer’s published table. The <a href="#/calc-quality">Quality & enchanting</a> calculator works it out for one item.')],
@@ -239,7 +269,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       ['mastery','Mastery',`<p>You can enchant an item once you have <b>mastered</b> it: the level where crafting it reaches its best success rate, <b>95%</b>. That is <b>14 levels</b> above its required level (60% at its level, climbing 40% over 15 levels, capped at 95%). A tool is the exception: its gem is set while it is forged, and you need mastery of the same tool <b>one metal up</b>.</p>`],
       ['carats','Carats',`<p>Gear enchantments use <b>three gems</b> (tools and rings one). Which gems decides the effect; their carats added up and rounded down decide the strength. An item holds <b>3 carats per material tier</b> (tier 4: 12) and anything above that is lost. Wearing enchanted gear takes <b>5 INT per carat</b>. Shields and ammo can’t be enchanted.</p>`],
       ['rings','Rings and tools',`<p><b>Rings</b> are forged at an anvil, bare or with one gem of 1c or more (up to 1/2/3/4c for iron/silver/gold/titanium). You wear two, and two of the same kind stack. 5c and 6c titanium rings only drop, from monsters level 25+. <b>Tools</b> take one gem while being forged (of the Artisan, +5% per carat). See ${guide('gems')} and ${guide('tool-smithing')}.</p>`],
-      ['list','Every enchantment',table(['On','Enchantment','Effect','Gems'],eRows)+note('Weapon enchantments all add the same amount of damage per carat; the elemental ones add it as their element, Destruction as the weapon’s own type. Pick the one the monster is weak to.')],
+      ['list','Every enchantment',enchCards+note('Weapon enchantments all add the same amount of damage per carat; the elemental ones add it as their element, Destruction as the weapon’s own type. Pick the one the monster is weak to.')],
     ],related:['gems','combat','weapon-smithing','armor-smithing']};
   }});
   reg({slug:'gems',group:'Gear, gems & enchanting',title:'Gems',blurb:'The nine gems, where they are found, and what their rings do.',build:()=>{
@@ -704,7 +734,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       // item takes, and its material tier): each material of that tier and the pieces made from it, by the skill that
       // makes them. Materials of the same tier and kind that have no recipe are named under it. A tier holds 3c more.
       const T=+b.dataset.tier,fam=b.dataset.backKind||'',M=GD.materials||{};
-      const LABEL={weapon:'weapons, bows and crossbows',bow:'bows and crossbows',staff:'staves',armor:'armour'},MKIND={weapon:['metal','wood'],bow:['wood'],staff:['wood'],armor:['metal','knick','pelt']};
+      const LABEL={tool:'tools',weapon:'weapons, bows and crossbows',bow:'bows and crossbows',staff:'staves',armor:'armour'},MKIND={tool:['metal'],weapon:['metal','wood'],bow:['wood'],staff:['wood'],armor:['metal','knick','pelt']};
       const SKILL_SLUG={'Weapon Smithing':'weapon-smithing','Armor Smithing':'armor-smithing','Bowyer':'bowyer','Tailoring':'tailoring','Leatherworking':'leatherworking','Tool Smithing':'tool-smithing'};
       const byMat=new Map();
       for(const r of (typeof RECIPES!=='undefined'?RECIPES:[])){const inf=typeof enchantInfo==='function'?enchantInfo(r):null;if(!inf||!(inf.kind===fam||(fam==='weapon'&&inf.kind==='bow'))||inf.tier!==T||!inf.material)continue;   // weapon enchants: any main-hand weapon but a wand, bows and crossbows too (official guide)
@@ -713,8 +743,8 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       const rows=[...byMat.values()].map(g=>[`<b>${esc(g.mat)}</b>`,g.items.map(r=>item(slug(r.id||r.item),short(r,g.mat))).join(', '),SKILL_SLUG[g.skill]?guide(SKILL_SLUG[g.skill],g.skill):esc(g.skill)]);
       const made=new Set([...byMat.values()].map(g=>g.mat.toLowerCase().replace(/ /g,'-')));
       const other=Object.entries(M).filter(([m,v])=>v.tier===T&&(MKIND[fam]||[]).includes(v.kind)&&!made.has(m)&&!['iron','silver','gold','titanium','pine','oak','black-walnut','shagbark','imp','snakeskin','ogrewax','dragonscale','deerhide','bearhide','werewolfpelt','dragonhide'].includes(m)).map(([m])=>esc(pretty(m)));
-      title=`Tier ${T} ${esc(LABEL[fam]||'gear')}`;
-      body=`<p>Tier ${T} ${esc(LABEL[fam]||'gear')} hold up to <b>${3*T}c</b> of enchantment${T<4?` (tier ${T+1}: ${3*T+3}c)`:', the most there is'}; anything above that is lost.</p>`
+      title=fam==='tool'?`${['Iron','Silver','Gold','Titanium'][T-1]} tools`:`Tier ${T} ${esc(LABEL[fam]||'gear')}`;
+      body=(fam==='tool'?`<p>${['Iron','Silver','Gold','Titanium'][T-1]} tools take a gem of up to <b>${T}c</b> when they are forged${T<4?` (${['Iron','Silver','Gold','Titanium'][T]}: ${T+1}c)`:', the most there is'}; anything above that is lost.</p>`:`<p>Tier ${T} ${esc(LABEL[fam]||'gear')} hold up to <b>${3*T}c</b> of enchantment${T<4?` (tier ${T+1}: ${3*T+3}c)`:', the most there is'}; anything above that is lost.</p>`)
         +(rows.length?table(['Material','Pieces','Made with'],rows):'<p class="muted">Nothing of this tier is crafted.</p>')
         +(other.length?`<p class="g-note">Also tier ${T}, but with no crafting recipe: ${other.join(', ')}.</p>`:'')
         +(b.dataset.backEnch?`<p><button type="button" class="gg-pop-btn" data-pop="one" data-kind="${esc(fam)}" data-ench="${esc(b.dataset.backEnch)}" data-gem="${esc(id||'')}">← Back to ${esc(pretty(fam)+' '+b.dataset.backEnch)}</button></p>`:'');
@@ -734,7 +764,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       const fam=b.dataset.kind,x=(ER[fam]||[]).find(r=>r.name===b.dataset.ench)||{name:b.dataset.ench,gems:[],effect:''};
       const g=(GD.enchants||[]).find(r=>r.name===x.name&&r.family===fam),t=g&&g.effect||{};
       const cs=fam==='tool'?[1,2,3,4]:[1,2,3,4,5,6,7,8,9,10,11,12],one=String(t[1]||'');
-      const at=c=>{if(!one)return '';if(g&&(g.element||(!g.school&&!g.attribute&&/base damage/.test(one))))return one.replace(/\d+(\.\d+)?/,String(Math.round(c*100/4.5)));return one.replace(/\d+(\.\d+)?/,m=>String(+m*c))};
+      const at=c=>enchEffectAt(g,c);
       title=`${esc(pretty(fam))} ${esc(x.name)}`;
       body=(g&&g.flavor?`<p class="g-note"><i>${esc(String(g.flavor).replace(/^./,c=>c.toUpperCase()))}</i></p>`:'')
         +(fam==='tool'?'<p>Gems: <b>any one gem</b>, set while the tool is forged (up to 1/2/3/4c for iron/silver/gold/titanium).</p>':`<p>Gems: ${x.gems.map(q=>q===id?`<b>${esc(gemName(q))}</b>`:esc(gemName(q))).join(' + ')}</p>`)

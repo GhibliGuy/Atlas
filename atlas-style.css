@@ -931,3 +931,23 @@ table.gg-tiers tbody tr:nth-child(3n+1):not(:first-child) td{border-top:2px soli
 .gc-stat span{font-size:12px;color:var(--muted)}
 .gc-card .g-scroll{margin:6px 0 0}
 @media (max-width:560px){.gc-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Quality & enchanting: one card per enchantment (the gem-card style), grouped by what it goes on */
+.ec-card .gg-line{grid-template-columns:72px 1fr}
+.ec-name{font:400 17px/1.2 var(--serif);color:var(--accent);text-decoration:underline;text-underline-offset:3px}
+.ec-gems{display:inline-flex;flex-wrap:wrap;align-items:center;gap:3px}
+.ec-gem{display:inline-flex;align-items:center;gap:3px;padding:1px 7px 1px 4px;border:1px solid var(--edge);border-radius:999px;background:var(--panel2);font-size:12px;white-space:nowrap}
+.ec-gem .g-ico{width:16px;height:16px;margin:0}
+.ec-any{padding:1px 8px;color:var(--muted);font-style:italic}
+.ec-plus{color:var(--muted);font-size:12px}
+.gg-cards.ec-cards{grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
+.ec-on{margin:-4px 0 8px}
+/* an enchant card's per-carat chart: four gear tiers of three carats (tools: four metals of one) */
+.ec-chart-h{margin:8px 0 4px;font-size:12px;color:var(--muted);text-transform:none}
+.ec-chart{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-bottom:8px}
+.ec-g{display:flex;flex-direction:column;gap:2px;padding:4px 3px 5px;border:1px solid var(--edge);border-radius:5px;background:var(--panel2)}
+.ec-g-h{font-size:10.5px;color:var(--accent);text-align:center;letter-spacing:.02em;margin-bottom:1px}
+.ec-c{display:flex;justify-content:space-between;gap:4px;padding:0 3px;font-size:11.5px}
+.ec-c span{color:var(--muted)}
+.ec-c b{font-weight:600;color:var(--ink);white-space:nowrap}
+.gg-pop-btn.ec-g-h{display:block;width:100%;background:none;border:0;padding:0;font-size:10.5px;color:var(--accent);text-align:center;text-decoration:underline;text-decoration-style:dotted;text-underline-offset:2px;cursor:pointer}
+.gg-pop-btn.ec-g-h:hover{text-decoration-style:solid}
