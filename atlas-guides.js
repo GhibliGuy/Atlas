@@ -67,7 +67,8 @@
     return rows;
   }
 
-  const gemOdds=()=>`The chance per success depends on the tier you gather: <b>0.5%</b> at tier 1, <b>0.6%</b> at tier 2, <b>0.75%</b> at tier 3 and <b>1%</b> at tier 4.`;
+  const gemOdds=sk=>{const GT=typeof GATHERABLES!=='undefined'?GATHERABLES:[],ts=GT.filter(x=>x.skill===sk).sort((a,b)=>a.level-b.level);
+    return table(['',{mining:'Ore',lumberjack:'Wood',fishing:'Fish'}[sk]||'Resource','Gem chance'],[.5,.6,.75,1].map((p,i)=>[`Tier ${i+1}`,ts[i]?item(slug(ts[i].item),ts[i].item):'—',`<b>${p}%</b>`]))+note('Chance of a gem on each successful gather.')};
   // ---- gathering skill guides ---------------------------------------------------------------------------------------
   function gatheringGuide(o){
     return ()=>{
@@ -189,17 +190,17 @@
     lede:'Mine rocks for iron, silver, gold and titanium ore, the metal behind every smithing skill. Mining is also where five of the nine gems are found.',
     toolLine:'A better pickaxe adds to that chance (see Quality & enchanting for tool bonuses).',
 tool:'pickaxe',unit:'ore',learn:'Learn it from a trainer for a skill point.',nodeLine:'A top-level miner gets 10 ore a swing from a starter rock, and over 13 with a full-gem titanium pickaxe.',
-    extra:()=>[['gems','Gems',`<p>Every successful swing has a small chance of a gem: <b>rubies, diamonds, emeralds, sapphires and onyx</b>. ${gemOdds()} See ${guide('gems')}.</p>`]],related:['smelting','weapon-smithing','armor-smithing','tool-smithing','gems']})});
+    extra:()=>[['gems','Gems',`<p>Every successful swing has a small chance of a gem: <b>rubies, diamonds, emeralds, sapphires and onyx</b>.</p>`+gemOdds('mining')]],related:['smelting','weapon-smithing','armor-smithing','tool-smithing','gems']})});
   reg({slug:'lumberjack',group:'Gathering skills',title:'Lumberjack',blurb:'Wood tiers, success chance and the fastest route to 100.',build:gatheringGuide({skill:'lumberjack',action:'chop',node:'tree',
     lede:'Chop trees for pine, oak, black walnut and shagbark wood, used by bowyers and in tool handles. Trees can also give amber and iolite.',
     toolLine:'A better axe adds to that chance.',
 tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLine:'A tree gives a few logs and then falls to a stump that grows back; everyone chopping the same tree shares its logs.',
-    extra:()=>[['gems','Gems',`<p>Chopping can turn up <b>amber and iolite</b>. ${gemOdds()} See ${guide('gems')}.</p>`]],related:['bowyer','tool-smithing','gems']})});
+    extra:()=>[['gems','Gems',`<p>Chopping can turn up <b>amber and iolite</b>.</p>`+gemOdds('lumberjack')]],related:['bowyer','tool-smithing','gems']})});
   reg({slug:'fishing',group:'Gathering skills',title:'Fishing',blurb:'Fish tiers, how fishing spots refill, and the fastest route to 100.',build:gatheringGuide({skill:'fishing',action:'cast',node:'fishing spot',
     lede:'Fish catfish, bass, trout and salmon from fishing spots, then cook them into food. Fishing is where pearls and topaz come from.',
     toolLine:'A better fishing rod adds to that chance.',
     tool:'fishing rod',unit:'fish',learn:'Learn it from the Fishing Trainer (one skill point); you fish from the bank.',
-    extra:()=>[['spots','How fishing spots work',`<p>Each spot is for one kind of fish (the map says which). Measured by players: a spot gives <b>1 to 5 catches</b> (about 2.5 on average) and then goes quiet, and comes back in the same place about <b>65 seconds</b> later. Moving between two or three nearby spots keeps you casting.</p>`],['gems','Gems',`<p>Fishing can turn up <b>pearls and topaz</b>. ${gemOdds()} See ${guide('gems')}.</p>`],['eat','Eating it',`<p>Raw fish can’t be eaten: cook it first (${guide('cooking')}).</p>`]],related:['cooking','gems']})});
+    extra:()=>[['spots','How fishing spots work',`<p>Each spot is for one kind of fish (the map says which). Measured by players: a spot gives <b>1 to 5 catches</b> (about 2.5 on average) and then goes quiet, and comes back in the same place about <b>65 seconds</b> later. Moving between two or three nearby spots keeps you casting.</p>`],['gems','Gems',`<p>Fishing can turn up <b>pearls and topaz</b>.</p>`+gemOdds('fishing')],['eat','Eating it',`<p>Raw fish can’t be eaten: cook it first (${guide('cooking')}).</p>`]],related:['cooking','gems']})});
   reg({slug:'herblore',group:'Gathering skills',title:'Herblore',blurb:'Plants to gather, and the pigments and potions made from them.',build:()=>{
     const gath=gatheringGuide({skill:'herblore',action:'pick',node:'plant',tool:'herbalist’s sickle',unit:'plant',learn:'Herblore costs no skill point: finishing the quest <a href="#/guide/quest-binxonia-scriptorium-apprentice">The Scriptorium Apprentice</a> (from <a href="#/npc/osric-blane">Osric Blane</a>) unlocks it.',lede:'',related:[]})();
     const craft=craftingGuide({skill:'Herblore',lede:'',chanceNote:'Pigments, powders and weapon poisons never fail. Poisoned arrows and bolts follow the usual crafting odds: 60% at their level, 95% from 14 levels above.'})();
@@ -275,7 +276,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       ['quality','Quality tiers',`<p>Every piece of crafted gear rolls a quality. It scales what the item itself brings: a weapon's <b>damage</b>, a piece of armour's <b>defence</b>, a staff's <b>spell power</b> and its sell price. It never changes your own attributes, or a gem set in the item.</p>`+table(['Quality','Gear stats','Tool bonus'],qRows)+note('A flawless sword hits 38% harder than an ordinary one of the same kind; an inferior one 30% softer. Tools work differently: quality adds to the tool’s bonus, which raises your success chance. Once you are at the 95% cap, the extra becomes a chance to get your materials back when crafting, or a bigger haul when gathering.')],
       ['odds','Quality odds',`<p>The quality you get depends only on how many levels you are <b>above</b> the item’s level: the further past it, the better your odds, up to <b>+30</b>. Your gear does not change it. A better tool (metal, quality, Artisan enchant) raises your chance to succeed, and past 95% your chance to get the materials back, but not the quality.</p>`+table(['Levels over recipe',...QT.map(q=>`<span class="q-name q-${q}">${esc(pretty(q))}</span>`)],odds)],
       ['loot','Quality of dropped gear',`<p>Gear from chests and ordinary monsters is at most excellent. <b>Elites drop only excellent, superior or flawless.</b></p><p>Enchanted gear from monsters goes up to <b>9c</b>, and never more than its material can hold: 3c per tier, so a 9c drop is always tier 3 or 4 gear.</p>`],
-      ['mastery','Mastery',`<p>You can enchant an item once you have <b>mastered</b> it: the level where crafting it reaches its best success rate, <b>95%</b>. That is <b>14 levels</b> above its required level (60% at its level, climbing 40% over 15 levels, capped at 95%). A tool is the exception: its gem is set while it is forged, and you need mastery of the same tool <b>one metal up</b>.</p>`+masteryChart],
+      ['mastery','Mastery',`<p>You can enchant an item once you have <b>mastered</b> it: the level where crafting it reaches its best success rate, <b>95%</b>. That is <b>14 levels</b> above its required level (60% at its level, climbing 40% over 15 levels, capped at 95%). Tools work the same way: the gem is set while the tool is forged, by someone who has mastered that tool.</p>`+masteryChart],
       ['carats','Carats',`<p>Gear enchantments use <b>three gems</b> (tools and rings one). Which gems decides the effect; their carats added up and rounded down decide the strength. An item holds <b>3 carats per material tier</b> (tier 4: 12) and anything above that is lost. Wearing enchanted gear takes <b>5 INT per carat</b>. Shields take armour enchants like any other piece; ammunition can’t be enchanted.</p>`],
       ['rings','Rings and tools',`<p><b>Rings</b> are forged at an anvil, bare or with one gem of 1c or more (up to 1/2/3/4c for iron/silver/gold/titanium). You wear two, and two of the same kind stack. 5c and 6c titanium rings only drop, from monsters level 25+. <b>Pendants</b> are never crafted; they drop at 1c up to <b>6c</b>. <b>Capes</b> only drop too, and carry an armour enchant of up to 3c. <b>Tools</b> take one gem while being forged (of the Artisan, +5% per carat). See ${guide('gems')} and ${guide('tool-smithing')}.</p>`],
       ['list','Every enchantment',enchCards],
@@ -595,8 +596,18 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   };
   // for the zone pages and layouts: the quests needed to get into a zone
   globalThis.bxcZoneQuests=z=>Object.entries(QUEST_UNLOCKS).filter(([,u])=>Number(u.z)===Number(z)).map(([id,u])=>{const q=questList().find(x=>x.questId===id);return {name:q?q.name:u.questName,href:'#/guide/quest-'+slug(id),giver:q&&q.giverName||null}});
+  // a whole area a quest opens (the game's own region; atlas-live QUEST_REGIONS draws its lock): its monsters and places
+  const QUEST_AREAS={'plymouth-the-ogre-traitor':{place:'Ogre Isle',text:'Finishing it earns the crossing to Ogre Isle, so the whole island and everything on it opens up. Gerald Seabroden sends you to the dock: “You’ve earned the crossing.”'}};
+  function questAreaUnlocks(q){const a=QUEST_AREAS[q.questId];if(!a)return '';
+    const S=globalThis.BINXONIA_COLLECTOR_SNAPSHOT||{},at=globalThis.bxcQuestRegionAt;if(typeof at!=='function')return `<p>${esc(a.text)}</p>`;
+    const by=new Map();for(const o of [...(S.npcObservations||[]),...(S.npcs||[])]){const p=o&&o.position;if(!p||p.z)continue;const v=by.get(o.typeId)||[0,0];v[1]++;if(at(p.x,p.y))v[0]++;by.set(o.typeId,v)}
+    const only=[...by].filter(([,v])=>v[0]&&v[0]>=v[1]*.9).map(([t])=>(typeof D!=='undefined'&&D.catalog||[]).find(m=>m.typeId===t)).filter(Boolean).sort((x,y)=>(x.baseLevel||0)-(y.baseLevel||0));
+    const places=(typeof D!=='undefined'&&D.pois||[]).filter(p=>at(+p.x,+p.y));
+    return `<p><b>${esc(a.place)}</b></p><p>${esc(a.text)}</p>`
+      +(only.length?`<p>Found only there: ${only.map(m=>monster(m.typeId,m.name)+(m.baseLevel?' <span class="muted">Lv '+esc(m.baseLevel)+'</span>':'')).join(', ')}.</p>`:'')
+      +(places.length?`<p>Places: ${places.map(p=>esc(p.name)).join(', ')}.</p>`:'')}
   function questUnlocks(q){
-    const u=QUEST_UNLOCKS[q.questId];if(!u)return '';
+    const u=QUEST_UNLOCKS[q.questId];if(!u)return questAreaUnlocks(q);
     const S=globalThis.BINXONIA_COLLECTOR_SNAPSHOT||{},z=Number(u.z);
     const rocks=new Map();for(const o of S.worldObjects||[]){const p=o&&o.position;if(!p||Number(p.z)!==z||!/-rock$/.test(o.typeId||''))continue;rocks.set(o.typeId,(rocks.get(o.typeId)||0)+1)}
     const res=[...rocks].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).map(([t,n])=>`${n} ${esc(pretty(t.replace(/-rock$/,'')))} rock${n===1?'':'s'}`);

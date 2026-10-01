@@ -276,6 +276,8 @@
       });
       map.on('click',e=>{
         if(state.addResourceArmed){placeManualResource(e.latlng);return}
+        if(state.moveNpcArmed){const name=state.moveNpcArmed;state.moveNpcArmed=null;updatePlacementCursor(false);mapPlacementBanner(null);
+          const pos=unprojectLatLng(e.latlng);bridgeRequest('set-npc-spot',{name,x:pos.x,y:pos.y}).then(syncNow).then(()=>setCollectorStatus(`Collector: moved ${name}`)).catch(err=>setCollectorStatus('Collector: '+err.message));return}
         if(state.moveEntranceArmed){
           const z=state.moveEntranceForZone;
           state.moveEntranceArmed=false;state.moveEntranceForZone=null;
@@ -1331,7 +1333,7 @@ function dungeonCardHtml(g,idx){
   const poi=(D.pois||[]).find(p=>p.category==='dungeon'&&String(p.name).toLowerCase()===String(g.name).toLowerCase());
   const entRoom=g.rooms.find(r=>state.zoneEntrances?.has(r.z))||g.rooms[0];
   const mapAt=poi?`data-card-map="place" data-card-map-id="${esc(poi.name)}"`:`data-card-map="zone" data-card-map-id="${entRoom.z}"`;
-  return `<div class="card zn-card dungeoncard" ${mapAt} title="Show it on the map"><div class="zn-kicker">Dungeon</div><div class="zn-name">${esc(g.name)}</div><div class="zn-meta">${meta}${PUBLIC_MODE?'':' · last seen '+when(last)}</div>`
+  return `<div class="card zn-card dungeoncard" ${mapAt} title="Show it on the map"><div class="zn-kicker">Dungeon</div><div class="zn-name">${esc(g.name)}</div>${g.rooms[0]?zoneQuestNote(g.rooms[0].z):''}<div class="zn-meta">${meta}${PUBLIC_MODE?'':' · last seen '+when(last)}</div>`
    +`<div class="zn-rooms">${g.rooms.map(r=>`<button type="button" class="roomlink-btn zn-room" ${roomAttrs(r,'data-zone')} title="${esc(r.label)}${r.entered?'':' - only seen from a doorway so far'}">${esc(r.label.replace(/^Room /,''))}${r.entered?'':'?'}</button>`).join('')}</div>`
    +`<div class="zn-actions"><button type="button" class="dungeonview-btn zn-open" data-dungeon="${esc(g.key)}">Dungeon map</button></div></div>`;
 }
@@ -1907,7 +1909,12 @@ globalThis.bxcPlaceAt=(z,x,y)=>{const id=placeIdAt(Number(z),{x:Number(x),y:Numb
 function placesNamed(name){const out=[];for(const z of state.zones?.keys()||[]){if(!z)continue;const n=Math.max(1,zoneAreas(z).length);for(let i=0;i<n;i++)if(placeName(z,i)===name)out.push({z,i})}return out}
 function placeIndexAt(z,p){const as=zoneAreas(z);if(as.length<2||!p)return 0;let best=0,bd=Infinity;as.forEach((a,i)=>{const d=Math.hypot(Math.max(a.minX-p.x,0,p.x-a.maxX),Math.max(a.minY-p.y,0,p.y-a.maxY));if(d<bd){bd=d;best=i}});return best}
 // "You need the quest ... to get in" (Agauton Mine and the like: see QUEST_UNLOCKS in atlas-guides.js)
-function zoneQuestNote(z){const qs=globalThis.bxcZoneQuests?globalThis.bxcZoneQuests(z):[];if(!qs.length)return '';
+// a place whose way in lies in a quest-gated area (Ogre Cove on Ogre Isle): that quest too (bxcQuestRegionAt)
+function zoneRegionQuest(z){if(typeof globalThis.bxcQuestRegionAt!=='function')return null;const pts=[],e=state.zoneEntrances?.get(z);if(e)pts.push(e);
+  const k=state.dungeonOfZone?.get(z),g=k!=null?state.dungeons?.get(k):null;
+  if(g){for(const r of g.rooms){const re=state.zoneEntrances?.get(r.z);if(re)pts.push(re)}const poi=(D.pois||[]).find(p=>p.category==='dungeon'&&String(p.name).toLowerCase()===String(g.name).toLowerCase());if(poi)pts.push({x:+poi.x,y:+poi.y})}
+  for(const p of pts){const q=globalThis.bxcQuestRegionAt(p.x,p.y);if(q){const qq=(snapshot?.quests||[]).find(x=>x.questId===q.questId);return {name:qq?.name||q.questName,href:'#/guide/quest-'+String(q.questId).toLowerCase().replace(/[^a-z0-9]+/g,'-'),giver:qq?.giverName||null,place:q.place}}}return null}
+function zoneQuestNote(z){const qs=[...(globalThis.bxcZoneQuests?globalThis.bxcZoneQuests(z):[])],rq=zoneRegionQuest(z);if(rq&&!qs.some(q=>q.name===rq.name))qs.push(rq);if(!qs.length)return '';
   return `<div class="zone-quest-note">Locked until you finish ${qs.map(q=>`<a href="${q.href}">${esc(q.name)}</a>${q.giver?' ('+esc(q.giver)+')':''}`).join(' and ')}.</div>`}
 // The app's own tools for a place (hidden on the public Atlas), in one menu: each says what it does, only the ones
 // that apply are offered, and deleting sits apart at the bottom.
@@ -4158,7 +4165,7 @@ function newsHtml(){
     if(kind==='npc'){
       const e=namedNpcs().get(id);if(!e)return '<p class="muted">Not met yet.</p>';
       const lv=[...e.levels.keys()].sort((a,b)=>a-b);
-      return `<p class="map-panel-kind">Named ${esc(prettyId(e.typeId))}</p><div class="card"><div class="name">${esc(e.name)}</div><div class="s muted">${lv.length?'Level '+(lv.length>1?lv[0]+'–'+lv[lv.length-1]:lv[0])+' · ':''}seen ${fmt(e.seen)}×</div></div><a class="map-panel-open" href="${pageHref('npc',id)}">Open the full page →</a>`;
+      return `<p class="map-panel-kind">Named ${esc(prettyId(e.typeId))}</p><div class="card"><div class="name">${esc(e.name)}</div><div class="s muted">${lv.length?'Level '+(lv.length>1?lv[0]+'–'+lv[lv.length-1]:lv[0])+' · ':''}seen ${fmt(e.seen)}×</div></div><a class="map-panel-open" href="${pageHref('npc',id)}">Open the full page →</a>${PUBLIC_MODE?'':`<div class="npc-edit"><button type="button" class="npc-move" data-name="${esc(e.name)}">Move on the map</button>${npcSpotOf(e.name)?`<button type="button" class="npc-reset" data-name="${esc(e.name)}">Use the recorded spot</button>`:''}</div>`}`;
     }
     if(kind==='zone'){
       const [z,ai]=zonePlaceId(id),nm=placeName(z,ai),pt=placeEntrancePoint(z,ai);
@@ -4169,7 +4176,7 @@ function newsHtml(){
       const mons=monsterTypesNear(p,70).filter(t=>!ROAMING_NPC_TYPES.has(t));
       const res=markersNear(state.resourceMarkersByType,p,70);
       const inside=placesNamed(p.name);
-      return `<p class="map-panel-kind">Place · ${esc(prettyId(p.category||''))}</p><div class="card"><div class="name">${esc(p.name)}</div><div class="s muted">World ${esc(p.x)}, ${esc(p.y)}</div>${inside.map((q,n)=>`<button type="button" class="open-zone" data-zone="${q.z}" data-area="${q.i}">${inside.length>1?'Room '+(n+1)+' layout':'Open the layout'}</button>`).join(' ')}</div>`+
+      return `<p class="map-panel-kind">Place · ${esc(prettyId(p.category||''))}</p>${questRegionNote([{x:+p.x,y:+p.y}],'It is')}<div class="card"><div class="name">${esc(p.name)}</div><div class="s muted">World ${esc(p.x)}, ${esc(p.y)}</div>${inside.map((q,n)=>`<button type="button" class="open-zone" data-zone="${q.z}" data-area="${q.i}">${inside.length>1?'Room '+(n+1)+' layout':'Open the layout'}</button>`).join(' ')}</div>`+
         (mons.length?`<h4 class="map-panel-h">Monsters around it</h4><div class="map-panel-picks">${mons.slice(0,10).map(t=>panelLink('monster',t,monsterNameFor(t),monsterLevelOf(t)!=null?'Lv '+monsterLevelOf(t):'')).join('')}</div>`:'<p class="muted">No monsters seen right around it yet.</p>')+
         (res.length?`<h4 class="map-panel-h">Resources around it</h4><div class="map-panel-picks">${res.slice(0,8).map(k=>panelLink('resource',k,resourceDisplayName(state.resourceCatalog?.get(k)||{key:k,name:k}))).join('')}</div>`:'');
     }
@@ -4826,6 +4833,8 @@ function newsHtml(){
   }
   // Where named people are: indoors at the entrance of their building (the right building when one zone number is
   // several, see zoneAreas), outdoors at the middle of where they stand. list: [{name,e (a namedNpcs entry),...}].
+  // a person's spot placed by hand (collector set-npc-spot, kept with the hand-placed markers)
+  const npcSpotOf=name=>(snapshot?.manualResources||[]).find(m=>m&&m.kind==='npc-spot'&&String(m.name).trim()===String(name).trim()&&Number.isFinite(+m.x)&&Number.isFinite(+m.y))||null;
   function placePeople(list,byName){
     for(const t of list){t.spots=[];t.inside=new Map()}
     if(byName.size)for(const arr of [snapshot?.npcs,snapshot?.npcObservations])for(const o of arr||[]){
@@ -4844,6 +4853,7 @@ function newsHtml(){
       }
       const pts=t.e.pts;
       if(pts.length){const xs=pts.map(p=>p.x).sort((a,b)=>a-b),ys=pts.map(p=>p.y).sort((a,b)=>a-b),h=xs.length>>1;t.spots.push({indoors:false,n:pts.length,pt:{x:xs[h],y:ys[h]}})}
+      const own=npcSpotOf(t.name);if(own)t.spots=[{indoors:false,n:Infinity,pt:{x:own.x,y:own.y},manual:true}];   // placed by hand: all their markers go there
       t.spots.sort((a,b)=>b.n-a.n);
       delete t.e;delete t.inside;
     }
@@ -4865,12 +4875,36 @@ function newsHtml(){
     giverCache={key,list};return list;
   }
   const questHref=q=>'#/guide/quest-'+npcSlug(q.questId||q.name);
+  // Areas you can only reach once a quest is done, by the game's own named regions. Ogre Isle: finishing The Ogre Traitor
+  // earns "the crossing" (Gerald Seabroden's last words in that quest), so the whole island and everything on it waits.
+  const QUEST_REGIONS=[{questId:'plymouth-the-ogre-traitor',questName:'The Ogre Traitor',place:'Ogre Isle',re:/^ogre isle( beach)?$/i}];
+  const questRegionPolys=q=>(snapshot?.regions||[]).filter(r=>!r.z&&q.re.test(String(r.name||'').trim())).flatMap(r=>(r.polygons||[]).filter(p=>Array.isArray(p)&&p.length>=3));
+  function questRegionAt(x,y){if(x==null||y==null)return null;for(const q of QUEST_REGIONS)if(questRegionPolys(q).some(p=>pointInPolygon(x,y,p)))return q;return null}
+  // a page's note when (nearly) every spot of something lies in such an area
+  function questRegionNote(pts,what){const inR=pts.map(p=>questRegionAt(p.x,p.y));if(!pts.length)return '';const q=inR.find(Boolean);if(!q||inR.filter(x=>x===q).length<pts.length*.9)return '';
+    const quest=(snapshot?.quests||[]).find(x=>x.questId===q.questId)||{questId:q.questId,name:q.questName};
+    return `<p class="q-alert-banner gg-alert" role="note"><svg class="q-alert-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20z" fill="currentColor"/><path d="M12 10v5M12 17.6v.4" stroke="#1b1300" stroke-width="2.2" stroke-linecap="round"/></svg><span>${esc(what)} on <b>${esc(q.place)}</b>, which you can only reach after finishing <a href="${questHref(quest)}">${esc(quest.name||q.questName)}</a>${quest.giverName?' ('+esc(quest.giverName)+')':''}.</span></p>`}
+  globalThis.bxcQuestRegionAt=(x,y)=>{const q=questRegionAt(+x,+y);return q?{place:q.place,questId:q.questId,questName:q.questName}:null};
+  document.addEventListener('click',e=>{
+    const mv=e.target.closest&&e.target.closest('.npc-move'),rs=e.target.closest&&e.target.closest('.npc-reset');if(!mv&&!rs)return;e.preventDefault();
+    const name=(mv||rs).dataset.name;
+    if(rs){bridgeRequest('set-npc-spot',{name,clear:true}).then(syncNow).then(()=>setCollectorStatus(`Collector: ${name} is back at the recorded spot`)).catch(err=>setCollectorStatus('Collector: '+err.message));return}
+    state.moveNpcArmed=name;updatePlacementCursor(true);
+    mapPlacementBanner(`Click the map where <b>${esc(name)}</b> stands.`,()=>{state.moveNpcArmed=null;updatePlacementCursor(false)})});
   function drawQuestGivers(){
     if(!questGiverLayer)questGiverLayer=L.layerGroup();else questGiverLayer.clearLayers();
-    for(const t of questGiverList()){
-      for(const s of t.spots){
-        if(!s.pt)continue;
-        const icon=L.divIcon({className:'bxc-questgiver',html:'<span>!</span>',iconSize:[22,22],iconAnchor:[11,11]});
+    // a lock over each quest-gated area: its name and the quest, at the middle of its largest outline
+    for(const q of QUEST_REGIONS){const polys=questRegionPolys(q);if(!polys.length)continue;
+      const big=polys.reduce((a,b)=>b.length>a.length?b:a),c={x:big.reduce((t,p)=>t+p.x,0)/big.length,y:big.reduce((t,p)=>t+p.y,0)/big.length};
+      const quest=(snapshot?.quests||[]).find(x=>x.questId===q.questId)||{questId:q.questId,name:q.questName};
+      const icon=L.divIcon({className:'bxc-questlock',html:`<span>🔒 ${esc(q.place)}<small>needs ${esc(quest.name||q.questName)}</small></span>`,iconSize:null,iconAnchor:[0,0]});
+      const m=L.marker(latlng(c,true),{icon,zIndexOffset:400,keyboard:false});
+      m.bindTooltip(`<b>${esc(q.place)}</b><br>Reached only after finishing ${esc(quest.name||q.questName)}${quest.giverName?' ('+esc(quest.giverName)+')':''}`,{direction:'top'});
+      m.on('click',ev=>{if(armedPassthrough(ev))return;location.hash=questHref(quest)});
+      m.addTo(questGiverLayer)}
+    // one marker per person and spot (a person placed by hand has just the one)
+    for(const t of questGiverList())for(const s of t.spots){if(!s.pt)continue;{
+        const icon=L.divIcon({className:'bxc-questgiver',html:`<span>!</span>${t.quests.length>1?`<b class="qg-n">${t.quests.length}</b>`:''}`,iconSize:[22,22],iconAnchor:[11,11]});
         const m=L.marker(latlng(s.pt,true),{icon,zIndexOffset:520});
         m.bindTooltip(`<b>${esc(t.name)}</b>${t.quests.length?'<br>'+t.quests.map(q=>esc(q.name)).join('<br>'):'<br><span style="opacity:.8">Has quests (none recorded yet)</span>'}<br>${esc(trainerWhere(s))}`,{direction:'top'});
         m.on('click',ev=>{if(armedPassthrough(ev))return;
@@ -4918,10 +4952,10 @@ function newsHtml(){
     const m=(D.catalog||[]).find(x=>x.typeId===id),name=m?.name||monsterNameFor(id);
     // a picked level (?lv=) sets the facts box too
     const pl=pageNow&&pageNow.kind==='monster'&&pageNow.id===id&&pageNow.lv!=null&&m?pageNow.lv:null,ls=pl!=null?monsterLevelStats(m,pl):null;
-    const pts=monsterPoints(id),areas=placesFor(pts);
+    const pts=monsterPoints(id),areas=placesFor(pts),lockNote=questRegionNote(pts,'It lives');
     const kin=m?(D.catalog||[]).filter(x=>x.family===m.family&&x.typeId!==id).sort((a,b)=>(a.baseLevel||0)-(b.baseLevel||0)):[];
     const lede=m?`A level ${esc(m.baseLevel)} ${esc(prettyId(m.family||'creature'))} that attacks with ${esc(m.attackType||'?')} (${esc(m.attackStyle||'melee')}).${m.passive?' It will not attack first.':''}`:'A creature the collector has seen.';
-    return `<article class="wp"><div class="wp-main"><p class="wp-lede">${lede}</p>
+    return `<article class="wp"><div class="wp-main">${lockNote}<p class="wp-lede">${lede}</p>
       <h2>Fighting it</h2><div class="s">${tagChipsLine(m?.weakTo,m?.resists,m?.family)}</div>
       <p class="s muted">A weakness adds 30% damage and a resistance takes 30% off (the game's own rule).</p>
       ${m?.eliteObserved?`<p class="s good">⭐ Seen as an elite ${esc(m.eliteObserved)} times (${(m.eliteRate*100).toFixed(1)}% of sightings). Elites have 3× HP, hit 1.4× harder, give 3× XP and 2.5× loot.</p>`:''}
@@ -5018,7 +5052,8 @@ function newsHtml(){
     const r=state.resourceCatalog?.get(key);
     if(!r)return '<p class="muted">This resource has not been seen yet.</p>';
     const card=cardFromList(resourcesHtml(''),`.card[data-r="${CSS.escape(key)}"]`);
-    return `<article class="wp"><div class="wp-main">
+    const rpts=(state.resourceMarkersByType?.get(key)||[]).map(m=>{try{return unprojectLatLng(m.getLatLng())}catch{return null}}).filter(Boolean);
+    return `<article class="wp"><div class="wp-main">${questRegionNote(rpts,'It grows')}
       <p class="wp-lede">A ${esc(prettyId(r.skill||'gathering'))} resource${r.yieldItem?` that gives <a href="${pageHref('item',r.yieldItem)}">${esc(prettyId(r.yieldItem))}</a>`:''}.</p>
       ${caveList(cavesFor('resource',key))}
       <h2>Details</h2>${card}

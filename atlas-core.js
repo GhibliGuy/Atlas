@@ -469,7 +469,7 @@ function calcGather(){
    q('enMaterial').value=onlyMetal?(metals.includes(previous)?previous:metals[0]):'';
    enchFillItems();
  }
- // Setting a gem in a tool asks the smith to be able to make that tool one metal up (guide: Enchanting / Tool Smithing).
+ // The next metal's recipe for a tool (kept for reference; setting a gem needs mastery of the tool itself, like any enchant).
  function enchToolNeed(r){
    const order=['Iron','Silver','Gold','Titanium'],m=order.find(x=>r.item.startsWith(x+' '));if(!m)return null;
    const up=order[order.indexOf(m)+1];if(!up)return {next:null};
@@ -543,11 +543,10 @@ function calcGather(){
    const lvl=Math.max(1,Math.floor(Number(q('enLevel').value)||1));
    const e=enchantInfo(r),opts=enchOptions(r),sel=opts[Number(q('enEnchant').value)||0]||opts[0];
    const tool=e.kind==='tool'?enchToolNeed(r):null;
-   const masteryRec=e.kind==='tool'?((tool?.next&&RECIPES.find(x=>x.skill===r.skill&&x.item===tool.next))||r):r;
+   const masteryRec=r;
    // Every enchant needs "Mastery": the level where crafting reaches its 95% success (the dev; with the game's own
-   // formula that is 14 levels past the recipe). For a tool it is mastery of the same tool one metal up (the official
-   // guide: good enough to make that tool one metal up); titanium has no metal above, so its own mastery is assumed.
-   const toolUp=e.kind==='tool'&&tool&&tool.next&&masteryRec!==r;
+   // formula that is 14 levels past the recipe) - a tool too: mastery of that tool itself (the gem is set as it is forged).
+   const toolUp=false;
    const masteryLevel=craftSureAt(masteryRec),chance=craftChance(masteryRec,lvl);
    const per=(e.kind==='tool'||e.kind==='ring')?1:3,maxC=e.tier?per*e.tier:null;
    const pickC=maxC?Math.max(1,Math.min(maxC,enCaratPick||Math.min(maxC,2*per))):0;
@@ -578,7 +577,7 @@ function calcGather(){
    else{
      const mastered=lvl>=masteryLevel,left=masteryLevel-lvl,prog=Math.max(0,Math.min(1,(lvl-(toolUp?r.level:masteryRec.level))/Math.max(1,masteryLevel-(toolUp?r.level:masteryRec.level))));
      const over=masteryLevel-masteryRec.level;
-     const need=[toolUp?`Mastery: ${masteryRec.skill} level <b>${masteryLevel}</b> (95% success on a ${masteryRec.item}, one metal up: ${over} levels past it)`:`Mastery: ${masteryRec.skill} level <b>${masteryLevel}</b> (95% success: ${over} levels past ${e.kind==='tool'?`the ${r.item}; there is no metal above titanium, so its own mastery is assumed`:`the item's own level`})`];
+     const need=[toolUp?`Mastery: ${masteryRec.skill} level <b>${masteryLevel}</b> (95% success on a ${masteryRec.item}, one metal up: ${over} levels past it)`:`Mastery: ${masteryRec.skill} level <b>${masteryLevel}</b> (95% success: ${over} levels past ${e.kind==='tool'?`the ${r.item}`:`the item's own level`})`];
      if(maxC)need.push(e.kind==='tool'?`Gem: one stone, up to <b>${maxC} carat${maxC===1?'':'s'}</b>`:`Gems: ${per===1?'one stone':'three stones'}, up to <b>${maxC} carat${maxC===1?'':'s'}</b> in total`);
      if(maxC&&e.kind!=='tool')need.push(`Intellect: <b>${5*maxC}</b> to wear it at full strength (5 per carat)`);
      s2=step(2,'Can you enchant it?',`<div class="craft-answer ${mastered?'ok':'no'}">${mastered?(toolUp?`Yes - you've mastered the ${masteryRec.item} (level ${masteryLevel}), so you can set a gem while forging this one.`:`Yes - you've mastered it (level ${masteryLevel}).`):toolUp?`Not yet - setting a gem needs mastery of the ${masteryRec.item}, one metal up: <b>${masteryRec.skill} level ${masteryLevel}</b>. You're level ${lvl}: ${left} to go.`:`Not yet - enchanting needs mastery: <b>${masteryRec.skill} level ${masteryLevel}</b>. You're level ${lvl}: ${left} to go.`}</div>

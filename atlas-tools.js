@@ -195,6 +195,10 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
     // under 10% is very rare - excellent, superior and flawless - so it is not what to plan on
     // the odds come from the best smith's Tool Smithing over the tool's recipe (unknown: assume 10 levels over)
     const sm=smithLevel(smithIn),over=t=>{const rl=toolRecipeLevel(skill,t);return rl==null?10:sm?sm.lv-rl:10};
+    // an Artisan gem is set while the tool is forged, by a smith who has mastered that tool (95% success, 14 levels past
+    // its recipe) - the same rule as any other enchant. Unknown smith: assumed able.
+    const artisanOk=t=>{const rl=toolRecipeLevel(skill,t);return !sm||rl==null||sm.lv>=rl+14};
+    const noArtisan=t=>{const rl=toolRecipeLevel(skill,t);return `no smith can set a gem in it yet: needs Tool Smithing ${rl+14} (mastery; best is ${sm.lv})`};
     const qOdds=(q,t=ti)=>{if(typeof interpolateCraftQuality!=='function')return null;const o=over(t);return o<0?0:(interpolateCraftQuality(Math.min(30,o))[q]||0)};
     const qRare=(q,t=ti)=>{const o=qOdds(q,t);return o!=null&&QUALITIES.findIndex(x=>x[0]===q)>3&&o<.10};
     const oddsTxt=o=>o<.005?'almost never':'about '+(o*100).toFixed(o<.1?1:0)+'%';
@@ -207,15 +211,16 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
     const add=(label,r,note)=>{if(!r)return;const dx=r.xp/now.xp-1,di=r.it/now.it-1;if(dx>.004||di>.004)ups.push({label,dx,di,note,score:dx+di*.5})};
     // the metal you could hold at this level, and the next one after it
     const topT=bestToolAt(level),nt=TOOL.findIndex((t,k)=>k>ti);
-    for(let t=ti+1;t<=topT;t++){const c=Math.min(t+1,Math.max(c0,Math.min(3,t+1)));
+    for(let t=ti+1;t<=topT;t++){const ok=artisanOk(t),c=ok?Math.min(t+1,Math.max(c0,Math.min(3,t+1))):0,cNew=ok?c0:0;
       const qn=realQ(t);
-      add(spec(t,qn,c0),rate(t,qn,c0,pros),cantMake(t)||(qn!==qual?`a new tool: ${pretty(qn)} is the most to expect ${smithTxt(t)}${c0?'; it needs its own Artisan enchant':''}`:(c0?'a new tool needs its own Artisan enchant':'')));
-      if(c>c0)add(spec(t,qn,c),rate(t,qn,c,pros),cantMake(t)||(caratNote(c,'tools')))}
+      add(spec(t,qn,cNew),rate(t,qn,cNew,pros),cantMake(t)||(qn!==qual?`a new tool: ${pretty(qn)} is the most to expect ${smithTxt(t)}${cNew?'; it needs its own Artisan enchant':''}`:(cNew?'a new tool needs its own Artisan enchant':(c0&&!ok?noArtisan(t):''))));
+      if(c>cNew)add(spec(t,qn,c),rate(t,qn,c,pros),cantMake(t)||(caratNote(c,'tools')))}
     if(nt>0&&nt>topT)ups.push({label:spec(nt,qual,c0),future:TOOL[nt][3]});
     // better quality on the tool you have (10% of the quality's value is added to success)
     for(const qn of [QUALITIES[qi+1]&&QUALITIES[qi+1][0],'flawless'])if(qn&&QUALITIES.findIndex(q=>q[0]===qn)>qi&&!ups.some(u=>u.q===qn)){const before=ups.length;add(spec(ti,qn,c0),rate(ti,qn,c0,pros),qNote(qn));if(ups.length>before)ups[ups.length-1].q=qn}
     // one more Artisan carat on the tool you have
-    if(c0<ti+1)add(spec(ti,qual,c0+1),rate(ti,qual,c0+1,pros),caratNote(c0+1,'tools'));
+    if(c0<ti+1&&artisanOk(ti))add(spec(ti,qual,c0+1),rate(ti,qual,c0+1,pros),caratNote(c0+1,'tools'));
+    else if(c0<ti+1&&!artisanOk(ti))ups.push({label:`Artisan ${c0+1}c`,info:noArtisan(ti)});
     else if(c0<4&&nt>0)ups.push({label:`Artisan ${c0+1}c`,info:`needs a ${TOOL[nt][1].toLowerCase()} ${tname} (a ${TOOL[ti][1].toLowerCase()} one holds ${ti+1}c)${c0+1>=4?"; 4-carat tools are very rare":""}`});
     const ringNote=p=>{const hi=Math.ceil(p/2);return hi>=3?'needs a '+caratNote(hi,'ring').replace(/-carat ring are /,'-carat ring: '):''};
     if(pros<8){const p1=pros+1;add(`Prospector ${p1} carat${p1>1?'s':''} in total`,rate(ti,qual,c0,p1),ringNote(p1)||(pros===0?'one amber ring':''));
@@ -228,9 +233,10 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
     let aimT=topT;while(aimT>ti&&cantMake(aimT))aimT--;
     // a new metal starts from what a smith realistically makes; on the tool you have, keep your quality if it is better
     const rq=realQ(aimT),aimQ=aimT!==ti?rq:(QUALITIES.findIndex(x=>x[0]===rq)>qi?rq:qual);
-    const aim=rate(aimT,aimQ,Math.max(c0,Math.min(aimT+1,2)),aimP);
+    const aimC=artisanOk(aimT)?Math.max(aimT===ti?c0:0,Math.min(aimT+1,2)):(aimT===ti?c0:0);   // a gem only where a smith has mastered that tool
+    const aim=rate(aimT,aimQ,aimC,aimP);
     const pctp=v=>v>.004?'+'+(v*100).toFixed(v<.1?1:0)+'%':'—';
-    const aimLine=aim&&(aim.xp/now.xp-1>.004||aim.it/now.it-1>.004)?`<p class="tool-answer"><b>Aim for:</b> ${esc(spec(aimT,aimQ,Math.max(c0,Math.min(aimT+1,2))))}${aimP>pros?` and Prospector ${aimP}c (two 2-carat rings)`:''}: ${[aim.xp/now.xp-1>.004?pctp(aim.xp/now.xp-1)+" XP":"",aim.it/now.it-1>.004?pctp(aim.it/now.it-1)+" items":""].filter(Boolean).join(" and ")} an hour over what you have.</p>`:`<p class="tool-answer">Your ${esc(tname)} is as good as it realistically gets at level ${level}.</p>`;
+    const aimLine=aim&&(aim.xp/now.xp-1>.004||aim.it/now.it-1>.004)?`<p class="tool-answer aim-line"><b>Aim for:</b> <span class="aim-chips"><span class="aim-chip">${esc(TOOL[aimT][1]+' '+tname)}</span><span class="aim-chip q-${esc(aimQ)}">${esc(pretty(aimQ))}</span>${aimC?`<span class="aim-chip">Artisan ${aimC}c</span>`:''}${aimP>pros?`<span class="aim-chip" title="two 2-carat amber rings">Prospector ${aimP}c</span>`:''}</span> ${[aim.xp/now.xp-1>.004?pctp(aim.xp/now.xp-1)+" XP":"",aim.it/now.it-1>.004?pctp(aim.it/now.it-1)+" items":""].filter(Boolean).join(" and ")} an hour over what you have.</p>`:`<p class="tool-answer">Your ${esc(tname)} is as good as it realistically gets at level ${level}.</p>`;
     const nowLine=`<p class="g-note">You now: ${esc(spec(ti,qual,c0))}${pros?`, Prospector ${pros}c`:''} (+${(now.tb*100).toFixed(1).replace(/[.]0$/,'')}% success), on ${esc(now.node.label)}.</p>`;
     if(!ups.length)return `<h3>Upgrades worth making at level ${level}</h3>`+nowLine+aimLine;
     return `<h3>Upgrades worth making at level ${level}</h3>`+nowLine+aimLine+table(['Upgrade','XP / hour','Items / hour','Note'],ups.map(u=>u.future?[esc(u.label),'—','—',`usable from level ${u.future}`]:u.info?[esc(u.label),'—','—',esc(u.info)]:[esc(u.label),pctp(u.dx),pctp(u.di),u.note?(/rare|uncommon/.test(u.note)&&globalThis.bxcRarityChip?globalThis.bxcRarityChip(esc(u.note)):`<span class="muted">${esc(u.note)}</span>`):'']))+
@@ -390,7 +396,7 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
       <label>Quality<select data-f="qual">${QUALITIES.map(([k])=>`<option value="${k}"${k===(s.qual||'ordinary')?' selected':''}>${pretty(k)}</option>`).join('')}</select></label>
       <label>Artisan carats<input type="number" min="0" max="4" data-f="carat" value="${Number(s.carat)||0}"></label>
       ${kind==='gather'?`<label>Prospector carats<input type="number" min="0" max="8" data-f="pros" value="${Number(s.pros)||0}"></label><label title="${esc(SMITH_TITLE('Tool Smithing'))}">Best tool smith<input type="number" min="0" max="100" data-f="smith" placeholder="${esc(smithPlaceholder('Tool Smithing'))}" value="${Number(s.smith)||''}"></label>`:''}
-    </div><div class="g-tool-out">${guideToolOut(kind,skill,{level:lv,tool:s.tool,qual:s.qual,carat:s.carat,pros:s.pros})}</div></div>`;
+    </div><div class="g-tool-out">${guideToolOut(kind,skill,{level:lv,tool:s.tool,qual:s.qual,carat:s.carat,pros:s.pros,smith:s.smith})}</div></div>`;
   }
   function guideToolOut(kind,skill,v){
     const level=Math.max(1,Math.min(100,Math.floor(+v.level||1))),ti=toolIdx(v.tool,level);
@@ -402,7 +408,9 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
       const rows=gs.map(g=>{const md=gatherModel(g,canUse?bonus:0,pros),c=md.chance(level),y=md.yieldAt(level),per=md.ms?3600000/md.ms:null;
         return level<g.level?[item(slug(g.item),g.item),n(g.level),'<span class="muted">needs '+g.level+'</span>','—','—','—']
           :[item(slug(g.item),g.item),n(g.level),pct(c),y.toFixed(2),(c*y).toFixed(2),per?n(per*c*y):'—']});
-      return head+table(['Tier','Level','Success','Items per success','Items per attempt','Items per hour'],rows)+'<p class="g-note">Per hour is gathering back to back at the node’s pace, not counting walking or waiting for nodes to come back.</p>';
+      // what to upgrade next, right under the numbers for the tool you entered (it follows the same inputs)
+      const up=gatherUpgradesHtml(skill,level,v.tool||'iron',v.qual||'ordinary',Math.floor(+v.carat||0),pros,v.smith);
+      return head+table(['Tier','Level','Success','Items per success','Items per attempt','Items per hour'],rows)+'<p class="g-note">Per hour is gathering back to back at the node’s pace, not counting walking or waiting for nodes to come back.</p>'+(up?`<div class="g-tool-up">${up}</div>`:'');
     }
     const opts=optionsFor(skill,'craft',canUse?bonus:0).filter(o=>o.level<=level).sort((a,b)=>b.level-a.level).slice(0,12);
     if(!opts.length)return head+'<p class="muted">Nothing to make at this level yet.</p>';
@@ -415,7 +423,7 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
   // "Fastest way to level" on a skill guide, from the tool box's level, tool and carats to level 100
   function guidePathOut(kind,skill,v){
     const level=Math.max(1,Math.min(99,Math.floor(+v.level||1))),sel=v.tool||'iron',qual=v.qual||'ordinary',carat=Math.max(0,Math.floor(+v.carat||0)),pros=Math.max(0,Math.min(8,Math.floor(+v.pros||0)));
-    if(kind==='gather'){const p=gatherPath(skill,level,0,100,sel,qual,carat,pros);return p.length?gatherUpgradesHtml(skill,level,sel,qual,carat,pros,v.smith)+'<h3>Level by level</h3>'+gatherPathHtml(skill,p,sel,level,100,true):'<p class="muted">Nothing to gather at this level.</p>'}
+    if(kind==='gather'){const p=gatherPath(skill,level,0,100,sel,qual,carat,pros);return p.length?gatherPathHtml(skill,p,sel,level,100,true):'<p class="muted">Nothing to gather at this level.</p>'}
     const ti=toolIdx(sel,level),usable=level>=TOOL[ti][3],tb=usable?toolBonus(TOOL[ti][0],qual,Math.min(ti+1,carat)):0;
     const rows=plan(optionsFor(skill,'craft',tb),level,0,100);if(!rows.length)return '<p class="muted">Nothing to make at this level yet.</p>';
     return `<p class="g-note">From level ${level} with your ${esc(TOOL[ti][1].toLowerCase())} ${esc((toolFor(skill)||'tool').toLowerCase())} (${tb>=0?'+':''}${(tb*100).toFixed(1).replace(/[.]0$/,'')}%): the recipe with the most XP per attempt at each stretch.</p>`+
