@@ -1,4 +1,13 @@
 [
+{"sessionId":"1b0f284a-3b29-4ae3-ab83-d8492f495e40","time":1790825849448,"iso":"2026-10-01T03:37:29.448Z","fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":1178},
+{"sessionId":"1b0f284a-3b29-4ae3-ab83-d8492f495e40","time":1790825588977,"iso":"2026-10-01T03:33:08.977Z","fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":1177},
+{"sessionId":"1b0f284a-3b29-4ae3-ab83-d8492f495e40","time":1790825550688,"iso":"2026-10-01T03:32:30.688Z","fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":1176},
+{"sessionId":"1b0f284a-3b29-4ae3-ab83-d8492f495e40","time":1790825218102,"iso":"2026-10-01T03:26:58.102Z","fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":1175},
+{"sessionId":"1b0f284a-3b29-4ae3-ab83-d8492f495e40","time":1790825169407,"iso":"2026-10-01T03:26:09.407Z","fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":1174},
+{"sessionId":"1b0f284a-3b29-4ae3-ab83-d8492f495e40","time":1790824778847,"iso":"2026-10-01T03:19:38.847Z","fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":1173},
+{"sessionId":"1b0f284a-3b29-4ae3-ab83-d8492f495e40","time":1790824385381,"iso":"2026-10-01T03:13:05.381Z","fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":1172},
+{"sessionId":"1b0f284a-3b29-4ae3-ab83-d8492f495e40","time":1790824033103,"iso":"2026-10-01T03:07:13.103Z","fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":1171},
+{"sessionId":"1b0f284a-3b29-4ae3-ab83-d8492f495e40","time":1790824013608,"iso":"2026-10-01T03:06:53.608Z","fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":1170},
 {"sessionId":"1b0f284a-3b29-4ae3-ab83-d8492f495e40","time":1790823581712,"iso":"2026-10-01T02:59:41.712Z","fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":1169},
 {"sessionId":"1b0f284a-3b29-4ae3-ab83-d8492f495e40","time":1790823567295,"iso":"2026-10-01T02:59:27.295Z","fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":1168},
 {"sessionId":"1b0f284a-3b29-4ae3-ab83-d8492f495e40","time":1790823535162,"iso":"2026-10-01T02:58:55.162Z","fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":1167},
