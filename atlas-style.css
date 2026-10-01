@@ -983,3 +983,12 @@ tr.zmon-on td:first-child{box-shadow:inset 3px 0 0 #ffd54a}
 .zmon-pop{position:absolute;z-index:5;width:min(380px,90%);max-height:60vh;overflow:auto;padding:10px 12px;background:var(--panel,#1d1a16);border:1px solid var(--accent-soft,#8a6430);border-radius:8px;box-shadow:0 10px 30px rgba(0,0,0,.55)}
 .zmon-pop-head{display:flex;align-items:baseline;gap:6px;margin-bottom:6px}
 .zmon-pop-x{margin-left:auto;background:none;border:0;color:var(--muted);font-size:18px;line-height:1;cursor:pointer}
+/* quest chain: the quests in order and what the last one opens */
+.q-chain{display:block;margin:0 0 12px;padding:10px 12px;border:1px solid var(--accent-soft,#8a6430);border-left:4px solid #ffd54a;border-radius:8px;background:rgba(255,213,74,.06)}
+.q-chain-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
+.q-chain-step{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--line,#3a3128);border-radius:999px;text-decoration:none}
+.q-chain-step i{font-style:normal;font-size:11px;font-weight:700;width:18px;height:18px;display:inline-grid;place-items:center;border-radius:50%;background:var(--line,#3a3128)}
+.q-chain-step.on{border-color:#ffd54a;color:#ffd54a;font-weight:600}
+.q-chain-step.on i{background:#ffd54a;color:#1a140c}
+.q-chain-step.end{border-color:#6fbf73;color:#8fd492;font-weight:600}
+.q-chain-arrow{color:var(--muted)}

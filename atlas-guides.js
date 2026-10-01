@@ -566,6 +566,17 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   // A quest that needs another one finished first (the story runs on: Cargo for the Isle, then The Ogre Traitor - same
   // quest-giver, and the second picks up where the first ends)
   const QUEST_PREREQS={'plymouth-the-ogre-traitor':['plymouth-cargo-for-the-isle']};
+  // Quest chains: quests done in order, the last one opening something up. Shown at the top of each quest in it.
+  const QUEST_CHAINS=[{ids:['plymouth-cargo-for-the-isle','plymouth-the-ogre-traitor'],ends:'Access to Ogre Isle'}];
+  function questChain(q){
+    const c=QUEST_CHAINS.find(c=>c.ids.includes(q.questId));if(!c)return '';
+    const i=c.ids.indexOf(q.questId),list=questList();
+    const step=(id,k)=>{const p=list.find(x=>x.questId===id),nm=esc(p?p.name:pretty(id));
+      return id===q.questId?`<span class="q-chain-step on"><i>${k+1}</i>${nm}</span>`:`<a class="q-chain-step" href="#/guide/quest-${esc(slug(id))}"><i>${k+1}</i>${nm}</a>`};
+    const left=c.ids.length-1-i;
+    return `<div class="q-chain" role="note"><b>Quest chain</b> <span class="muted">· part ${i+1} of ${c.ids.length}${left?`, ${left} more after this one`:', the last one'}</span>
+      <div class="q-chain-row">${c.ids.map(step).join('<span class="q-chain-arrow">→</span>')}<span class="q-chain-arrow">→</span><span class="q-chain-step end">🔓 ${esc(c.ends)}</span></div></div>`;
+  }
   const QUEST_STAGES_RECOVERED={'plymouth-the-ogre-traitor':[{n:0,text:'Kill the Ogre Traitor',objectives:[{text:'Kill the Ogre Traitor',required:1,npc:'Ogre Traitor',waypoints:[{z:-58,x:49,y:155}],after:'a level 34 boss at the bottom of the den (level 45 before 26 Sep 2026)'}]}]};
   // an objective's text, with a person it names (o.npc, or a recorded named NPC whose name it contains) linked to them
   const objText=o=>{const t=String(o.text||''),nm=o.npc||null,p=nm&&globalThis.bxcNpcByName?globalThis.bxcNpcByName(nm):null;
@@ -626,7 +637,11 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       +(places.length?`<p>Places: ${places.map(p=>esc(p.name)).join(', ')}.</p>`:'')
       +(a.news?note('Since 26 Sep 2026 Ogre Isle is a level 30 area (it was 45). From the Binxonia news: '+a.news.map(([u,t,d])=>`<a href="https://binxonia.com/news/${u}" target="_blank" rel="noopener">${esc(t)}</a> (${esc(d)})`).join(', ')+'.'):'')}
   function questUnlocks(q){
-    const u=QUEST_UNLOCKS[q.questId];if(!u)return questAreaUnlocks(q);
+    const u=QUEST_UNLOCKS[q.questId];
+    if(!u){const c=QUEST_CHAINS.find(c=>c.ids.includes(q.questId)),i=c?c.ids.indexOf(q.questId):-1;
+      if(c&&i<c.ids.length-1){const id=c.ids[i+1],p=questList().find(x=>x.questId===id);
+        return `<p><a href="#/guide/quest-${esc(slug(id))}">${esc(p?p.name:pretty(id))}</a>, the next quest in the chain to <b>${esc(c.ends.replace(/^Access to /,''))}</b>.</p>`}
+      return questAreaUnlocks(q)}
     const S=globalThis.BINXONIA_COLLECTOR_SNAPSHOT||{},z=Number(u.z);
     const rocks=new Map();for(const o of S.worldObjects||[]){const p=o&&o.position;if(!p||Number(p.z)!==z||!/-rock$/.test(o.typeId||''))continue;rocks.set(o.typeId,(rocks.get(o.typeId)||0)+1)}
     const res=[...rocks].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).map(([t,n])=>`${n} ${esc(pretty(t.replace(/-rock$/,'')))} rock${n===1?'':'s'}`);
@@ -688,9 +703,8 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const q=questBySlug(s);if(!q)return null;
     return {slug:s,group:'Quests',title:q.name,blurb:q.lore||'',build:()=>{
       const facts=table(['',''],[['Given by',questGiver(q)],['Level',String(q.recommendedLevel||'?')],['Length',esc(pretty(q.lengthTag||'?'))],['Kind',esc((Q_CATS.find(c=>c[0]===questCat(q))||[])[1]||'Side quests').replace(/ quests$/,'')],['Quest points',String(q.questPoints||0)],...(questRequiresSkills(q).length?[['Requires',questRequiresSkills(q).join(', ')+' skill']]:[]),
-        ...((QUEST_PREREQS[q.questId]||[]).length?[['Requires',(QUEST_PREREQS[q.questId]).map(id=>{const p=questList().find(x=>x.questId===id);return p?`<a href="#/guide/quest-${esc(slug(id))}">${esc(p.name)}</a>`:esc(pretty(id))}).join(', ')+' finished first']]:[]),
-        ...(Object.entries(QUEST_PREREQS).filter(([,need])=>need.includes(q.questId)).length?[['Leads to',Object.entries(QUEST_PREREQS).filter(([,need])=>need.includes(q.questId)).map(([id])=>{const p=questList().find(x=>x.questId===id);return p?`<a href="#/guide/quest-${esc(slug(id))}">${esc(p.name)}</a>`:esc(pretty(id))}).join(', ')]]:[])],'q-facts');
-      return {lede:(questDone(q)?'':`<span class="q-alert-banner" role="alert">${ALERT_SVG}<span><b>This quest is not fully written yet.</b> Steps, items or dialogue may be missing.</span></span>`)+(q.lore?esc(q.lore):''),sections:[
+        ...((QUEST_PREREQS[q.questId]||[]).length?[['Requires',(QUEST_PREREQS[q.questId]).map(id=>{const p=questList().find(x=>x.questId===id);return p?`<a href="#/guide/quest-${esc(slug(id))}">${esc(p.name)}</a>`:esc(pretty(id))}).join(', ')+' finished first']]:[])],'q-facts');
+      return {lede:(questDone(q)?'':`<span class="q-alert-banner" role="alert">${ALERT_SVG}<span><b>This quest is not fully written yet.</b> Steps, items or dialogue may be missing.</span></span>`)+questChain(q)+(q.lore?esc(q.lore):''),sections:[
         ['about','About',facts],
         ['needs','What you need',questNeeds(q)],
         ['steps','Steps',questSteps(q)],
