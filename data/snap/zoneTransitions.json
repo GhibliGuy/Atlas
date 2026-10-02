@@ -1,4 +1,6 @@
 [
+{"sessionId":"6e71b3d6-1507-437e-ab62-4cbc68c2cff1","time":1790958766322,"iso":"2026-10-02T16:32:46.322Z","fromZ":11001,"toZ":0,"kind":"outdoors","outX":116,"outY":-85,"key":1505},
+{"sessionId":"6e71b3d6-1507-437e-ab62-4cbc68c2cff1","time":1790958754976,"iso":"2026-10-02T16:32:34.976Z","fromZ":null,"toZ":11001,"zoneName":"GhibliGuy's home, Plymouth Wharf","pvpMode":"none","atX":11,"atY":5,"key":1504},
 {"sessionId":"0ca24de6-8c4b-40b2-8ad3-863fda15d1ca","time":1790952457161,"iso":"2026-10-02T14:47:37.161Z","fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":1503},
 {"sessionId":"0ca24de6-8c4b-40b2-8ad3-863fda15d1ca","time":1790952439063,"iso":"2026-10-02T14:47:19.063Z","fromZ":0,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":1502},
 {"sessionId":"0d5bdf96-6310-4d05-af30-465a38c37cac","time":1790952426261,"iso":"2026-10-02T14:47:06.261Z","fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":1501},
