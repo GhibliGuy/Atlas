@@ -243,7 +243,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const tot=k=>HOME_STEPS.reduce((a,h)=>a+(k==='f'?Math.floor(h.actions/4):h.actions),0);
     return {lede:'Carpentry saws logs into planks, hammers ore into fittings, and turns both into furniture, crafting stations and a home of your own. It never fails, and every action that builds a house pays the same 75 XP.',sections:[
       ['how','How it works',`<ul class="g-list">
-        <li><b>Learn it</b> from <b>Hollis Tamber</b>, a carpenter at Plymouth Wharf, in the quest <b>The Carpenter’s Trade</b>. It is the only way to learn Carpentry, and it costs no skill point.</li>
+        <li><b>Learn it</b> from <b>Hollis Tamber</b>, a carpenter at Plymouth Wharf, in the quest <a href="#/guide/quest-plymouth-carpenters-trade">The Carpenter’s Trade</a>. It is the only way to learn Carpentry, and it costs no skill point. He gives you a saw, a smithing hammer, 20 pine logs and 5 iron ore when you take it: exactly enough for the 10 planks and 5 sets of fittings it asks for.</li>
         <li><b>Planks, furniture, stations and garden pieces</b> are made at a <b>sawmill</b> with a <b>saw</b> equipped (tools have their own slot). <b>Fittings</b> are made on an anvil’s Carpentry tab with a <b>smithing hammer</b>.</li>
         <li><b>Sawing never fails</b>: every attempt makes the item.</li>
         <li><b>Saws</b> are forged by Tool Smithing in all four metals (${['saw','silver-saw','gold-saw','titanium-saw'].map(id=>item(id)).join(', ')}). A better saw builds a house faster.</li>
@@ -588,7 +588,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   const questBySlug=s=>String(s||'').startsWith('quest-')?questList().find(q=>questSlug(q)===s)||null:null;
   // Quest guides the user has confirmed as fully written (quest ids). Every other quest gets an alert: on its card on
   // the Quests page, and a banner on its own page.
-  const QUEST_COMPLETE=new Set(['wasteland-nothing-gets-through','imp-menace','plymouth-cargo-for-the-isle','plymouth-the-ogre-traitor','warrior-spear-beyond-the-point','warrior-mace-the-broken-hammers']);
+  const QUEST_COMPLETE=new Set(['wasteland-nothing-gets-through','imp-menace','plymouth-cargo-for-the-isle','plymouth-the-ogre-traitor','warrior-spear-beyond-the-point','warrior-mace-the-broken-hammers','plymouth-carpenters-trade']);
   const questDone=q=>QUEST_COMPLETE.has(q.questId);
   const ALERT_SVG='<svg class="q-alert-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20z" fill="currentColor"/><path d="M12 10v5M12 17.6v.4" stroke="#1b1300" stroke-width="2.2" stroke-linecap="round"/></svg>';
   const questLink=q=>`<a href="#/guide/${enc(questSlug(q))}">${esc(q.name)}</a>`;
@@ -616,6 +616,8 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       ...(QUEST_AREAS[q.questId]?['access to '+esc(QUEST_AREAS[q.questId].place)]:[]),
       ...(QUEST_UNLOCKS[q.questId]?[esc(QUEST_UNLOCKS[q.questId].name)]:[])];
   }
+  // quests whose listed items are handed over at the start, not as the reward (the quest-giver's own words)
+  const QUEST_START_ITEMS=new Set(['plymouth-carpenters-trade']);
   function questRewards(q){
     const r=q.rewards||{},rows=[];
     if(r.gold)rows.push(['Gold',qn(r.gold)]);
@@ -623,7 +625,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     for(const s of [...(r.skillXp||[]),...(r.combatSkillXp||[])])rows.push([esc(questSkill(s))+' XP',qn(s.amount)]);
     if(q.questPoints)rows.push(['Quest points',String(q.questPoints)]);
     const items=(r.items||[]).map(i=>item(i.typeId)+(i.quantity>1?' ×'+qn(i.quantity):''));
-    if(items.length)rows.push(['Items',items.join('<br>')]);
+    if(items.length)rows.push([QUEST_START_ITEMS.has(q.questId)?'Given when you take it':'Items',items.join('<br>')]);
     const choice=(r.choice||[]).map(i=>item(i.typeId)+(i.quantity>1?' ×'+qn(i.quantity):''));
     if(choice.length)rows.push(['Choose one',choice.join('<br><span class="muted">or</span> ')]);
     const skillLink=k=>byslug.has(slug(k))?`<a href="#/guide/${esc(slug(k))}">${esc(pretty(k))}</a>`:esc(pretty(k));
@@ -636,7 +638,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   // while someone was on the quest (numbered after it); with none recorded, what players reported (QUEST_REQUIRES).
   // Quests whose every step is known: the recorded steps are all of them, and handIn - the last step is going back to
   // the quest-giver (as players who finished it reported).
-  const QUEST_STEPS_KNOWN={'imp-menace':{handIn:true},'plymouth-the-ogre-traitor':{handIn:true},'warrior-spear-beyond-the-point':{handIn:true}};
+  const QUEST_STEPS_KNOWN={'imp-menace':{handIn:true},'plymouth-the-ogre-traitor':{handIn:true},'warrior-spear-beyond-the-point':{handIn:true},'plymouth-carpenters-trade':{handIn:false}};
   // Steps the game sent while someone was on the quest, recovered from older collector backups (the quest log of
   // 19-20 Sep 2026) where today's data has none: The Ogre Traitor's stage 1, objective "Kill the Ogre Traitor" (1).
   // Steps players reported for a quest with none recorded; the items and places named are the game's own (its catalog:
