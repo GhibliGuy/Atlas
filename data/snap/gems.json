@@ -1,4 +1,5 @@
 [
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1790976932694,"iso":"2026-10-02T21:35:32.694Z","sessionId":"b2e0a1dd-a982-4cb3-9af4-0b9fe4f7aeff","key":225},
 {"type":"gem.found","typeId":"gem-amber","carat":2,"dropped":false,"time":1790946717869,"iso":"2026-10-02T13:11:57.869Z","sessionId":"d435e1ca-6c50-4103-aeda-f4077a695b93","key":224},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1790945960268,"iso":"2026-10-02T12:59:20.268Z","sessionId":"d435e1ca-6c50-4103-aeda-f4077a695b93","key":223},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1790915873210,"iso":"2026-10-02T04:37:53.210Z","sessionId":"a8b4d877-3d07-40cb-b10e-8c605dfd4b73","key":222},
