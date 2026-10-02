@@ -17,7 +17,6 @@
   // the countdown text itself ticks every second locally, independent of that poll.
   let bossTimerLayer=null, bossTimerPanelEl=null;
   const bossTimerMarkers=new Map();   // name -> L.Marker
-  
   async function syncBossTimers(){
     try{
       const r=await bridgeRequest('get-boss-timers',{});
@@ -741,7 +740,7 @@
     const s=String(search||'').toLowerCase().trim();
     const rows=[...(state.items?.values()||[])].filter(r=>itemMatchesSearch(r,s)).sort((a,b)=>b.lastSeen-a.lastSeen);
     return accessoryDropRules()+`<div class="collector-panel"><div class="collector-title">Observed items</div><div class="statline"><span>${fmt(rows.length)} item types observed</span></div><div class="muted">Every item type your collector has seen, with where it's known to come from so far — crafted, gathered from a resource node, or dropped by a monster. This fills in automatically as you craft, gather, and fight; an item you've only received once (e.g. a quest or vendor reward) may show no known source yet.</div></div>` +
-    (rows.length?rows.map(r=>`<div class="card" data-item="${esc(r.itemTypeId)}"><img class="thumb itemthumb" src="${itemImgFor(r.itemTypeId)}" alt="${esc(prettyId(r.itemTypeId))}"><div class="name"><a class="page-link" href="${pageHref('item',r.itemTypeId)}">${esc(prettyId(r.itemTypeId))}</a>${questItem(r.itemTypeId)?` <span class="quest-badge" title="Asked for by ${esc(questItem(r.itemTypeId).quests.join(' / '))}">Quest item</span>`:''}</div><div class="s">${esc(itemSourcesText(r))}</div>${itemMonsterRates(r)}<div class="s muted">Last seen ${when(r.lastSeen)}</div>${typeof privateItemButton==='function'?privateItemButton(r):''}${(r.monsterSources.size||[...(state.resourceCatalog?.values()||[])].some(x=>x.yieldItem===r.itemTypeId))?`<button type="button" class="show-on-map" data-map-kind="item" data-map-id="${esc(r.itemTypeId)}">Show on map</button>`:''}</div>`).join('')
+    (rows.length?rows.map(r=>`<div class="card" data-item="${esc(r.itemTypeId)}"><img class="thumb itemthumb" src="${itemImgFor(r.itemTypeId)}" alt="${esc(prettyId(r.itemTypeId))}"><div class="name"><a class="page-link" href="${pageHref('item',r.itemTypeId)}">${esc(prettyId(r.itemTypeId))}</a>${questItem(r.itemTypeId)?` <span class="quest-badge" title="Asked for by ${esc(questItem(r.itemTypeId).quests.join(' / '))}">Quest item</span>`:''}</div><div class="s">${esc(itemSourcesText(r))}</div>${itemMonsterRates(r)}<div class="s muted">Last seen ${when(r.lastSeen)}</div>${(r.monsterSources.size||[...(state.resourceCatalog?.values()||[])].some(x=>x.yieldItem===r.itemTypeId))?`<button type="button" class="show-on-map" data-map-kind="item" data-map-id="${esc(r.itemTypeId)}">Show on map</button>`:''}</div>`).join('')
     :'<div class="note">'+(s?'No items match your search.':'No items captured yet.')+'</div>');
   }
   function cloneResourceMarker(src){
@@ -5232,7 +5231,6 @@ function newsHtml(){
   });
   content?.addEventListener('click',e=>{
     if(tab!=='items')return;
-    if(typeof privateItemClick==='function'&&privateItemClick(e))return;
     const monsterRow=e.target.closest('.monsterlink');
     if(monsterRow)goToMonsterCard(monsterRow.dataset.monster);
   });
