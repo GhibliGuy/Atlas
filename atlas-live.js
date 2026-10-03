@@ -4087,8 +4087,14 @@ function newsHtml(){
       ...[...namedNpcs().values()].map(e=>({kind:e.typeId==='human'?'Person':'Named',tab:'monsters',page:'npc',id:e.slug,name:e.name,detail:prettyId(e.typeId)+(npcRole(e.name)?' · '+npcRole(e.name):''),image:()=>npcImg(e),attr:'npc'})),
       ...[...(state.items?.values()||[])].map(r=>({kind:'Item',tab:'items',id:r.itemTypeId,name:prettyId(r.itemTypeId),detail:itemSourcesText(r),image:()=>itemImgFor(r.itemTypeId),attr:'item',record:r})),
       ...[...(state.resourceCatalog?.values()||[])].map(r=>({kind:'Resource',tab:'resources',id:r.key,name:resourceDisplayName(r),detail:prettyId(r.skill||''),image:()=>resourceImg(r),attr:'r'})),
-      ...[...(state.zones?.values()||[])].map(r=>({kind:'Zone',tab:'zones',id:String(r.z),name:r.name||'Zone '+r.z,detail:'Zone '+r.z,attr:'zone'}))
-    ];
+      // a cave of several rooms is one result (its first room), not one per room
+      ...(()=>{const by=new Map();for(const r of state.zones?.values()||[]){const n=r.name||'Zone '+r.z,g=by.get(n);if(g)g.n++;else by.set(n,{r,n:1})}return [...by.values()].map(({r,n})=>({kind:'Zone',tab:'zones',id:String(r.z),name:r.name||'Zone '+r.z,detail:n>1?n+' rooms':'Its layout',attr:'zone'}))})(),
+      // guides, quests, places on the map and the menu's sections: each has a page (a link) of its own too
+      ...((globalThis.bxcGuides&&globalThis.bxcGuides.list)||[]).map(g=>({kind:'Guide',page:'guide',id:g.slug,name:g.title,detail:[g.group,g.blurb].filter(Boolean).join(' · ')})),
+      ...(snapshot?.quests||[]).filter(x=>x&&x.name&&x.questId&&!String(x.questId).startsWith('__')).map(x=>({kind:'Quest',page:'guide',id:'quest-'+npcSlug(x.questId),name:x.name,detail:[x.recommendedLevel?'Level '+x.recommendedLevel:'',x.giverName?'from '+x.giverName:''].filter(Boolean).join(' · ')})),
+      ...(D.pois||[]).filter(p=>p&&p.name).map(p=>({kind:'Place',href:'#/map/place/'+encodeURIComponent(p.name),name:p.name,detail:prettyId(p.category||'')+' on the world map'})),
+      ...[...document.querySelectorAll('.tab:not(.bxc-menu-btn)')].filter(b=>!b.dataset.gpage&&b.textContent.trim()).map(b=>({kind:'Section',href:'#/'+tabKey(b),name:b.textContent.trim(),detail:'A section of the Atlas'}))
+    ].map(e=>(e.href||(e.href=e.page?pageHref(e.page,e.id):e.tab==='zones'?'#/zone/'+e.id:({monsters:'#/monster/',items:'#/item/',resources:'#/resource/'}[e.tab]||'#/')+encodeURIComponent(e.id)),e));
   }
   function globalSearchMatches(entries,query){
     // A search naming damage types ("slash", "resist crush", "ogre stab") lists only the monsters weak to / resisting them.
@@ -4099,13 +4105,19 @@ function newsHtml(){
       query=pq.text;
       if(!query)return entries;
     }
-    const norm=s=>String(s||'').toLowerCase().replace(/[-_]+/g,' ').replace(/\s+/g,' ').trim(),needle=norm(query),terms=needle.split(' ').filter(Boolean);
+    // lower case, dashes as spaces, other punctuation dropped ("moonfangs" finds Moonfang's Lair)
+    const norm=s=>String(s||'').toLowerCase().replace(/[-_/]+/g,' ').replace(/[^a-z0-9 ]+/g,'').replace(/\s+/g,' ').trim(),needle=norm(query),terms=needle.split(' ').filter(Boolean);
     if(!terms.length)return [];
-    return entries.filter(e=>terms.every(t=>norm(e.name+' '+e.id+' '+e.kind+' '+e.detail).includes(t))).sort((a,b)=>Number(norm(b.name)===needle)-Number(norm(a.name)===needle)||Number(norm(b.name).startsWith(needle))-Number(norm(a.name).startsWith(needle)));
+    // the name itself: exactly it, starts with it, a word in it starts with it, it's inside it; else only the details
+    const rank=n=>n===needle?0:n.startsWith(needle)?1:(' '+n).includes(' '+needle)?2:n.includes(needle)?3:terms.every(t=>(' '+n).includes(' '+t))?4:terms.every(t=>n.includes(t))?5:6;
+    const KIND_ORDER=['Quest','Guide','Monster','Named','Person','Item','Resource','Place','Zone','Section'];
+    return entries.map(e=>{const n=norm(e.name);return {e,n,r:rank(n),k:KIND_ORDER.indexOf(e.kind)}})
+      .filter(x=>x.r<6||terms.every(t=>norm(x.e.name+' '+x.e.id+' '+x.e.kind+' '+x.e.detail).includes(t)))
+      .sort((a,b)=>a.r-b.r||a.k-b.k||a.n.length-b.n.length||a.n.localeCompare(b.n)).map(x=>x.e);
   }
   function installGlobalSearch(){
     if(!q)return;
-    q.placeholder='Search monsters, items, resources and zones…';q.setAttribute('aria-label','Search across the atlas');q.setAttribute('aria-controls','atlasGlobalResults');q.setAttribute('aria-expanded','false');
+    q.placeholder='Search guides, quests, monsters, items, places…';q.setAttribute('aria-label','Search across the atlas');q.setAttribute('aria-controls','atlasGlobalResults');q.setAttribute('aria-expanded','false');
     const panel=document.createElement('div');panel.id='atlasGlobalResults';panel.hidden=true;panel.setAttribute('aria-label','Search results');
     panel.style.cssText='position:fixed;z-index:10000;max-height:60vh;overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--accent-soft);border-radius:10px;padding:10px;box-shadow:0 10px 35px #0009;box-sizing:border-box';document.body.append(panel);
     let results=[],timer;
@@ -4113,6 +4125,7 @@ function newsHtml(){
     function position(){const r=q.getBoundingClientRect();panel.style.left=Math.max(8,Math.min(r.left,innerWidth-340))+'px';panel.style.top=(r.bottom+6)+'px';panel.style.width=Math.min(Math.max(r.width,340),innerWidth-16)+'px';}
     function openResult(entry){
       close();q.value='';if(onlyObserved)onlyObserved.checked=false;
+      if(entry.kind==='Place'||entry.kind==='Section'){goRoute(entry.href);return}
       if(entry.page){openPage(entry.page,entry.id);return}
       // monsters, items and resources have pages of their own; zones open their layout
       const kind={monsters:'monster',items:'item',resources:'resource'}[entry.tab];
@@ -4124,12 +4137,12 @@ function newsHtml(){
     function update(){
       if(!q.value.trim()){close();return;}
       results=globalSearchMatches(globalSearchEntries(),q.value);position();panel.hidden=false;q.setAttribute('aria-expanded','true');
-      panel.innerHTML='<div class="muted" role="status">'+results.length+' matches across the atlas'+(results.length>40?' · showing first 40; keep typing to narrow':'')+'</div>'+results.slice(0,40).map((e,i)=>'<button type="button" data-result="'+i+'" style="display:block;width:100%;text-align:left;background:var(--panel2);color:inherit;border:1px solid var(--edge);border-radius:7px;padding:10px;margin-top:7px;cursor:pointer">'+(e.image?'<img src="'+esc(e.image())+'" alt="" style="width:42px;height:42px;object-fit:contain;float:left;margin-right:10px">':'')+'<b>'+esc(e.name)+'</b><div class="muted">'+esc(e.kind)+'</div><div style="clear:both;font-size:12px;padding-top:4px">'+esc(e.detail)+'</div></button>').join('');
+      panel.innerHTML='<div class="muted" role="status">'+results.length+' matches across the atlas'+(results.length>40?' · showing first 40; keep typing to narrow':'')+'</div>'+results.slice(0,40).map((e,i)=>'<a href="'+esc(e.href)+'" data-result="'+i+'" style="display:block;width:100%;box-sizing:border-box;text-align:left;text-decoration:none;background:var(--panel2);color:inherit;border:1px solid var(--edge);border-radius:7px;padding:10px;margin-top:7px;cursor:pointer">'+(e.image?'<img src="'+esc(e.image())+'" alt="" style="width:42px;height:42px;object-fit:contain;float:left;margin-right:10px">':'')+'<b>'+esc(e.name)+'</b><div class="muted">'+esc(e.kind)+'</div><div style="clear:both;font-size:12px;padding-top:4px">'+esc(e.detail)+'</div></a>').join('');
     }
     q.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(update,100)});q.addEventListener('focus',update);
-    q.addEventListener('keydown',e=>{if(e.key==='Escape'){close();return}if(!panel.hidden&&e.key==='Enter'&&results.length){e.preventDefault();openResult(results[0])}if(!panel.hidden&&e.key==='ArrowDown'){e.preventDefault();panel.querySelector('button')?.focus()}});
-    panel.addEventListener('click',e=>{const b=e.target.closest('[data-result]');if(b)openResult(results[Number(b.dataset.result)])});
-    panel.addEventListener('keydown',e=>{const buttons=[...panel.querySelectorAll('button')],i=buttons.indexOf(document.activeElement);if(e.key==='Escape'){close();q.focus();close()}else if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();buttons[Math.max(0,Math.min(buttons.length-1,i+(e.key==='ArrowDown'?1:-1)))]?.focus()}});
+    q.addEventListener('keydown',e=>{if(e.key==='Escape'){close();return}if(!panel.hidden&&e.key==='Enter'&&results.length){e.preventDefault();openResult(results[0])}if(!panel.hidden&&e.key==='ArrowDown'){e.preventDefault();panel.querySelector('a[data-result]')?.focus()}});
+    panel.addEventListener('click',e=>{const b=e.target.closest('[data-result]');if(!b)return;if(e.button!==0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;e.preventDefault();openResult(results[Number(b.dataset.result)])});
+    panel.addEventListener('keydown',e=>{const buttons=[...panel.querySelectorAll('a[data-result]')],i=buttons.indexOf(document.activeElement);if(e.key==='Escape'){close();q.focus();close()}else if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();buttons[Math.max(0,Math.min(buttons.length-1,i+(e.key==='ArrowDown'?1:-1)))]?.focus()}});
     document.addEventListener('pointerdown',e=>{if(e.target!==q&&!panel.contains(e.target))close()});window.addEventListener('resize',position);
   }
 

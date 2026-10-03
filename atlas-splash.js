@@ -169,7 +169,6 @@
   function search(text){
     text=String(text||'').trim();
     close();
-    const monsters=document.querySelector('.tab[data-tab="monsters"]');if(monsters&&!monsters.classList.contains('on'))monsters.click();
     if(typeof q==='undefined'||!q)return;
     q.value=text;q.focus();q.dispatchEvent(new Event('input'));
   }
