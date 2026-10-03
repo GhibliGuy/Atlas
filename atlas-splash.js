@@ -100,8 +100,10 @@
   // the numbers under the search box (what the Atlas knows right now)
   function statsHtml(){
     const d=typeof D!=='undefined'?D:{},S=globalThis.BINXONIA_COLLECTOR_SNAPSHOT||{};
-    const items=new Set([...(typeof RECIPES!=='undefined'?RECIPES:[]).map(r=>r.id),...(S.inventoryTypes||[]).map(x=>x.typeId||x.id)].filter(Boolean)).size;
-    const n=[[count(d.catalog),'creatures'],[items,'items'],[typeof RECIPES!=='undefined'?RECIPES.length:0,'recipes'],[count(d.pois),'places'],[count(S.gems),'gems found']].filter(x=>x[0]>0);
+    // (the website's lite start does not load the item and gem lists: the publish counted them - S.bxcHomeCounts)
+    const hc=S.bxcHomeCounts;
+    const items=hc&&hc.items!=null?hc.items:new Set([...(typeof RECIPES!=='undefined'?RECIPES:[]).map(r=>r.id),...(S.inventoryTypes||[]).map(x=>x.typeId||x.id)].filter(Boolean)).size;
+    const n=[[count(d.catalog),'creatures'],[items,'items'],[typeof RECIPES!=='undefined'?RECIPES.length:0,'recipes'],[count(d.pois),'places'],[hc&&hc.gems!=null?hc.gems:count(S.gems),'gems found']].filter(x=>x[0]>0);
     return n.map(([v,l])=>`<div><b>${v.toLocaleString()}</b><span>${l}</span></div>`).join('');
   }
   // a first handful of guides for someone new

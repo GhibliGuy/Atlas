@@ -3870,8 +3870,8 @@ function newsHtml(){
     const types=m.npcTypes||[];
     const npcs=(m.npcs||[]).map((r,i)=>{const [ti,id,level,elite,ls,px,py,pz,ox,oy,oz,cls]=r,t=types[ti]||[];
       const n={id:id||('lite-'+i),typeId:t[0],name:t[1],level,elite:!!elite,lastSeen:ls*1000,position:{x:px,y:py,z:pz},originPosition:ox!=null?{x:ox,y:oy,z:oz||0}:null};if(cls)n.npcClass=cls;return n});
-    const worldObjects=(m.objects||[]).map((r,i)=>{const [typeId,name,x,y,status,fish,z]=r,o={id:'lite-o'+i,typeId,name,position:{x,y,z:z||0},status};if(fish)o.data={fishTypes:fish};return o});
-    rawSnapshot={...base,npcs,worldObjects,npcObservations:[],drops:[],terrain:[],zoneTransitions:[],bxcLite:true};
+    const worldObjects=(m.objects||[]).map((r,i)=>{const [typeId,name,x,y,status,fish,z,ls,fs]=r,o={id:'lite-o'+i,typeId,name,position:{x,y,z:z||0},status};if(ls)o.lastSeen=ls*1000;if(fs)o.firstSeen=fs*1000;if(fish)o.data={fishTypes:fish};return o});
+    rawSnapshot={...base,npcs,worldObjects,npcObservations:[],drops:[],terrain:[],zoneTransitions:[],bxcLite:true,bxcHomeCounts:m.home||null};
     snapshot=rawSnapshot;window.BINXONIA_COLLECTOR_SNAPSHOT=snapshot;
     deriveResourceSkills();deriveResourceCatalog();deriveAssets();
     state.zones=new Map((m.zones||[]).map(z=>[z.z,z]));state.zoneEntrances=new Map(m.entrances||[]);
@@ -3888,11 +3888,12 @@ function newsHtml(){
     questGiverList=function(){return !isFull()&&litePeople&&litePeople.givers?litePeople.givers:qgBase()};
     trainerList=function(){return !isFull()&&litePeople&&litePeople.trainers?litePeople.trainers:trBase()}}
   // sections listing everything (and the cave layouts): they need the whole database
-  const LITE_LIST_TABS=new Set(['monsters','items','resources','zones','gems','drops','xp','research','assets']);
-  const liteListWaits=()=>{if(!PUBLIC_MODE||isFull()||!LITE_LIST_TABS.has(tab))return false;try{if(tab==='zones'&&zonesIn)return false;return !(pageNow&&tab===PAGE_TAB[pageNow.kind])}catch{return true}};   // (set further down: PAGE_TAB, zonesIn)   // (PAGE_TAB is set further down)
+  const LITE_LIST_TABS=new Set(['monsters','items','resources','zones','gems','calc','drops','xp','research','assets']);
+  const LITE_FILE_LISTS=new Set(['monsters','items','resources','gems','calc']);   // these come from data/lists.json; the rest (app-only) need everything
+  const liteListWaits=()=>{if(!PUBLIC_MODE||isFull()||!LITE_LIST_TABS.has(tab))return false;try{if(tab==='zones'&&zonesIn)return false;if(LITE_FILE_LISTS.has(tab)&&listsIn)return false;return !(pageNow&&tab===PAGE_TAB[pageNow.kind])}catch{return true}};   // (set further down: PAGE_TAB, zonesIn)   // (PAGE_TAB is set further down)
   if(PUBLIC_MODE){const augBase=augmentCurrentTab;augmentCurrentTab=function(){if(liteListWaits())return;return augBase.apply(this,arguments)}}
   if(PUBLIC_MODE&&typeof render==='function'){const liteBase=render;render=function(){
-    if(liteListWaits()){content.innerHTML='<p class="muted">Loading…</p>';(tab==='zones'?ensureZones():globalThis.bxcEnsureFull?.()).then(()=>{render();augmentCurrentTab()});return}   // the Zones list needs only the caves' data
+    if(liteListWaits()){content.innerHTML='<p class="muted">Loading…</p>';(tab==='zones'?ensureZones():LITE_FILE_LISTS.has(tab)?ensureLists():globalThis.bxcEnsureFull?.()).then(()=>{render();augmentCurrentTab()});return}   // the Zones list needs only the caves' data
     return liteBase.apply(this,arguments)}}
   // The caves' and buildings' own data (data/zones.json, a few dozen KB), the first time a layout is opened: merged
   // into the lite snapshot (a new snapshot object, so the layouts' caches start fresh) with what the publish worked
@@ -3912,6 +3913,21 @@ function newsHtml(){
       state.zoneContents=new Map((st.zoneContents||[]).map(([z,c])=>[z,{monsters:toMap(c.monsters),objects:toMap(c.objects)}]));
       zonesIn=true;
     }).catch(err=>{zonesLoad=null;console.warn('[atlas] cave data',err);return globalThis.bxcEnsureFull?.()}));
+  }
+  // The section lists' own file (data/lists.json), the first time Bestiary, Items, Resources or Gems opens; the
+  // caves' file comes along (the lists say which caves things are in). Without it, the whole database instead.
+  let listsLoad=null,listsIn=false;
+  function ensureLists(){
+    if(isFull()||listsIn)return Promise.resolve();
+    return listsLoad||(listsLoad=Promise.all([fetch('data/lists.json').then(r=>{if(!r.ok)throw new Error('no lists file');return r.text()}),ensureZones()]).then(([text])=>{
+      if(isFull())return;
+      const d=JSON.parse(text,listReviver);
+      if(Array.isArray(d.catalog)&&Array.isArray(D.catalog)){D.catalog.length=0;D.catalog.push(...d.catalog)}   // in place: other code holds this list
+      state.monster=d.monsterNames instanceof Map?d.monsterNames:new Map(d.monsterNames||[]);
+      for(const k of ['dropAgg','looted','kills','items','gems','gemByType'])if(d[k]!==undefined)state[k]=d[k];
+      rawSnapshot=snapshot={...snapshot,gems:d.raw?.gems||[],inventoryTypes:d.raw?.inventoryTypes||[]};window.BINXONIA_COLLECTOR_SNAPSHOT=snapshot;
+      listsIn=true;
+    }).catch(err=>{listsLoad=null;console.warn('[atlas] lists data',err);return globalThis.bxcEnsureFull?.()}));
   }
   if(PUBLIC_MODE){
     const zoneBase=openZoneOverlay,dungeonBase=openDungeonOverlay;
@@ -4623,6 +4639,9 @@ function newsHtml(){
         content.innerHTML=doc.html;const h=document.getElementById('sectionTitle');if(h)h.textContent=doc.title;document.dispatchEvent(new Event('bxc-route'))});
       return;
     }
+    // a guide reads the same facts as the lists (gem finds, monster counts, outfits): on the website's lite start
+    // it waits for their file (it is small) so it reads exactly as with the whole database
+    if(PUBLIC_MODE&&!isFull()&&pageNow&&pageNow.kind==='guide'&&!listsIn){const want=pageNow;content.innerHTML='<p class="muted">Loading…</p>';ensureLists().then(()=>{if(pageNow===want)renderPage()});return}
     // in the app, fold in data that arrived since the last refresh first (links skip the Refresh button)
     if(liveStale)deriveLive();
     const {kind,id}=pageNow;
@@ -5478,6 +5497,9 @@ function newsHtml(){
   // draws every monster, person, item, resource and quest page (and each level / quality / carat a page can be
   // switched to) exactly as a visitor would see it, plus the search list, so the website can load just the page
   // that is opened instead of the whole database. Pages are drawn in small batches so the window stays responsive.
+  // lookup tables (Map, Set) in saved JSON and back, exactly
+  const listReplacer=(k,v)=>v instanceof Map?{__m:[...v]}:v instanceof Set?{__s:[...v]}:v;
+  const listReviver=(k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?(Array.isArray(v.__m)?new Map(v.__m):Array.isArray(v.__s)?new Set(v.__s):v):v;
   // a page's file name part: the id with its % escapes as ! ("a::b" -> "a!3A!3Ab"), the same here and when publishing
   function pageFileId(x){return encodeURIComponent(String(x)).replace(/%/g,'!')}
   globalThis.bxcExportPages=async function(){
@@ -5530,15 +5552,17 @@ function newsHtml(){
     }
     const objects=[];
     for(const o of snapshot.worldObjects||[]){const p=o.position;if(!p||!Number.isFinite(p.x)||!state.objectSkillByType?.get(o.typeId))continue;   // (inside caves too: the resource list and legend count them)
-      objects.push([o.typeId,o.name||null,p.x,p.y,o.status||null,o.data?.fishTypes?.length?o.data.fishTypes:0,p.z||0]);
+      objects.push([o.typeId,o.name||null,p.x,p.y,o.status||null,o.data?.fishTypes?.length?o.data.fishTypes:0,p.z||0,Math.round((o.lastSeen||0)/1000),Math.round((o.firstSeen||0)/1000)]);   // (seen times: the resource list is sorted by them)
     }
     const zones=[...(state.zones?.values()||[])].map(z=>({z:z.z,name:z.name||null,pvpMode:z.pvpMode??null,synthetic:!!z.synthetic}));
     const entrances=[...(state.zoneEntrances||[])].map(([z,e])=>[z,{x:e.x,y:e.y}]);
     const contents=[...(state.zoneContents||[])].map(([z,c])=>[z,[...(c.objects||new Map())].map(([k,v])=>[k,{count:v.count,yieldItem:v.yieldItem||null,name:v.name||null}])]).filter(x=>x[1].length);
     const spot=x=>({pt:x.pt?{x:x.pt.x,y:x.pt.y}:null,indoors:!!x.indoors,z:x.z??0,area:x.area??0,n:x.n??0,name:x.name||null});
     const givers=questGiverList().map(t=>({slug:t.slug,name:t.name,quests:t.quests.map(q=>({questId:q.questId,name:q.name,recommendedLevel:q.recommendedLevel??null})),spots:t.spots.map(spot)}));
-    const trainers=trainerList().map(t=>({slug:t.slug,name:t.name,skill:t.skill||null,spots:t.spots.map(spot)}));
-    const mapData={v:1,npcTypes,npcs,objects,zones,entrances,contents,givers,trainers};
+    const trainers=trainerList().map(t=>({slug:t.slug,name:t.name,skill:t.skill||null,guide:t.guide||null,spots:t.spots.map(spot)}));   // (guide: which guide lists them)
+    // the home page's two counts that come from stores the lite start does not load (kinds of item, gems found)
+    const home={items:new Set([...(typeof RECIPES!=='undefined'?RECIPES:[]).map(r=>r.id),...(snapshot.inventoryTypes||[]).map(x=>x.typeId||x.id)].filter(Boolean)).size,gems:(snapshot.gems||[]).length};
+    const mapData={v:1,npcTypes,npcs,objects,zones,entrances,contents,givers,trainers,home};
     // every cave and building: its floor, objects, sightings and people, every crossing between places, and the rooms,
     // exits and contents worked out from them - what drawing a layout reads (loaded the first time one is opened)
     const inside=r=>r&&r.position&&r.position.z;
@@ -5549,7 +5573,12 @@ function newsHtml(){
       state:{dungeons:entries(state.dungeons),dungeonOfZone:entries(state.dungeonOfZone),zoneParent:entries(state.zoneParent),zoneInternalExits:entries(state.zoneInternalExits),zoneSurfaceExits:entries(state.zoneSurfaceExits),zoneContents:contentsAll}};
     // the search list: what the search box finds, with each result's address (and its picture when it has a file)
     const search=globalSearchEntries().map(e=>{let img=null;try{const u=e.image&&e.image();if(typeof u==='string'&&/^data\/img\//.test(u))img=u}catch{}return [e.kind,e.name,e.detail||'',e.href,img]});
-    return {pages,panels,map:mapData,zones:zonesData,search,builtAt:snapshot.generatedAt||null};
+    // the section lists (Bestiary, Items, Resources, Gems): the monster list with its counts and levels, every drop
+    // and loot total, items with where they come from, gems, and the two small stores they also read
+    const listsData=JSON.stringify({v:1,catalog:D.catalog||[],monsterNames:[...(state.monster||new Map())].map(([t,r])=>[t,{typeId:t,name:r.name}]),
+      dropAgg:state.dropAgg,looted:state.looted,kills:state.kills,items:state.items,gems:state.gems,gemByType:state.gemByType,
+      raw:{gems:snapshot.gems||[],inventoryTypes:snapshot.inventoryTypes||[]}},listReplacer);
+    return {pages,panels,map:mapData,zones:zonesData,lists:listsData,search,builtAt:snapshot.generatedAt||null};
   };
   if(PUBLIC_MODE){
     // One fetch, once, ever - no live collector to re-sync with or poll. applySnapshot() itself already calls
