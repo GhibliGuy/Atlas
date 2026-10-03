@@ -975,6 +975,11 @@ table.gg-tiers tbody tr:nth-child(3n+1):not(:first-child) td{border-top:2px soli
 .zmon{cursor:pointer}
 .zmon-lbl{fill:#fff4dc;stroke:#120d07;stroke-width:0.14px;paint-order:stroke;font-weight:600;pointer-events:none;font-family:var(--sans);user-select:none;-webkit-user-select:none}
 #zoneDetailViewport svg{user-select:none;-webkit-user-select:none}   /* dragging to pan must not select the labels */
+/* no scrollbars on a cave layout (drag to pan, wheel to zoom) or across its window: the layout box counts its border in
+   its width, so it no longer sticks out 2px and the window never needs to scroll sideways */
+#zoneDetailViewport{box-sizing:border-box;scrollbar-width:none}
+#zoneDetailViewport::-webkit-scrollbar{display:none}
+#zoneOverlay{overflow-x:hidden!important}
 .zmon.zmon-on image,.zmon.zmon-on circle{filter:drop-shadow(0 0 .25px #ffd54a) drop-shadow(0 0 .6px #ffd54a)}
 .zmon.zmon-on .zmon-lbl{fill:#ffd54a}
 tr[data-zmon-type],tr[data-zmon-name]{cursor:pointer}
