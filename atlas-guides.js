@@ -589,7 +589,22 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   // Quest guides the user has confirmed as fully written (quest ids). Every other quest gets an alert: on its card on
   // the Quests page, and a banner on its own page.
   const QUEST_COMPLETE=new Set(['wasteland-nothing-gets-through','imp-menace','plymouth-cargo-for-the-isle','plymouth-the-ogre-traitor','warrior-spear-beyond-the-point','warrior-mace-the-broken-hammers','plymouth-carpenters-trade','binxonia-runaway-horses']);
-  const questDone=q=>QUEST_COMPLETE.has(q.questId);
+  // your page edits (page-edits.js, written by the app's page editor): a quest's steps, notes and whether it is done
+  const questEdit=q=>((globalThis.BXC_PAGE_EDITS||{}).pages||{})['quest:'+q.questId]||null;
+  const questDone=q=>QUEST_COMPLETE.has(q.questId)||!!questEdit(q)?.done;
+  // an edit's text: [[#/route|Label]] a link, [[map:kind:id|Label]] shows it on the map, [[spot:x,y|Label]] a spot,
+  // **bold**, line breaks; everything else stays plain text
+  function editText(t){
+    return esc(String(t||'')).replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g,(m,a,label)=>{
+      if(/^#\/[\w\-\/%.!~:]+$/.test(a))return `<a href="${a}">${label}</a>`;
+      let mm=a.match(/^map:(npc|monster|item|resource|place|zone):(.+)$/);if(mm)return `<button type="button" class="show-on-map q-map-btn" data-map-kind="${mm[1]}" data-map-id="${mm[2]}">\u{1F4CD} ${label}</button>`;
+      mm=a.match(/^spot:(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)$/);if(mm)return `<button type="button" class="show-on-map q-map-btn" data-map-kind="spot" data-map-id="${mm[1]}|${mm[2]}|${label}">\u{1F4CD} ${label}</button>`;
+      return m;
+    }).replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+  }
+  globalThis.bxcEditText=editText;
+  // where the editor opens (only where editing works: the app's own copy, or the website inside the app)
+  const questEditBtn=q=>globalThis.bxcCanEdit?`<p><button type="button" class="q-edit-btn" data-quest-id="${esc(q.questId)}">Edit steps &amp; notes</button></p>`:'';
   const ALERT_SVG='<svg class="q-alert-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20z" fill="currentColor"/><path d="M12 10v5M12 17.6v.4" stroke="#1b1300" stroke-width="2.2" stroke-linecap="round"/></svg>';
   const questLink=q=>`<a href="#/guide/${enc(questSlug(q))}">${esc(q.name)}</a>`;
   const Q_CATS=[['story','Story'],['unlock','Mount & companion quests'],['skillunlock','Skill unlocks'],['combat','Combat skill unlocks'],['side','Side quests']];   // (a skill quest that unlocks nothing, e.g. A Winter's Wool, is a side quest)
@@ -711,6 +726,9 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const whereGiver=gsOut?` <span class="muted">(outdoors ${esc(gs.near||'')})</span>`:g&&g.where&&g.where[0]?` <span class="muted">(${esc(g.where[0])})</span>`:'';
     const mapBtn=gsOut?` <button type="button" class="show-on-map" data-map-kind="spot" data-map-id="${esc(Math.round(gs.x)+'|'+Math.round(gs.y)+'|'+(q.giverName||''))}">Show on map</button>`:(g&&g.onMap)||(p&&p.onMap)?` <button type="button" class="show-on-map" data-map-kind="npc" data-map-id="${esc((g||p).slug)}">Show on map</button>`:'';
     const steps=[`<li value="1">Talk to ${who}${whereGiver} to get the quest.${mapBtn}</li>`];
+    // your own steps (page editor), when written: they are the whole list after taking the quest
+    const ed=questEdit(q);
+    if(ed&&Array.isArray(ed.steps)&&ed.steps.some(x=>String(x||'').trim())){ed.steps.filter(x=>String(x||'').trim()).forEach((t,k)=>steps.push(`<li value="${k+2}">${editText(t)}</li>`));return '<ol class="q-steps">'+steps.join('')+'</ol>'}
     // every step known (players who finished it said so): the recorded ones in order, then handing it back in
     const known=QUEST_STEPS_KNOWN[q.questId];
     if(st.length&&known){
@@ -827,7 +845,8 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       return {lede:(questDone(q)?'':`<span class="q-alert-banner" role="alert">${ALERT_SVG}<span><b>This quest is not fully written yet.</b> Steps, items or dialogue may be missing.</span></span>`)+questChain(q)+(q.lore?esc(q.lore):''),sections:[
         ['about','About',facts],
         ['needs','What you need',questNeeds(q)],
-        ['steps','Steps',questSteps(q)],
+        ['steps','Steps',questEditBtn(q)+questSteps(q)],
+        ['notes','Notes',questEdit(q)?.notes?`<div class="q-notes">${editText(questEdit(q).notes)}</div>`:''],
         ['rewards','Rewards',questRewards(q)+(questUnlocks(q)?'<h3>Unlocks</h3>'+questUnlocks(q):'')],   // what finishing it opens up is a reward too
         ['talk',`What ${q.giverName?esc(q.giverName)+' says':'they say'}`,questTalk(q)],
         ['end','Handing it in',q.completionMessage?`<p class="q-end"><i>"${esc(q.completionMessage)}"</i></p>`:'']

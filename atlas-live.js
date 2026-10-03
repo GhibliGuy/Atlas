@@ -10,7 +10,8 @@
   // the website only when the collector app opened it and handed it its editing link (window.bxcEdit, a few named
   // actions and nothing else). A visitor's browser never has that, so they never see the tools.
   const EDIT=!PUBLIC_MODE||!!(globalThis.bxcEdit&&typeof globalThis.bxcEdit.send==='function');
-  const SITE_EDIT_CMDS=new Set(['set-npc-spot','set-zone-entrance','clear-zone-entrance','set-zone-exit','set-zone-name','set-zone-parent','clear-zone-parent','create-manual-zone','link-manual-zone','delete-zone','create-manual-resource','delete-manual-resource','remove-drop-row','set-place']);
+  globalThis.bxcCanEdit=EDIT;   // (the quest pages' "Edit steps & notes" button)
+  const SITE_EDIT_CMDS=new Set(['save-page-edit','set-npc-spot','set-zone-entrance','clear-zone-entrance','set-zone-exit','set-zone-name','set-zone-parent','clear-zone-parent','create-manual-zone','link-manual-zone','delete-zone','create-manual-resource','delete-manual-resource','remove-drop-row','set-place']);
   // Addresses. Inside the app every page is #/<kind>/<id> (it loads from a file). On the website the same pages have
   // clean paths instead, /Atlas/<kind>/<id> (BXC_PATHS: set by the page's head, see atlas-public/build.js): the
   // #/... form stays the one used inside the code and its links, and is turned into a path only at the address bar.
@@ -319,6 +320,7 @@
         }
       });
       map.on('click',e=>{
+        if(state.editorSpotPick){const fn=state.editorSpotPick;state.editorSpotPick=null;updatePlacementCursor(false);mapPlacementBanner(null);fn(unprojectLatLng(e.latlng));return}   // a spot for the page editor
         if(state.addResourceArmed){placeManualResource(e.latlng);return}
         if(state.moveNpcArmed){const name=state.moveNpcArmed;state.moveNpcArmed=null;updatePlacementCursor(false);mapPlacementBanner(null);
           const pos=unprojectLatLng(e.latlng);bridgeRequest('set-npc-spot',{name,x:pos.x,y:pos.y}).then(syncNow).then(()=>setCollectorStatus(`Collector: moved ${name}`)).catch(err=>setCollectorStatus('Collector: '+err.message));return}
@@ -5531,6 +5533,67 @@ function newsHtml(){
       if(/^#\//.test(raw)){e.preventDefault();goRoute(raw)}
     });
   }
+  // ---- The page editor (quest steps and notes) ------------------------------------------------------------------
+  // Only where editing works (the app's own copy, or the website inside the app). Steps and notes are plain text with
+  // links ([[#/npc/x|Name]]), map buttons ([[map:npc:x|Name]]) and spots ([[spot:x,y|Label]]) put in by the toolbar;
+  // saving sends them to the app (save-page-edit), which writes page-edits.js and publishes a minute later.
+  let qeEl=null,qeState=null,qeFocus=null,qeCaret=null;   // qeCaret: the box and cursor you were last in
+  function qeEntries(){try{return globalSearchEntries()}catch{return []}}
+  const qeMapTarget=href=>{let m=String(href||'').match(/^#\/(npc|monster|item|resource|zone)\/(.+)$/);if(m){try{return [m[1],decodeURIComponent(m[2])]}catch{return [m[1],m[2]]}}m=String(href||'').match(/^#\/map\/place\/(.+)$/);if(m){try{return ['place',decodeURIComponent(m[1])]}catch{return ['place',m[1]]}}return null};
+  function qeInsert(text,into,at){if(!into&&qeCaret&&document.contains(qeCaret.ta)){into=qeCaret.ta;at=qeCaret.pos}const ta=into&&document.contains(into)?into:qeFocus&&document.contains(qeFocus)?qeFocus:qeEl?.querySelector('textarea');if(!ta)return;const a=at!=null?at:ta.selectionStart??ta.value.length,b=at!=null?at:ta.selectionEnd??a;ta.value=ta.value.slice(0,a)+text+ta.value.slice(b);ta.selectionStart=ta.selectionEnd=a+text.length;qeCaret={ta,pos:a+text.length};ta.dispatchEvent(new Event('input',{bubbles:true}));ta.focus()}
+  function qeSync(){if(!qeEl||!qeState)return;qeState.steps=[...qeEl.querySelectorAll('.qe-step textarea')].map(t=>t.value);qeState.notes=qeEl.querySelector('#qeNotes').value;qeState.done=qeEl.querySelector('#qeDone').checked}
+  function qePreview(){if(!qeEl)return;qeSync();const r=globalThis.bxcEditText||(x=>esc(x));qeEl.querySelector('#qePreview').innerHTML='<ol class="q-steps">'+qeState.steps.filter(x=>x.trim()).map(x=>'<li>'+r(x)+'</li>').join('')+'</ol>'+(qeState.notes.trim()?'<div class="q-notes">'+r(qeState.notes)+'</div>':'')}
+  function qeDrawSteps(){const box=qeEl.querySelector('#qeSteps');box.innerHTML=qeState.steps.map((t,i)=>`<div class="qe-step"><span class="qe-n">${i+2}.</span><textarea rows="2" placeholder="What to do">${esc(t)}</textarea><span class="qe-mv"><button type="button" data-qe="up" data-i="${i}" title="Move up">\u2191</button><button type="button" data-qe="down" data-i="${i}" title="Move down">\u2193</button><button type="button" data-qe="del" data-i="${i}" title="Remove this step">\u2715</button></span></div>`).join('');qePreview()}
+  // the search for Link / Show on map: the Atlas's own search, at most 12 results
+  function qePick(mode){const box=qeEl.querySelector('#qePick');box.hidden=false;box.dataset.mode=mode;const inp=box.querySelector('input');inp.value='';inp.placeholder=mode==='map'?'Find a person, monster, item, resource, place or cave to show on the map\u2026':'Find a page to link: a person, monster, item, quest, guide, place\u2026';box.querySelector('.qe-res').innerHTML='';inp.focus()}
+  function qePickResults(){const box=qeEl.querySelector('#qePick'),mode=box.dataset.mode,qv=box.querySelector('input').value;let r=qv.trim()?globalSearchMatches(qeEntries(),qv):[];if(mode==='map')r=r.filter(e=>qeMapTarget(e.href));
+    box.querySelector('.qe-res').innerHTML=r.slice(0,12).map((e,i)=>`<button type="button" class="qe-hit" data-i="${i}"><b>${esc(e.name)}</b> <span class="muted">${esc(e.kind)}</span></button>`).join('')||(qv.trim()?'<p class="muted">Nothing found.</p>':'');box._hits=r.slice(0,12)}
+  function qeChoose(e){const box=qeEl.querySelector('#qePick'),mode=box.dataset.mode;box.hidden=true;if(!e)return;
+    if(mode==='map'){const t=qeMapTarget(e.href);if(t)qeInsert(`[[map:${t[0]}:${t[1]}|${e.name}]]`)}else qeInsert(`[[${e.href}|${e.name}]]`)}
+  // a spot: the map comes up, you click it, the editor comes back with the spot put in
+  function qeSpot(){const into=qeCaret&&document.contains(qeCaret.ta)?qeCaret.ta:qeFocus,at=qeCaret&&qeCaret.ta===into?qeCaret.pos:into?into.selectionStart:null;   // where it goes: the box and place you were at
+    const back=routeNow(),label=window.prompt('What is there? (the button\'s words)','')||'Here';if(!qeEl)return;qeSync();qeEl.hidden=true;
+    goRoute('#/map');setTimeout(()=>{if(typeof map!=='undefined')map.invalidateSize({pan:false})},60);updatePlacementCursor(true);
+    const done=()=>{state.editorSpotPick=null;updatePlacementCursor(false);mapPlacementBanner(null);goRoute(back);setTimeout(()=>{if(qeEl){qeEl.hidden=false}},120)};
+    mapPlacementBanner(`Click the map where <b>${esc(label)}</b> is.`,done);
+    state.editorSpotPick=pos=>{done();setTimeout(()=>qeInsert(`[[spot:${(Math.round(pos.x*10)/10)},${(Math.round(pos.y*10)/10)}|${label.replace(/[\[\]|]/g,'')}]]`,into,at),160)}}
+  function openQuestEditor(questId){
+    const q=(snapshot?.quests||[]).find(x=>x.questId===questId);if(!q)return;
+    const cur=((globalThis.BXC_PAGE_EDITS||{}).pages||{})['quest:'+questId]||{};
+    // nothing written yet: start from the steps the page shows now (as plain text, without its first step - taking the quest)
+    const shown=[...(content?.querySelectorAll('.q-steps > li')||[])].slice(1).map(li=>li.innerText.replace(/\s*Show on map\s*/g,' ').replace(/\s+/g,' ').trim()).filter(Boolean);
+    qeState={questId,name:q.name,steps:Array.isArray(cur.steps)&&cur.steps.length?[...cur.steps]:shown.length?shown:[''],notes:cur.notes||'',done:!!cur.done};
+    if(qeEl)qeEl.remove();qeEl=document.createElement('div');qeEl.id='qEditor';qeEl.setAttribute('role','dialog');
+    qeEl.innerHTML=`<div class="qe-head"><b>Edit \u201c${esc(q.name)}\u201d</b><button type="button" data-qe="close" title="Close without saving">\u2715</button></div>
+      <div class="qe-tools"><button type="button" data-qe="link">Link\u2026</button><button type="button" data-qe="map">Show on map\u2026</button><button type="button" data-qe="spot">Spot on map</button><span class="muted">They go where the cursor is. **bold** for bold.</span></div>
+      <div id="qePick" hidden><input type="search"><div class="qe-res"></div></div>
+      <h4>Steps <span class="muted">(step 1, taking the quest, is written for you)</span></h4><div id="qeSteps"></div><button type="button" data-qe="add">+ Add a step</button>
+      <h4>Notes</h4><textarea id="qeNotes" rows="4" placeholder="Tips, warnings, anything else">${esc(qeState.notes)}</textarea>
+      <label class="qe-done"><input type="checkbox" id="qeDone"${qeState.done?' checked':''}> The steps are complete (takes off \u201cnot fully written yet\u201d)</label>
+      <h4>Preview</h4><div id="qePreview" class="qe-preview"></div>
+      <div class="qe-foot"><button type="button" data-qe="save" class="qe-save">Save</button><button type="button" data-qe="close">Cancel</button><span id="qeMsg" class="muted"></span></div>`;
+    document.body.append(qeEl);qeDrawSteps();
+    qeEl.addEventListener('focusin',e=>{if(e.target.matches('textarea'))qeFocus=e.target});
+    for(const ev of ['click','keyup','select','input'])qeEl.addEventListener(ev,e=>{if(e.target.matches&&e.target.matches('textarea')){qeFocus=e.target;qeCaret={ta:e.target,pos:e.target.selectionStart}}});
+    qeEl.addEventListener('input',e=>{if(e.target.closest('#qePick'))qePickResults();else qePreview()});
+    qeEl.addEventListener('keydown',e=>{if(e.key==='Escape'&&!qeEl.querySelector('#qePick').hidden){e.stopPropagation();qeEl.querySelector('#qePick').hidden=true}});
+    qeEl.addEventListener('click',e=>{const hit=e.target.closest('.qe-hit');if(hit){qeChoose(qeEl.querySelector('#qePick')._hits[+hit.dataset.i]);return}
+      const b=e.target.closest('[data-qe]');if(!b)return;const a=b.dataset.qe,i=+b.dataset.i;
+      if(a==='close'){qeEl.remove();qeEl=null;qeState=null;return}
+      if(a==='add'){qeSync();qeState.steps.push('');qeDrawSteps();qeEl.querySelectorAll('.qe-step textarea')[qeState.steps.length-1]?.focus();return}
+      if(a==='up'||a==='down'||a==='del'){qeSync();const s=qeState.steps;if(a==='del')s.splice(i,1);else{const j=a==='up'?i-1:i+1;if(j<0||j>=s.length)return;[s[i],s[j]]=[s[j],s[i]]}if(!s.length)s.push('');qeDrawSteps();return}
+      if(a==='link'||a==='map'){qePick(a);return}
+      if(a==='spot'){qeSpot();return}
+      if(a==='save'){qeSync();const msg=qeEl.querySelector('#qeMsg');msg.textContent='Saving\u2026';b.disabled=true;
+        const entry={steps:qeState.steps.map(x=>x.trim()).filter(Boolean),notes:qeState.notes.trim(),done:qeState.done},key='quest:'+qeState.questId;
+        bridgeSend('save-page-edit',{key,entry}).then(r=>{if(!r||r.ok!==true)throw new Error((r&&r.error)||'the app did not save it (it may need its latest update)');
+          const E=globalThis.BXC_PAGE_EDITS||(globalThis.BXC_PAGE_EDITS={v:1,pages:{}});E.pages=E.pages||{};E.pages[key]={...entry,updatedAt:Date.now()};
+          qeEl.remove();qeEl=null;qeState=null;if(pageNow)renderPage();
+          setCollectorStatus(PUBLIC_MODE?'Page saved \u2014 the website shows it after the next publish, in a few minutes':'Page saved \u2014 on the website after the next publish');
+        }).catch(err=>{msg.textContent='Not saved: '+err.message;b.disabled=false})}
+    });
+  }
+  if(EDIT)document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.q-edit-btn');if(!b)return;e.preventDefault();openQuestEditor(b.dataset.questId)});
   // ---- Pages for the website, drawn ahead of time ------------------------------------------------------------
   // The app's publish runs the website's Atlas over the full published data in a hidden window and calls this: it
   // draws every monster, person, item, resource and quest page (and each level / quality / carat a page can be

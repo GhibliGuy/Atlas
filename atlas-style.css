@@ -277,6 +277,20 @@ a.map-panel-open:hover{border-color:var(--accent);background:var(--panel2)}
 
 /* Guides (atlas-guides.js): an index of cards by group, and article pages with tables and an "On this page" box. */
 .g-index section{margin:4px 0 22px}.g-index h2{font:400 20px var(--serif);margin:0 0 10px;padding-bottom:4px;border-bottom:1px solid var(--edge)}
+#qEditor{position:fixed;z-index:12000;top:60px;right:20px;width:min(640px,calc(100vw - 40px));max-height:calc(100vh - 80px);overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--accent-soft);border-radius:10px;box-shadow:0 12px 40px #000c;padding:12px 14px;box-sizing:border-box}
+#qEditor[hidden]{display:none}
+#qEditor h4{margin:12px 0 6px}
+#qEditor textarea{width:100%;box-sizing:border-box;background:var(--panel2);color:inherit;border:1px solid var(--edge);border-radius:6px;padding:6px;font:inherit;resize:vertical}
+.qe-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.qe-tools{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:8px 0}
+.qe-step{display:grid;grid-template-columns:28px 1fr auto;gap:6px;align-items:start;margin-bottom:6px}.qe-n{padding-top:6px;text-align:right}
+.qe-mv{display:flex;gap:2px}.qe-mv button{padding:2px 6px}
+#qePick{border:1px solid var(--edge);border-radius:6px;padding:6px;margin-bottom:8px}#qePick input{width:100%;box-sizing:border-box}
+.qe-res{display:flex;flex-direction:column;gap:2px;margin-top:4px;max-height:220px;overflow:auto}.qe-hit{text-align:left}
+.qe-preview{border:1px dashed var(--edge);border-radius:6px;padding:6px 10px}
+.qe-done{display:block;margin-top:8px}
+.qe-foot{display:flex;gap:8px;align-items:center;margin-top:12px}.qe-save{font-weight:600}
+.q-notes{padding:4px 0}.q-map-btn{margin:0 2px}
 .g-subhead{margin:18px 0 8px;font-size:15px;color:var(--accent)}.g-subhead .muted{font-size:13px;font-weight:400}
 .g-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
 .g-card{display:flex;flex-direction:column;gap:3px;padding:12px 14px;background:var(--panel);border:1px solid var(--edge);border-top:2px solid var(--accent-soft);color:var(--ink)!important;text-decoration:none}

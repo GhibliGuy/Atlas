@@ -8,7 +8,7 @@ const path = require('path');
 const SRC = path.join(__dirname, '..', 'binxonia-research-collector');
 const OUT = __dirname;
 
-const CODE_FILES = ['official-pois.js', 'game-data.js', 'game-recipes.js', 'atlas-core.js', 'atlas-live.js', 'atlas-layout.js', 'atlas-combo.js', 'atlas-menu.js', 'xp-curve.js', 'family-rules.js', 'atlas-community.js', 'atlas-splash.js', 'atlas-mobile.js', 'atlas-guides.js', 'atlas-tools.js', 'atlas-style.css'];
+const CODE_FILES = ['page-edits.js', 'official-pois.js', 'game-data.js', 'game-recipes.js', 'atlas-core.js', 'atlas-live.js', 'atlas-layout.js', 'atlas-combo.js', 'atlas-menu.js', 'xp-curve.js', 'family-rules.js', 'atlas-community.js', 'atlas-splash.js', 'atlas-mobile.js', 'atlas-guides.js', 'atlas-tools.js', 'atlas-style.css'];
 const VENDOR_FILES = ['vendor/leaflet.js', 'vendor/leaflet.css'];
 
 // Some app-only features are never published. Their pieces sit between /*<private>*/ and /*</private>*/ in the
