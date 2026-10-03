@@ -1,4 +1,6 @@
 [
+{"sessionId":"3d084a3f","time":1791054336346,"fromZ":11001,"toZ":0,"kind":"outdoors","outX":125,"outY":-85,"key":1714},
+{"sessionId":"3d084a3f","time":1791054320119,"fromZ":null,"toZ":11001,"zoneName":"GhibliGuy's home, Plymouth Wharf","pvpMode":"none","atX":17,"atY":8,"key":1713},
 {"sessionId":"534a4803","time":1791033782348,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":1712},
 {"sessionId":"534a4803","time":1791033768504,"fromZ":0,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":1711},
 {"sessionId":"534a4803","time":1791033601292,"fromZ":1,"toZ":0,"kind":"outdoors","outX":156,"outY":-56,"key":1710},
