@@ -277,6 +277,7 @@ a.map-panel-open:hover{border-color:var(--accent);background:var(--panel2)}
 
 /* Guides (atlas-guides.js): an index of cards by group, and article pages with tables and an "On this page" box. */
 .g-index section{margin:4px 0 22px}.g-index h2{font:400 20px var(--serif);margin:0 0 10px;padding-bottom:4px;border-bottom:1px solid var(--edge)}
+.g-subhead{margin:18px 0 8px;font-size:15px;color:var(--accent)}.g-subhead .muted{font-size:13px;font-weight:400}
 .g-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
 .g-card{display:flex;flex-direction:column;gap:3px;padding:12px 14px;background:var(--panel);border:1px solid var(--edge);border-top:2px solid var(--accent-soft);color:var(--ink)!important;text-decoration:none}
 .g-card:hover{border-color:var(--accent)}.g-card b{font:400 18px var(--serif)}.g-card span{font-size:12.5px;color:var(--muted)}

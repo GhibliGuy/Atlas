@@ -846,14 +846,16 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   const ORDER=['getting-started','attributes-and-classes','levels-and-xp','death-and-banking','using-the-atlas','combat','special-attacks','armor','magic','monsters-by-level','monster-families','mining','lumberjack','fishing','herblore','shearing','smelting','weapon-smithing','armor-smithing','tool-smithing','bowyer','tailoring','leatherworking','cooking','scribing','quality-and-enchanting','gems','outfits','places','trainers','travel','economy','playing-together'];
   const orderOf=s=>{const i=ORDER.indexOf(s);return i<0?999:i};
   // one card per recorded quest (the Quests section of the guide index), each opening its own page
-  function questCards(){return questList().map(q=>`<a class="g-card" href="#/guide/${enc(questSlug(q))}">${questDone(q)?'':`<span class="q-alert" role="note">${ALERT_SVG}Not fully written yet</span>`}<b>${esc(q.name)}</b><span>Level ${q.recommendedLevel||'?'} · ${esc(pretty(q.lengthTag||''))}${q.giverName?' · '+esc(q.giverName):''}</span></a>`).join('')}
+  // the quests in their groups (story, side, skill - the game's own categories), each under its own heading
+  function questGroups(){return Q_CATS.map(([k,t])=>{const qs=questList().filter(q=>questCat(q)===k);return qs.length?`<h3 class="g-subhead">${esc(t)} <span class="muted">(${qs.length})</span></h3><div class="g-cards">${questCards(qs)}</div>`:''}).join('')}
+  function questCards(list){return (list||questList()).map(q=>`<a class="g-card" href="#/guide/${enc(questSlug(q))}">${questDone(q)?'':`<span class="q-alert" role="note">${ALERT_SVG}Not fully written yet</span>`}<b>${esc(q.name)}</b><span>Level ${q.recommendedLevel||'?'} · ${esc(pretty(q.lengthTag||''))}${q.giverName?' · '+esc(q.giverName):''}</span></a>`).join('')}
   function indexHtml(only){
     const groups=only?GROUPS.filter(gr=>slug(gr)===only):GROUPS;
     // All guides: a row of links to each group first, and each heading links to its own page
     const jump=only?`<p class="g-groups"><a href="#/guides">All guides</a>${GROUPS.filter(gr=>slug(gr)!==only).map(gr=>` · <a href="#/guides-${slug(gr)}">${esc(gr)}</a>`).join('')}</p>`
       :`<p class="g-groups">${GROUPS.filter(gr=>G.some(g=>g.group===gr)).map(gr=>`<a href="#/guides-${slug(gr)}">${esc(gr)}</a>`).join(' · ')}</p>`;
     return `<div class="g-index">`+jump+groups.map(gr=>{const list=G.filter(g=>g.group===gr).sort((a,b)=>orderOf(a.slug)-orderOf(b.slug));if(!list.length)return '';
-      return `<section><h2>${only?esc(gr):`<a href="#/guides-${slug(gr)}">${esc(gr)}</a>`}</h2><div class="g-cards">${list.map(g=>`<a class="g-card" href="#/guide/${enc(g.slug)}"><b>${esc(g.title)}</b><span>${esc(g.blurb)}</span></a>`).join('')}${gr==='Quests'?questCards():''}</div></section>`}).join('')+`</div>`;
+      return `<section><h2>${only?esc(gr):`<a href="#/guides-${slug(gr)}">${esc(gr)}</a>`}</h2><div class="g-cards">${list.map(g=>`<a class="g-card" href="#/guide/${enc(g.slug)}"><b>${esc(g.title)}</b><span>${esc(g.blurb)}</span></a>`).join('')}</div>${gr==='Quests'?questGroups():''}</section>`}).join('')+`</div>`;
   }
   function pageHtml(s){
     const g=byslug.get(s)||questGuide(s);if(!g)return '<p class="muted">No such guide.</p>';   // quest pages are made from their records
