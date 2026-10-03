@@ -973,6 +973,8 @@ table.gg-tiers tbody tr:nth-child(3n+1):not(:first-child) td{border-top:2px soli
 .bxc-questgiver .qg-n{position:absolute;top:-6px;right:-7px;min-width:14px;height:14px;padding:0 3px;box-sizing:border-box;border-radius:7px;background:#2a1d05;color:#ffd24a;border:1px solid #7a5a12;font:700 9.5px/12px var(--sans);text-align:center}
 /* zone layout: monsters named with their level, linked to their rows below; a pick highlights both */
 .zmon{cursor:pointer}
+.zexit-lbl{fill:#efe6d2;stroke:#120d07;stroke-width:0.14px;paint-order:stroke;font-weight:600;pointer-events:none;font-family:var(--sans);user-select:none;-webkit-user-select:none}
+.zexit-lbl.zexit-out{fill:#7fe3a4}.zexit-lbl.zexit-back{fill:#ffd54a}
 .zmon-lbl{fill:#fff4dc;stroke:#120d07;stroke-width:0.14px;paint-order:stroke;font-weight:600;pointer-events:none;font-family:var(--sans);user-select:none;-webkit-user-select:none}
 #zoneDetailViewport svg{user-select:none;-webkit-user-select:none}   /* dragging to pan must not select the labels */
 /* no scrollbars on a cave layout (drag to pan, wheel to zoom) or across its window: the layout box counts its border in

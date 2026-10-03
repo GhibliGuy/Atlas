@@ -1732,6 +1732,14 @@ function exitKind(ex,near){
   if(/cave|entrance|tunnel|cavern|stair/.test(t))return 'cave';
   return ex.toZ===0?'cave':'door';
 }
+// Where each way in or out leads, written under it on the layout (the same words as its hover text): green for the
+// way outside, yellow for the way back, plain for anywhere else.
+function exitLabel(ex,cx,cy){
+  const from=state.openZone,dg=state.dungeonOfZone,sameDg=!ex.surface&&from!=null&&dg?.has(from)&&dg.get(from)===dg.get(ex.toZ);
+  const text=ex.surface?'Way outside':(ex.isParentExit?'Back to ':'To ')+(sameDg?roomLabelFor(ex.toZ):placeName(ex.toZ));
+  const cls=ex.surface?' zexit-out':ex.isParentExit?' zexit-back':'';
+  return '<text class="zexit-lbl'+cls+'" x="'+cx+'" y="'+(cy+1.75)+'" text-anchor="middle" font-size="0.5">'+escXml(text)+'</text>';
+}
 function exitMarkup(ex,objs,cx,cy,shadow){
   const from=state.openZone,dg=state.dungeonOfZone,sameDg=!ex.surface&&from!=null&&dg?.has(from)&&dg.get(from)===dg.get(ex.toZ);
   const targetName=ex.surface?'outside':sameDg?roomLabelFor(ex.toZ):placeName(ex.toZ);
@@ -1899,7 +1907,7 @@ function zoneDetailSvg(z){
       const lbl=`<text class="zmon-lbl" x="${cx}" y="${cy-1.3}" text-anchor="middle" font-size="0.5">${escXml(nm)}${lv!=null?' · Lv '+lv:''}</text>`;
       return `<g class="zmon" data-zmon-type="${escXml(o.typeId||'')}" data-zmon-name="${escXml(nm)}" data-lv="${lv??''}">${body}${lbl}</g>`;
     }
-    if(it.kind==='exit')return exitMarkup(it.ex,allObjsHere,cx,cy,shadow);
+    if(it.kind==='exit')return exitMarkup(it.ex,allObjsHere,cx,cy,shadow)+exitLabel(it.ex,cx,cy);
     return `<circle cx="${cx}" cy="${cy}" r="1.1" fill="#ffd54a" stroke="#3a2c05" stroke-width="0.2" ${shadow}><title>${escXml(it.s.name||'You')}</title></circle>`;
   }).join('');
 
