@@ -44,7 +44,7 @@ fs.cpSync(path.join(SRC, 'tiles'), path.join(OUT, 'tiles'), { recursive: true })
 // the start page is skipped). Inside the app none of this runs (it loads atlas.html from a file, with #/... links).
 const HEAD_SCRIPT = String.raw`<script>window.BXC_PUBLIC=true;(function(){try{if(!/^https?:$/.test(location.protocol))return;` +
   String.raw`var root=new URL(document.baseURI).pathname;window.BXC_PATHS={root:root};var h=location.hash;` +
-  String.raw`if(/^#\//.test(h)){history.replaceState(null,"",root+h.slice(2))}` +
+  String.raw`if(/^#\//.test(h)){history.replaceState(null,"",root+h.slice(2)+(h.indexOf("?")<0?location.search:""))}` +
   String.raw`var p=location.pathname;p=p.indexOf(root)===0?p.slice(root.length):"";p=p.replace(/(^|\/)index\.html$/,"").replace(/\.html$/,"").replace(/\/$/,"");` +
   String.raw`window.BXC_DEEP=!!p}catch(e){}})();</script>`;
 let html = fs.readFileSync(path.join(SRC, 'atlas.html'), 'utf8');

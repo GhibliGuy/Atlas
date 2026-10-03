@@ -17,7 +17,12 @@
     p=p.replace(/(^|\/)index\.html$/,'').replace(/\.html$/,'').replace(/\/$/,'');
     return p?'#/'+p+(location.search||''):(location.hash||'');
   }
+  // Lite start (the website): the map's own slim data, the base file and the pictures list instead of the whole
+  // database; pages, map panels and search come from files drawn at publish, and anything else (the section lists,
+  // cave layouts) loads the whole database the moment it is opened. ?lite=1 turns it on (remembered), ?lite=0 off.
+  const LITE=PUBLIC_MODE&&(()=>{try{const v=new URLSearchParams(location.search).get('lite');if(v==='1'||v==='0')localStorage.setItem('bxcLite',v);return localStorage.getItem('bxcLite')==='1'}catch{return false}})();
   const routeUrl=h=>PATH_MODE&&/^#\//.test(h)?ROUTE_ROOT+h.slice(2):h;
+  function isFull(){return !!snapshot&&!snapshot.bxcLite}   // the whole database is in (always, inside the app)
   globalThis.bxcRouteNow=routeNow;globalThis.bxcRouteUrl=routeUrl;
   const ATLAS='binxonia-atlas', BRIDGE='binxonia-research-collector-bridge';
   const LAST_SEEN_KEY='binxoniaAtlasCollectorLastSeenV2';
@@ -3858,6 +3863,42 @@ function newsHtml(){
     if(opts.layoutOnly&&!LIVE_TABS.has(tab)){showStaleLink();return}
     keepSidebarView(()=>{if(tab!=='calc'&&tab!=='gemcombine'){render();augmentCurrentTab()}else augmentCurrentTab()});
   }
+  // The website's lite start: a partial snapshot (monsters and outdoor resources as the map draws them, from
+  // data/map.json, plus the base file) and the caves' entrances and contents as the publish worked them out. Only
+  // what the map needs is derived; the whole database replaces it when something needs it (bxcEnsureFull).
+  function applyLite(base,m){
+    const types=m.npcTypes||[];
+    const npcs=(m.npcs||[]).map((r,i)=>{const [ti,id,level,elite,ls,px,py,pz,ox,oy,oz,cls]=r,t=types[ti]||[];
+      const n={id:id||('lite-'+i),typeId:t[0],name:t[1],level,elite:!!elite,lastSeen:ls*1000,position:{x:px,y:py,z:pz},originPosition:ox!=null?{x:ox,y:oy,z:oz||0}:null};if(cls)n.npcClass=cls;return n});
+    const worldObjects=(m.objects||[]).map((r,i)=>{const [typeId,name,x,y,status,fish,z]=r,o={id:'lite-o'+i,typeId,name,position:{x,y,z:z||0},status};if(fish)o.data={fishTypes:fish};return o});
+    rawSnapshot={...base,npcs,worldObjects,npcObservations:[],drops:[],terrain:[],zoneTransitions:[],bxcLite:true};
+    snapshot=rawSnapshot;window.BINXONIA_COLLECTOR_SNAPSHOT=snapshot;
+    deriveResourceSkills();deriveResourceCatalog();deriveAssets();
+    state.zones=new Map((m.zones||[]).map(z=>[z.z,z]));state.zoneEntrances=new Map(m.entrances||[]);
+    state.zoneContents=new Map((m.contents||[]).map(([z,objs])=>[z,{objects:new Map(objs),monsters:new Map()}]));
+    litePeople={givers:m.givers||null,trainers:m.trainers||null};
+    state.areaEntrances=[];if(!state.dungeons)state.dungeons=new Map();if(!state.dungeonOfZone)state.dungeonOfZone=new Map();
+    drawMap();lastMapSig=null;   // the whole database, if it comes, draws it again
+    setTimeout(openFromHash,0);updateStatus();
+    keepSidebarView(()=>{if(!LITE_LIST_TABS.has(tab)){render();augmentCurrentTab()}});
+  }
+  // the people the map marks, as the publish placed them (from every sighting, which the lite start does not load)
+  let litePeople=null;
+  if(PUBLIC_MODE){const qgBase=questGiverList,trBase=trainerList;
+    questGiverList=function(){return !isFull()&&litePeople&&litePeople.givers?litePeople.givers:qgBase()};
+    trainerList=function(){return !isFull()&&litePeople&&litePeople.trainers?litePeople.trainers:trBase()}}
+  // sections listing everything (and the cave layouts): they need the whole database
+  const LITE_LIST_TABS=new Set(['monsters','items','resources','zones','gems','drops','xp','research','assets']);
+  const liteListWaits=()=>{if(!PUBLIC_MODE||isFull()||!LITE_LIST_TABS.has(tab))return false;try{return !(pageNow&&tab===PAGE_TAB[pageNow.kind])}catch{return true}};   // (PAGE_TAB is set further down)
+  if(PUBLIC_MODE){const augBase=augmentCurrentTab;augmentCurrentTab=function(){if(liteListWaits())return;return augBase.apply(this,arguments)}}
+  if(PUBLIC_MODE&&typeof render==='function'){const liteBase=render;render=function(){
+    if(liteListWaits()){content.innerHTML='<p class="muted">Loading…</p>';globalThis.bxcEnsureFull?.().then(()=>{render();augmentCurrentTab()});return}
+    return liteBase.apply(this,arguments)}}
+  if(PUBLIC_MODE){
+    const zoneBase=openZoneOverlay,dungeonBase=openDungeonOverlay;
+    openZoneOverlay=function(...a){if(!isFull()&&globalThis.bxcEnsureFull){globalThis.bxcEnsureFull().then(()=>openZoneOverlay(...a));return}return zoneBase.apply(this,a)};
+    openDungeonOverlay=function(...a){if(!isFull()&&globalThis.bxcEnsureFull){globalThis.bxcEnsureFull().then(()=>openDungeonOverlay(...a));return}return dungeonBase.apply(this,a)};
+  }
   function loadStoredBaseline(){try{return JSON.parse(localStorage.getItem(LAST_SEEN_KEY)||'null')?.stats||null}catch{return null}}
 
   // Heavy asset fields (image data URLs, atlas JSON text) rarely change, so they are kept here and
@@ -4083,7 +4124,9 @@ function newsHtml(){
     };
   }
 
+  let liteSearch=null;   // the website's saved search list (data/search.json), used until the whole database is in
   function globalSearchEntries(){
+    if(PUBLIC_MODE&&!isFull()&&liteSearch)return liteSearch;
     return [
       ...(D.catalog||[]).map(m=>({kind:'Monster',tab:'monsters',id:m.typeId,name:m.name,detail:'Level '+m.baseLevel+' · '+(m.family||''),image:()=>monsterImg(m),attr:'t'})),
       ...[...namedNpcs().values()].map(e=>({kind:e.typeId==='human'?'Person':'Named',tab:'monsters',page:'npc',id:e.slug,name:e.name,detail:prettyId(e.typeId)+(npcRole(e.name)?' · '+npcRole(e.name):''),image:()=>npcImg(e),attr:'npc'})),
@@ -4127,6 +4170,7 @@ function newsHtml(){
     function position(){const r=q.getBoundingClientRect();panel.style.left=Math.max(8,Math.min(r.left,innerWidth-340))+'px';panel.style.top=(r.bottom+6)+'px';panel.style.width=Math.min(Math.max(r.width,340),innerWidth-16)+'px';}
     function openResult(entry){
       close();q.value='';if(onlyObserved)onlyObserved.checked=false;
+      if(entry.lite){goRoute(entry.href);return}
       if(entry.kind==='Place'||entry.kind==='Section'){goRoute(entry.href);return}
       if(entry.page){openPage(entry.page,entry.id);return}
       // monsters, items and resources have pages of their own; zones open their layout
@@ -4439,11 +4483,19 @@ function newsHtml(){
     mapPanelNow={kind,id};
     if(state.openZone!=null&&typeof closeZoneOverlay==='function')closeZoneOverlay();   // a new pick replaces an open cave layout
     if(!ctx.fromRoute)setRoute('#/map/'+kind+'/'+encodeURIComponent(id)+(ctx.quality?'?q='+encodeURIComponent(ctx.quality):ctx.level!=null&&ctx.level!==''?'?lv='+ctx.level:''));
-    el.querySelector('.map-panel-body').innerHTML=panelHtml(kind,String(id),ctx);
+    const body=el.querySelector('.map-panel-body');
+    if(PUBLIC_MODE&&!isFull()&&PANEL_DOC_KINDS.has(kind)){
+      body.innerHTML='<p class="muted">Loading…</p>';const want=mapPanelNow;
+      loadPanelDoc(kind,id).then(d=>{if(mapPanelNow===want&&!isFull())body.innerHTML=d?d.html:'<p class="muted">Nothing recorded here yet.</p>'});
+      if(kind==='item'){el.hidden=false;document.getElementById('main').classList.add('map-panel-open');globalThis.bxcEnsureFull?.().then(()=>{if(mapPanelNow===want)openMapPanel(kind,id,{...ctx,fromRoute:true})});return}
+    }else body.innerHTML=panelHtml(kind,String(id),ctx);
     el.hidden=false;el.scrollTop=0;document.getElementById('main').classList.add('map-panel-open');
     const best=selectOnMap(kind,String(id),!!ctx.fit,ctx.quality||null,ctx.level!=null&&ctx.level!==''?Number(ctx.level):null);
     if(best&&best.text)el.querySelector('.map-panel-body').insertAdjacentHTML('afterbegin',`<p class="map-panel-best">${esc(best.text)}${best.zone!=null?`<button type="button" class="open-zone" data-zone="${esc(best.zone)}">Open the ${esc(best.zoneName||'cave')} layout</button>`:''}</p>`);
   }
+  const PANEL_DOC_KINDS=new Set(['monster','resource','item','npc','zone','place']);
+  const panelDocCache=new Map();
+  function loadPanelDoc(kind,id){const u='data/panels/'+kind+'/'+pageFileId(id)+'.json';if(!panelDocCache.has(u))panelDocCache.set(u,fetch(u).then(r=>r.ok?r.json():null).catch(()=>null));return panelDocCache.get(u)}
   function closeMapPanel(clearSelection){
     if(!mapPanelEl)return;
     if(clearSelection&&tab==='map')setRoute('#/map');
@@ -4545,9 +4597,9 @@ function newsHtml(){
   function loadPageDoc(p){const u=pageDocPath(p);if(!pageDocCache.has(u))pageDocCache.set(u,fetch(u).then(r=>r.ok?r.json():null).catch(()=>null));return pageDocCache.get(u)}
   const hasPageDoc=p=>PUBLIC_MODE&&(['monster','npc','item','resource'].includes(p.kind)||(p.kind==='guide'&&/^quest-/.test(p.id)));
   function renderPage(){
-    if(!snapshot&&pageNow&&hasPageDoc(pageNow)){
+    if(!isFull()&&pageNow&&hasPageDoc(pageNow)){
       const want=pageNow;content.innerHTML='<p class="muted">Loading…</p>';
-      loadPageDoc(want).then(doc=>{if(snapshot||pageNow!==want)return;   // the data came first, or another page was opened
+      loadPageDoc(want).then(doc=>{if(isFull()||pageNow!==want)return;   // the data came first, or another page was opened
         if(!doc){content.innerHTML='<p class="muted">Loading the Atlas data…</p>';return}
         content.innerHTML=doc.html;const h=document.getElementById('sectionTitle');if(h)h.textContent=doc.title;document.dispatchEvent(new Event('bxc-route'))});
       return;
@@ -5434,10 +5486,43 @@ function newsHtml(){
     for(const qst of snapshot.quests||[]){if(!qst||!qst.name||!qst.questId||String(qst.questId).startsWith('__'))continue;
       const id='quest-'+npcSlug(qst.questId);await draw('guide/'+enc(id),'guide',id,x=>globalThis.bxcGuides?.pageHtml(x)||'');
     }
+    // the side panel of everything the map can show (monster, resource, item, person, cave or building, place)
+    const panels={};let pn=0;
+    const panel=async(kind,id)=>{try{const html=panelHtml(kind,String(id),{});if(html)panels[kind+'/'+enc(id)]={html}}catch(e){console.warn('[export] panel',kind,id,e)}if(++pn%40===0)await yieldNow()};
+    for(const m of D.catalog||[])if(m&&m.typeId)await panel('monster',m.typeId);
+    for(const key of state.resourceCatalog?.keys()||[])await panel('resource',key);
+    for(const id of items)if(id)await panel('item',id);
+    for(const slug of namedNpcs().keys())await panel('npc',slug);
+    for(const z of state.zoneEntrances?.keys()||[])await panel('zone',String(z));
+    for(const p of D.pois||[])if(p&&p.name)await panel('place',p.name);
     pageNow=keep;
+    // the map's own data, slimmed to what drawing it reads: monsters (kind, name, level, elite, last seen, where they
+    // were and their spawn point; a named one's id and class too), resources (kind, name, place, status, fish),
+    // and the caves' and buildings' names, entrances and the resources inside them (for their entrance icons)
+    const typeIx=new Map(),npcTypes=[];
+    const tIx=(t,n)=>{const k=t+'\u0000'+(n||'');if(!typeIx.has(k)){typeIx.set(k,npcTypes.length);npcTypes.push([t,n||null])}return typeIx.get(k)};
+    const r1=v=>Number.isFinite(v)?Math.round(v*10)/10:null;
+    const typeName=new Map((D.catalog||[]).map(m=>[m.typeId,String(m.name||'').toLowerCase()]));
+    const npcs=[];
+    for(const n of snapshot.npcs||[]){const p=n.position;if(!p||!Number.isFinite(p.x))continue;const o=n.originPosition;
+      if(p.z&&!o)continue;   // only seen inside a cave or building, with no spawn point: the world map never shows it
+      const nm=String(n.name||'').trim(),named=nm&&nm.toLowerCase()!==(typeName.get(n.typeId)||String(n.typeId).replace(/-/g,' '));
+      npcs.push([tIx(n.typeId,n.name),named?n.id:0,Number.isFinite(n.level)?n.level:null,n.elite?1:0,Math.round((n.lastSeen||0)/1000),r1(p.x),r1(p.y),p.z||0,o?r1(o.x):null,o?r1(o.y):null,o?o.z||0:null,named&&n.npcClass?n.npcClass:0]);
+    }
+    const objects=[];
+    for(const o of snapshot.worldObjects||[]){const p=o.position;if(!p||!Number.isFinite(p.x)||!state.objectSkillByType?.get(o.typeId))continue;   // (inside caves too: the resource list and legend count them)
+      objects.push([o.typeId,o.name||null,p.x,p.y,o.status||null,o.data?.fishTypes?.length?o.data.fishTypes:0,p.z||0]);
+    }
+    const zones=[...(state.zones?.values()||[])].map(z=>({z:z.z,name:z.name||null,pvpMode:z.pvpMode??null,synthetic:!!z.synthetic}));
+    const entrances=[...(state.zoneEntrances||[])].map(([z,e])=>[z,{x:e.x,y:e.y}]);
+    const contents=[...(state.zoneContents||[])].map(([z,c])=>[z,[...(c.objects||new Map())].map(([k,v])=>[k,{count:v.count,yieldItem:v.yieldItem||null,name:v.name||null}])]).filter(x=>x[1].length);
+    const spot=x=>({pt:x.pt?{x:x.pt.x,y:x.pt.y}:null,indoors:!!x.indoors,z:x.z??0,area:x.area??0,n:x.n??0,name:x.name||null});
+    const givers=questGiverList().map(t=>({slug:t.slug,name:t.name,quests:t.quests.map(q=>({questId:q.questId,name:q.name,recommendedLevel:q.recommendedLevel??null})),spots:t.spots.map(spot)}));
+    const trainers=trainerList().map(t=>({slug:t.slug,name:t.name,skill:t.skill||null,spots:t.spots.map(spot)}));
+    const mapData={v:1,npcTypes,npcs,objects,zones,entrances,contents,givers,trainers};
     // the search list: what the search box finds, with each result's address (and its picture when it has a file)
     const search=globalSearchEntries().map(e=>{let img=null;try{const u=e.image&&e.image();if(typeof u==='string'&&/^data\/img\//.test(u))img=u}catch{}return [e.kind,e.name,e.detail||'',e.href,img]});
-    return {pages,search,builtAt:snapshot.generatedAt||null};
+    return {pages,panels,map:mapData,search,builtAt:snapshot.generatedAt||null};
   };
   if(PUBLIC_MODE){
     // One fetch, once, ever - no live collector to re-sync with or poll. applySnapshot() itself already calls
@@ -5446,9 +5531,20 @@ function newsHtml(){
     // the snapshot lists its big stores as separate files (data/snap/<store>.json); they are fetched side by side.
     // A part may come as a table ({cols, rows}: one array per record, terrain does) - turned back into records here.
     const partRows=p=>Array.isArray(p)?p:p&&Array.isArray(p.cols)&&Array.isArray(p.rows)?p.rows.map(r=>{const o={};for(let i=0;i<p.cols.length;i++)o[p.cols[i]]=r[i];return o}):[];
-    fetch('data/snapshot.json').then(r=>r.json()).then(async s=>{
+    // the whole database: every store; once, shared by everything that asks for it
+    let fullLoad=null;
+    const loadFull=()=>fullLoad||(fullLoad=fetch('data/snapshot.json').then(r=>r.json()).then(async s=>{
       if(Array.isArray(s.parts))await Promise.all(s.parts.map(async k=>{const p=s[k]&&s[k].part;s[k]=p?partRows(await fetch('data/'+p).then(r=>r.json())):[]}));
-      return s}).then(applySnapshot).then(()=>{globalThis.bxcDataReady=true}).catch(err=>setCollectorStatus('Could not load data: '+err.message));
+      return s}).then(s=>{applySnapshot(s);globalThis.bxcDataReady=true}).catch(err=>{fullLoad=null;setCollectorStatus('Could not load data: '+err.message);throw err}));
+    globalThis.bxcEnsureFull=()=>isFull()?Promise.resolve():loadFull();
+    // lite: the base file, the pictures list, the map's slim data and the search list
+    const loadLite=()=>Promise.all([fetch('data/snapshot.json').then(r=>r.json()),fetch('data/map.json').then(r=>{if(!r.ok)throw new Error('no map data yet');return r.json()}),fetch('data/search.json').then(r=>r.ok?r.json():[]).catch(()=>[])])
+      .then(async([s,m,found])=>{
+        s.assets=s.assets&&s.assets.part?partRows(await fetch('data/'+s.assets.part).then(r=>r.json())):Array.isArray(s.assets)?s.assets:[];
+        liteSearch=(found||[]).map(([kind,name,detail,href,img])=>({kind,name,detail,href,lite:true,image:img?()=>img:null}));
+        applyLite(s,m);
+      }).catch(err=>{console.warn('[atlas] lite start failed - loading everything',err);return loadFull()});
+    if(LITE)loadLite();else loadFull();
   }else{
     syncNow().then(openFromHash);setInterval(fullSyncIfNeeded,600000);
     syncBossTimers();
