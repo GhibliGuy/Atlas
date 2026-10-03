@@ -5,7 +5,7 @@ function unprojectLatLng(ll){let qx=ll.lng,qy=T.heightPx-ll.lat,A=qx/T.scale+T.p
 function levelDims(level){let n=Math.max(0,T.maxLevel-level),d=2**n;return {w:Math.max(1,Math.ceil(T.widthPx/d)),h:Math.max(1,Math.ceil(T.heightPx/d))}}
 function grid(level){let d=levelDims(level);return {cols:Math.ceil(d.w/T.tileSize),rows:Math.ceil(d.h/T.tileSize)}}
 const bounds=L.latLngBounds([[0,0],[T.heightPx,T.widthPx]]);
-const map=L.map('map',{crs:L.CRS.Simple,center:[T.heightPx,0],zoom:-2,minZoom:-3,maxZoom:2,zoomSnap:.5,zoomDelta:.5,maxBounds:bounds,maxBoundsViscosity:1,scrollWheelZoom:true});
+const map=L.map('map',{preferCanvas:true,crs:L.CRS.Simple,center:[T.heightPx,0],zoom:-2,minZoom:-3,maxZoom:2,zoomSnap:.5,zoomDelta:.5,maxBounds:bounds,maxBoundsViscosity:1,scrollWheelZoom:true});
 // Self-hosted: these used to be fetched live from binxonia.com, but the game's dev is blocking cross-site
 // embedding of them and asked us to self-host instead (see tools/download-map-tiles.js, which pulled the whole
 // pyramid down once). The path is relative to atlas.html, so it resolves correctly whether that's the app's local
