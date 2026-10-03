@@ -4644,7 +4644,9 @@ function newsHtml(){
   // its heading on the Quests page
   function pageTrail(p,key,label){
     const qg=p&&p.kind==='guide'&&/^quest-/.test(p.id)&&globalThis.bxcGuides?.questGroup?globalThis.bxcGuides.questGroup(p.id):null;
-    if(qg)return `Atlas / <a href="#/guides">Guides</a> / <a href="#/guides-quests">Quests</a> / <a href="#/guides-quests?g=${esc(qg.key)}">${esc(qg.title)}</a>`;
+    if(qg)return `Atlas / <a href="#/guides">Guides</a> / <a href="#/guides-quests">Quests</a> / <a href="${qg.page?'#/guide/'+esc(qg.page):'#/guides-quests?g='+esc(qg.key)}">${esc(qg.title)}</a>`;
+    // the quest group pages and All quests: under Quests too
+    if(p&&p.kind==='guide'&&/^quests(-|$)/.test(p.id))return `Atlas / <a href="#/guides">Guides</a> / <a href="#/guides-quests">Quests</a>`;
     return `Atlas / <a href="#/${key}">${esc(label)}</a>`;
   }
   function pageTitle(kind,id){

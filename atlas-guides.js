@@ -596,6 +596,12 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   // by what the reward unlocks, whatever the game files the quest under: a mount or the pack mule -> Mount & companion quests;
   // a skill (Carpentry, Herblore) -> Skill unlocks; a weapon skill or a magic school -> Combat skill unlocks
   const nonEmpty=a=>Array.isArray(a)&&a.length>0;
+  // a page of its own for each group (in the Guides menu under Quests)
+  const QG_PAGES={story:['quests-story','Story quests','The main story: quests that follow on from one another and open up new places.'],
+    unlock:['quests-mounts','Mount & companion quests','Quests that give you a mount or a companion, such as the pack mule.'],
+    skillunlock:['quests-skills','Skill unlocks','Quests that teach you a new skill.'],
+    combat:['quests-combat','Combat skill unlocks','Quests that teach you a weapon skill or a school of magic.'],
+    side:['quests-side','Side quests','Stories around the world that pay gold, XP and items.']};
   const questCat=q=>{const r=q.rewards||{};if(r.unlockPackMule||nonEmpty(r.unlockMounts))return 'unlock';if(nonEmpty(r.skills))return 'skillunlock';if(nonEmpty(r.weaponSkills)||nonEmpty(r.spellSchools))return 'combat';return Q_CATS.some(c=>c[0]===q.category)?q.category:'side'};
   const qn=v=>Math.round(+v||0).toLocaleString('en-US');
   const questZone=z=>{const r=((globalThis.BINXONIA_COLLECTOR_SNAPSHOT||{}).zones||[]).find(x=>Number(x.z)===Number(z));return r&&(r.name||r.label)||null};
@@ -836,6 +842,12 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     return {lede:`The ${Q.length} quests players have done so far (${totalQp} quest points in all). Each has its own page with who gives it, what it pays and, where the data has them, the steps and what the quest-giver says.`,
       sections:[...Q_CATS.map(([k,t])=>[k,t,Q.some(q=>questCat(q)===k)?rows(Q.filter(q=>questCat(q)===k)):'']).filter(x=>x[2])],related:['travel','getting-started']};
   }});
+  for(const [k,[pslug,ptitle,pblurb]] of Object.entries(QG_PAGES))reg({slug:pslug,group:'Quests',title:ptitle,blurb:pblurb,inIndex:false,build:()=>{
+    const qs=questList().filter(q=>questCat(q)===k);
+    const rows=table(['Quest','Level','Length','Given by','Rewards'],qs.map(q=>[questLink(q),String(q.recommendedLevel||'?'),esc(pretty(q.lengthTag||'')),giverLink(q),esc(questRewardLine(q))]));
+    return {lede:pblurb+(qs.length?` ${qs.length} recorded so far, by level; each has its own page with the steps, rewards and what the quest-giver says.`:''),
+      sections:[[k,ptitle,qs.length?rows:'<p class="muted">None recorded yet.</p>']],related:['quests','travel']};
+  }});
   reg({slug:'travel',group:'World',title:'Travel & quests',blurb:'Horses, warp scrolls, keys, and how quests work.',build:()=>({lede:'Getting around faster, and the basics of quests.',sections:[
     ['horse','Horses',`<p>A horse costs <b>2,500 gold</b> at a stable and makes you <b>50% faster on roads</b>. Press <b>H</b> to mount or dismount; you get off by yourself to gather. Being overloaded slows you even on a horse.</p>`],
     // the pack mule: from the quest's own reward (unlockPackMule) and the Stablemaster's own stable window (each level's
@@ -853,14 +865,14 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   const orderOf=s=>{const i=ORDER.indexOf(s);return i<0?999:i};
   // one card per recorded quest (the Quests section of the guide index), each opening its own page
   // the quests in their groups (story, side, skill - the game's own categories), each under its own heading
-  function questGroups(){return Q_CATS.map(([k,t])=>{const qs=questList().filter(q=>questCat(q)===k);return qs.length?`<h3 class="g-subhead" id="qg-${k}">${esc(t)} <span class="muted">(${qs.length})</span></h3><div class="g-cards">${questCards(qs)}</div>`:''}).join('')}
+  function questGroups(){return Q_CATS.map(([k,t])=>{const qs=questList().filter(q=>questCat(q)===k);return qs.length?`<h3 class="g-subhead" id="qg-${k}">${QG_PAGES[k]?`<a href="#/guide/${QG_PAGES[k][0]}">${esc(t)}</a>`:esc(t)} <span class="muted">(${qs.length})</span></h3><div class="g-cards">${questCards(qs)}</div>`:''}).join('')}
   function questCards(list){return (list||questList()).map(q=>`<a class="g-card" href="#/guide/${enc(questSlug(q))}">${questDone(q)?'':`<span class="q-alert" role="note">${ALERT_SVG}Not fully written yet</span>`}<b>${esc(q.name)}</b><span>Level ${q.recommendedLevel||'?'} · ${esc(pretty(q.lengthTag||''))}${q.giverName?' · '+esc(q.giverName):''}</span></a>`).join('')}
   function indexHtml(only){
     const groups=only?GROUPS.filter(gr=>slug(gr)===only):GROUPS;
     // All guides: a row of links to each group first, and each heading links to its own page
     const jump=only?`<p class="g-groups"><a href="#/guides">All guides</a>${GROUPS.filter(gr=>slug(gr)!==only).map(gr=>` · <a href="#/guides-${slug(gr)}">${esc(gr)}</a>`).join('')}</p>`
       :`<p class="g-groups">${GROUPS.filter(gr=>G.some(g=>g.group===gr)).map(gr=>`<a href="#/guides-${slug(gr)}">${esc(gr)}</a>`).join(' · ')}</p>`;
-    return `<div class="g-index">`+jump+groups.map(gr=>{const list=G.filter(g=>g.group===gr).sort((a,b)=>orderOf(a.slug)-orderOf(b.slug));if(!list.length)return '';
+    return `<div class="g-index">`+jump+groups.map(gr=>{const list=G.filter(g=>g.group===gr&&g.inIndex!==false).sort((a,b)=>orderOf(a.slug)-orderOf(b.slug));if(!list.length)return '';
       return `<section><h2>${only?esc(gr):`<a href="#/guides-${slug(gr)}">${esc(gr)}</a>`}</h2><div class="g-cards">${list.map(g=>`<a class="g-card" href="#/guide/${enc(g.slug)}"><b>${esc(g.title)}</b><span>${esc(g.blurb)}</span></a>`).join('')}</div>${gr==='Quests'?questGroups():''}</section>`}).join('')+`</div>`;
   }
   function pageHtml(s){
@@ -887,7 +899,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     forSkill:skill=>{const s=skillGuideSlug(skill);return byslug.has(s)?s:null},
     link:(s,label)=>byslug.has(s)?guide(s,label):'',
     // a quest page's group on the Quests page ({key, title}), for its breadcrumb
-    questGroup:s=>{const q=questBySlug(s);if(!q)return null;const c=Q_CATS.find(x=>x[0]===questCat(q));return c?{key:c[0],title:c[1]}:null}
+    questGroup:s=>{const q=questBySlug(s);if(!q)return null;const c=Q_CATS.find(x=>x[0]===questCat(q));return c?{key:c[0],title:c[1],page:QG_PAGES[c[0]]?.[0]||null}:null}
   };
   // Gems guide: "the witch" in the intro jumps to her section (instantly: a hidden window never animates a scroll)
   document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.gg-to-witch');if(!b)return;e.preventDefault();document.getElementById('g-witch')?.scrollIntoView({block:'start'})});

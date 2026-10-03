@@ -38,6 +38,7 @@ function pageList(outDir) {
   const pages = new Map();
   const add = (route, title, desc) => { if (!pages.has(route)) pages.set(route, [title, clip(desc)]); };
   const html = fs.readFileSync(path.join(outDir, 'index.html'), 'utf8');
+  const menuGuides = [];
   // the sections in the menu
   for (const m of html.matchAll(/<button[^>]*class="tab[^"]*"[^>]*>[^<]*/g)) {
     const t = m[0], label = t.replace(/^.*>/, '').trim().replace(/&amp;/g, '&');
@@ -46,13 +47,14 @@ function pageList(outDir) {
     if (!label) continue;
     if (calc) add('calc-' + calc, label, `${label} calculator for Binxonia.`);
     else if (grp) add('guides-' + grp, label + ' guides', `Binxonia guides: ${label}.`);
-    else if (gpage) continue;   // a guide; listed below with its blurb
+    else if (gpage) { menuGuides.push([gpage, label]); continue; }   // a guide; listed below with its blurb (or, if only the menu names it, after them)
     else if (tab) add(tab, label, `${label} - the Binxonia Atlas.`);
   }
   // the written guides (atlas-guides.js registers each with a slug, title and blurb)
   const guides = fs.readFileSync(path.join(outDir, 'atlas-guides.js'), 'utf8');
   for (const m of guides.matchAll(/reg\(\{slug:'([^']+)'[^}]*?title:'((?:[^'\\]|\\.)*)'(?:[^}]*?blurb:'((?:[^'\\]|\\.)*)')?/g))
     add('guide/' + m[1], m[2].replace(/\\'/g, "'"), (m[3] || '').replace(/\\'/g, "'"));
+  for (const [g, label] of menuGuides) add('guide/' + g, label, `${label} - a Binxonia Atlas guide.`);
   const data = readData(outDir);
   // quests (their pages are guide/quest-<id>)
   for (const q of data.quests) if (q && q.name && q.questId && !q.questId.startsWith('__'))
