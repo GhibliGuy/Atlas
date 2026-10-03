@@ -3808,8 +3808,8 @@ function newsHtml(){
 
   function updateStatus(){
     if(!snapshot)return;
-    if(PUBLIC_MODE){setCollectorStatus(`Data as of ${snapshot.generatedAt?new Date(snapshot.generatedAt).toLocaleString():'—'}`);return;}
-    const s=snapshot.stats||{};const saved=state.lastSyncAt?new Date(state.lastSyncAt).toLocaleTimeString():'—';setCollectorStatus(`Collector: ${fmt(s.npcs)} NPCs · ${fmt(s.gathers)} gathers · ${fmt(s.gems)} gems · ${fmt(s.drops)} drops · ${fmt(s.assets)} assets · ${deltaText()} · saved ${saved}`);
+    if(PUBLIC_MODE){setCollectorStatus(`Updated ${snapshot.generatedAt?new Date(snapshot.generatedAt).toLocaleString():'—'}`);return;}
+    const saved=state.lastSyncAt?new Date(state.lastSyncAt).toLocaleTimeString():'—';setCollectorStatus(`Updated ${saved}`);   // just when (the counts were clutter)
   }
   // Cheap fingerprints of a snapshot: array sizes and newest rows, plus the small stores that change in place.
   // They let a refresh that brought nothing new skip the heavy work, and let the map keep its markers,
