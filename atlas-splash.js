@@ -14,6 +14,13 @@
   const TILES=[
     ['[data-tab="guides"]','Guides','Skills, combat, gear and the world, filled from the game’s own data','Start here','guides'],
     ['map','World map',d=>count(d.pois)?count(d.pois)+' places, every creature and resource we have seen':'Every place, creature and resource we have seen','Start here','map'],
+    // Quests: all of them, then each group's own page (the counts come from the Quests guide's own grouping)
+    ['[data-ggroup="quests"]','All quests',()=>questTileText(null,'in all: who gives them, the steps and what they pay','Who gives each quest, the steps and what it pays'),'Quests','quests'],
+    ['[data-gpage="quests-story"]','Story quests',()=>questTileText('story','that follow on from one another and open up new places','The main story, quest by quest'),'Quests','qstory'],
+    ['[data-gpage="quests-mounts"]','Mount & companion quests',()=>questTileText('unlock','that give you a mount or a companion such as the pack mule','Mounts and companions you earn'),'Quests','qmounts'],
+    ['[data-gpage="quests-skills"]','Skill unlocks',()=>questTileText('skillunlock','that teach you a new skill','Quests that teach a new skill'),'Quests','qskills'],
+    ['[data-gpage="quests-combat"]','Combat skill unlocks',()=>questTileText('combat','that teach a weapon skill or a school of magic','Weapon skills and magic you earn'),'Quests','qcombat'],
+    ['[data-gpage="quests-side"]','Side quests',()=>questTileText('side','around the world that pay gold, XP and items','Stories around the world'),'Quests','qside'],
     ['[data-tab="monsters"]','Bestiary',d=>count(d.catalog)?count(d.catalog)+' creatures - levels, weaknesses, drops and where they roam':'Creatures, their weaknesses, drops and where they roam','Explore','monsters'],
     ['[data-tab="items"]','Items','What every item is, its qualities, enchants and where it comes from','Explore','items'],
     ['[data-tab="zones"]','Zones & caves','Dungeons, mines and buildings, mapped from the inside','Explore','zones'],
@@ -24,7 +31,9 @@
     ['[data-calc="quality"]','Quality & enchanting','Can you make it, enchant it, and what quality to expect','Calculators','quality'],
     ['[data-tab="guide"]','Write a guide','Share what you know with other players','Community','guide']
   ];
-  const GROUPS=['Start here','Explore','Gathering','Calculators','Community'];
+  const GROUPS=['Start here','Quests','Explore','Gathering','Calculators','Community'];
+  // a quest tile's line: how many (in one group, or all of them) and what they are
+  function questTileText(group,what,none){const c=globalThis.bxcGuides?.questGroupCounts?.();if(!c)return none;const n=group?c[group]||0:Object.values(c).reduce((a,b)=>a+b,0);return n?`${n} ${n===1?'quest':'quests'} ${what}`:none}
   // Each tile's picture: one of these real game pictures, picked afresh every time the page opens. Only pictures the
   // Atlas has recorded from the game are used; with none available the tile simply has no picture (no placeholder).
   const TI=['sword','longsword','scimitar','rapier','dagger','kryss','mace','warmace','spear','battlespear','axe'].map(w=>'titanium-'+w);
@@ -32,6 +41,12 @@
   const GEMS=['amber','diamond','emerald','iolite','onyx','pearl','ruby','sapphire','topaz'].map(g=>'gem-'+g);
   const ICONS={
     guides:{hint:'item',ids:()=>['sword','dagger','bow','crossbow','mace','spear'].map(k=>'tome-'+k).concat(['tome-weaponsmithing-titanium','tome-armorsmithing-titanium','tome-toolsmithing-titanium','tome-bowyer-shagbark','tome-tailoring-dragonscale','tome-leatherworking-dragonhide','bandit-tally-book'])},
+    quests:{hint:'item',ids:()=>['stolen-smith-tool','stolen-patrol-fitting','ogre-isle-supply-crate']},
+    qstory:{hint:'item',ids:()=>['ogre-isle-supply-crate','plymouth-tide-charts']},
+    qmounts:{hint:'item',ids:()=>['warp-appleseed-farm','warp-underleaf','warp-wispmeyer']},
+    qskills:{hint:'item',ids:()=>['saw','herbalist-sickle','scribing-quill','shears']},
+    qcombat:{hint:'item',ids:()=>['tome-spear','tome-mace']},
+    qside:{hint:'item',ids:()=>['stolen-patrol-fitting','stolen-smith-tool','key-buried-treasure-1']},
     map:{hint:'item',ids:()=>['plymouth-tide-charts','warp-appleseed-farm','warp-binxonia-mage-tower','warp-mirewick','warp-plymouth-wharf','warp-underleaf','warp-wispmeyer']},
     monsters:{hint:'monster',ids:()=>['red-dragon','young-red-dragon','baby-red-dragon','sand-wyrm','sand-wyrmling']},
     items:{hint:'item',ids:()=>TI.concat(TA)},
