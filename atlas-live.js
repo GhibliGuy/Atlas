@@ -2485,7 +2485,7 @@ function deriveAssets(){
   const exact = new Map();
   const add=(token,a)=>{ token=slug(token); if(!token) return; if(!idx.has(token)) idx.set(token,[]); idx.get(token).push(a); };
   for(const a of assets){
-    if(a.entityKind && a.entityId && a.dataUrl) exact.set(`${a.entityKind}:${slug(a.entityId)}`, a);
+    if(a.entityKind && a.entityId && (a.dataUrl||a.file)) exact.set(`${a.entityKind}:${slug(a.entityId)}`, a);
     const base = String(a.basename||a.url||'').split('/').pop();
     add(base.replace(/\.[^.]+$/,''), a); add(a.slug, a);
     for(const part of String(base).replace(/\.[^.]+$/,'').split(/[^a-z0-9]+/i)) add(part,a);
@@ -2509,6 +2509,8 @@ function assetCandidatesFor(id,name){
 function usableImageUrl(a){
   if(!a||a.atlasFrame)return null; // A frame needs cropping; its JSON/sprite sheet is not an icon.
   if(typeof a.dataUrl==='string'&&/^data:image\//i.test(a.dataUrl))return a.dataUrl;
+  // on the website a picture is a file of its own (data/img/<hash>.<ext>), downloaded only when it is shown
+  if(typeof a.file==='string'&&/^data\/img\/[\w.-]+$/.test(a.file))return a.file;
   const url=String(a.url||'');
   if(/^https?:/i.test(url)&&/\.(png|jpe?g|gif|webp|svg|avif)(?:[?#]|$)/i.test(url))return url;
   return null;
@@ -2516,7 +2518,7 @@ function usableImageUrl(a){
 function assetUrlFor(id,name,hint=''){
   const exact=state.exactAssetIndex?.get(hint+':'+slug(id));const exactUrl=usableImageUrl(exact);if(exactUrl)return exactUrl;
   const candidates=assetCandidatesFor(id,name).filter(a=>usableImageUrl(a));
-  candidates.sort((a,b)=>Number(!!b.dataUrl)-Number(!!a.dataUrl));
+  candidates.sort((a,b)=>Number(!!(b.dataUrl||b.file))-Number(!!(a.dataUrl||a.file)));
   return usableImageUrl(candidates[0]);
 }
 // a real game picture only (exact asset, never a guess or a drawn placeholder) - null when the game's art is not recorded
@@ -2618,12 +2620,12 @@ function assetsHtml(search=''){
   const isTile=a=>/\/api\/maps?\/\d+\/tiles\//i.test(String(a.url||''));
   const all=(state.assets||[]).filter(a=>!isTile(a));
   const rows=all.filter(a=>!s||JSON.stringify([a.url,a.basename,a.kind,a.slug,a.atlasFrame]).toLowerCase().includes(s)).sort((a,b)=>String(a.kind).localeCompare(String(b.kind))||String(a.basename).localeCompare(String(b.basename))).slice(0,600);
-  const notCaptured=all.filter(a=>!a.dataUrl&&!a.text&&!String(a.url).startsWith('render:')).length;
+  const notCaptured=all.filter(a=>!a.dataUrl&&!a.file&&!a.text&&!String(a.url).startsWith('render:')).length;
   return `<div class="collector-panel"><div class="collector-title">Visual asset catalog</div><div class="statline"><span>${fmt(all.length)} captured assets</span><span>${fmt(all.filter(a=>String(a.kind).includes('image')).length)} images</span><span>${fmt(all.filter(a=>a.text).length)} text/json assets</span></div><div class="muted">The collector stores a local copy of every public image and atlas/json asset your browser loads from Binxonia - never a live link back to binxonia.com. When an obvious match exists, those local copies are used as real monster/item/resource thumbnails.${notCaptured?` A background sweep keeps retrying the ${fmt(notCaptured)} not shown below yet (a fetch failed, or the file was too large at the time) roughly once a day until a local copy is captured.`:''}</div><div class="muted">Map tiles are stored separately: the whole world map pyramid is downloaded once and self-hosted alongside Atlas (see the Map tab) rather than loaded live from binxonia.com.</div></div><div class="collector-panel">${rows.map(a=>{
-    const img=a.dataUrl?`<img class="thumb itemthumb" src="${esc(a.dataUrl)}" alt="${esc(a.basename||a.url)}" onerror="this.style.display='none'">`:`<div class="thumb itemthumb" title="Not captured locally yet - never shown as a live link" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:#8a988c">Pending</div>`;
+    const img=(a.dataUrl||a.file)?`<img class="thumb itemthumb" src="${esc(a.dataUrl||a.file)}" alt="${esc(a.basename||a.url)}" onerror="this.style.display='none'">`:`<div class="thumb itemthumb" title="Not captured locally yet - never shown as a live link" style="display:flex;align-items:center;justify-content:center;font-size:10px;color:#8a988c">Pending</div>`;
     // Never print the source URL: once captured, this is a local copy only, and even a pending one is never
     // shown as a link, so there is no reason to display where it originally came from either.
-    const origin=(a.dataUrl||a.text)?'Locally hosted':'Pending local capture';
+    const origin=(a.dataUrl||a.file||a.text)?'Locally hosted':'Pending local capture';
     return `<div class="itempreview">${img}<div><div><b>${esc(a.basename||a.url)}</b></div><div class="subresult">${esc(a.kind)} • ${esc(a.slug||'')} • ${fmt(a.size)} bytes</div><div class="muted">${origin}</div></div></div>`;
   }).join('')||'<div class="muted">No assets captured yet. Reload the game tab and let the collector observe the loaded public resources.</div>'}</div>`;
 }
