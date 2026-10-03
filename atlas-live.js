@@ -4539,7 +4539,19 @@ function newsHtml(){
     // the search box and "Observed only" were bound to the first render() - send them through this one
     if(q)q.oninput=()=>render();if(onlyObserved)onlyObserved.onchange=()=>render();
   }
+  // the drawn-ahead page for what is open (the publish draws every page: see bxcExportPages), or null
+  const pageDocCache=new Map();
+  function pageDocPath(p){const v=p.kind==='monster'&&p.lv!=null?'~lv'+p.lv:p.kind==='item'&&p.q?'~q'+pageFileId(p.q):'';return 'data/pages/'+p.kind+'/'+pageFileId(p.id)+v+'.json'}
+  function loadPageDoc(p){const u=pageDocPath(p);if(!pageDocCache.has(u))pageDocCache.set(u,fetch(u).then(r=>r.ok?r.json():null).catch(()=>null));return pageDocCache.get(u)}
+  const hasPageDoc=p=>PUBLIC_MODE&&(['monster','npc','item','resource'].includes(p.kind)||(p.kind==='guide'&&/^quest-/.test(p.id)));
   function renderPage(){
+    if(!snapshot&&pageNow&&hasPageDoc(pageNow)){
+      const want=pageNow;content.innerHTML='<p class="muted">Loading…</p>';
+      loadPageDoc(want).then(doc=>{if(snapshot||pageNow!==want)return;   // the data came first, or another page was opened
+        if(!doc){content.innerHTML='<p class="muted">Loading the Atlas data…</p>';return}
+        content.innerHTML=doc.html;const h=document.getElementById('sectionTitle');if(h)h.textContent=doc.title;document.dispatchEvent(new Event('bxc-route'))});
+      return;
+    }
     // in the app, fold in data that arrived since the last refresh first (links skip the Refresh button)
     if(liveStale)deriveLive();
     const {kind,id}=pageNow;
@@ -5348,7 +5360,8 @@ function newsHtml(){
   let routedOnce=false,routedEarly=false,touchedEarly=false;
   function openFromHash(){
     // Pages are drawn in place (nothing to scroll into view), so this works even while the window is hidden.
-    if(!snapshot)return;
+    // (on the website a page with a drawn-ahead file opens before the data is in: see renderPage)
+    if(!snapshot){if(PUBLIC_MODE)handleRoute(false);return}
     // the first time the data is in: draw the address's page, unless it was already drawn before the data came and
     // the reader has started using it (then it is left alone - the tab's own live refresh fills in the rest)
     // the quest pages and lists are built from the data alone and have nothing to type into, so they are always
@@ -5364,7 +5377,8 @@ function newsHtml(){
   function routeEarly(){
     if(routedOnce)return;
     const h=routeNow(),a=h.replace(/^#\/?/,'').split(/[/?]/)[0];
-    if(!a||/[=&]/.test(a)||['map','zone','search','monster','npc','item','resource'].includes(a))return;
+    // (on the website monster, person, item and resource pages open at once from their drawn-ahead file)
+    if(!a||/[=&]/.test(a)||['map','zone','search'].includes(a)||(!PUBLIC_MODE&&['monster','npc','item','resource'].includes(a)))return;
     try{handleRoute(true);routedEarly=true}catch(e){console.warn('[atlas] early route',e);lastRoute=null}
     const mark=()=>{touchedEarly=true};content?.addEventListener('input',mark,{once:true});content?.addEventListener('mousedown',mark,{once:true});
   }
@@ -5388,6 +5402,43 @@ function newsHtml(){
       if(/^#\//.test(raw)){e.preventDefault();goRoute(raw)}
     });
   }
+  // ---- Pages for the website, drawn ahead of time ------------------------------------------------------------
+  // The app's publish runs the website's Atlas over the full published data in a hidden window and calls this: it
+  // draws every monster, person, item, resource and quest page (and each level / quality / carat a page can be
+  // switched to) exactly as a visitor would see it, plus the search list, so the website can load just the page
+  // that is opened instead of the whole database. Pages are drawn in small batches so the window stays responsive.
+  // a page's file name part: the id with its % escapes as ! ("a::b" -> "a!3A!3Ab"), the same here and when publishing
+  function pageFileId(x){return encodeURIComponent(String(x)).replace(/%/g,'!')}
+  globalThis.bxcExportPages=async function(){
+    if(!snapshot)throw new Error('no data loaded');
+    if(liveStale)deriveLive();
+    const pages={},keep=pageNow,yieldNow=()=>new Promise(r=>setTimeout(r,0));let n=0;
+    const draw=async(path,kind,id,fn,opts={})=>{
+      pageNow={kind,id:String(id),q:opts.q||null,lv:opts.lv!=null?Number(opts.lv):null};
+      try{const html=fn(id);if(html)pages[path]={title:pageTitle(kind,id),html}}catch(e){console.warn('[export]',path,e)}
+      if(++n%25===0)await yieldNow();
+    };
+    const enc=pageFileId;
+    for(const m of D.catalog||[]){if(!m||!m.typeId)continue;
+      await draw('monster/'+enc(m.typeId),'monster',m.typeId,monsterPageHtml);
+      for(const l of monsterLevelsSeen(m.typeId))await draw('monster/'+enc(m.typeId)+'~lv'+l.level,'monster',m.typeId,monsterPageHtml,{lv:l.level});
+    }
+    for(const slug of namedNpcs().keys())await draw('npc/'+enc(slug),'npc',slug,npcPageHtml);
+    const items=new Set([...(state.items?.keys()||[]),...(typeof RECIPES!=='undefined'?RECIPES:[]).map(r=>r.id)]);
+    for(const id of items){if(!id)continue;
+      await draw('item/'+enc(id),'item',id,itemPageHtml);
+      const variants=gearOf(id)?Q_TIERS:/^gem-/.test(id)?[...new Set((snapshot.gems||[]).filter(g=>g.typeId===id&&Number.isFinite(+g.carat)).map(g=>String(+g.carat)))]:[];
+      for(const q of variants)await draw('item/'+enc(id)+'~q'+enc(q),'item',id,itemPageHtml,{q});
+    }
+    for(const key of state.resourceCatalog?.keys()||[])await draw('resource/'+enc(key),'resource',key,resourcePageHtml);
+    for(const qst of snapshot.quests||[]){if(!qst||!qst.name||!qst.questId||String(qst.questId).startsWith('__'))continue;
+      const id='quest-'+npcSlug(qst.questId);await draw('guide/'+enc(id),'guide',id,x=>globalThis.bxcGuides?.pageHtml(x)||'');
+    }
+    pageNow=keep;
+    // the search list: what the search box finds, with each result's address (and its picture when it has a file)
+    const search=globalSearchEntries().map(e=>{let img=null;try{const u=e.image&&e.image();if(typeof u==='string'&&/^data\/img\//.test(u))img=u}catch{}return [e.kind,e.name,e.detail||'',e.href,img]});
+    return {pages,search,builtAt:snapshot.generatedAt||null};
+  };
   if(PUBLIC_MODE){
     // One fetch, once, ever - no live collector to re-sync with or poll. applySnapshot() itself already calls
     // openFromHash once the data's in, same as the live path below.
@@ -5397,7 +5448,7 @@ function newsHtml(){
     const partRows=p=>Array.isArray(p)?p:p&&Array.isArray(p.cols)&&Array.isArray(p.rows)?p.rows.map(r=>{const o={};for(let i=0;i<p.cols.length;i++)o[p.cols[i]]=r[i];return o}):[];
     fetch('data/snapshot.json').then(r=>r.json()).then(async s=>{
       if(Array.isArray(s.parts))await Promise.all(s.parts.map(async k=>{const p=s[k]&&s[k].part;s[k]=p?partRows(await fetch('data/'+p).then(r=>r.json())):[]}));
-      return s}).then(applySnapshot).catch(err=>setCollectorStatus('Could not load data: '+err.message));
+      return s}).then(applySnapshot).then(()=>{globalThis.bxcDataReady=true}).catch(err=>setCollectorStatus('Could not load data: '+err.message));
   }else{
     syncNow().then(openFromHash);setInterval(fullSyncIfNeeded,600000);
     syncBossTimers();
