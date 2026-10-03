@@ -728,6 +728,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const steps=[`<li value="1">Talk to ${who}${whereGiver} to get the quest.${mapBtn}</li>`];
     // your own steps (page editor), when written: they are the whole list after taking the quest
     const ed=questEdit(q);
+    if(ed&&String(ed.first||'').trim())steps[0]=`<li value="1">${editText(ed.first)}</li>`;   // your own step 1 (taking the quest)
     if(ed&&Array.isArray(ed.steps)&&ed.steps.some(x=>String(x||'').trim())){ed.steps.filter(x=>String(x||'').trim()).forEach((t,k)=>steps.push(`<li value="${k+2}">${editText(t)}</li>`));return '<ol class="q-steps">'+steps.join('')+'</ol>'}
     // every step known (players who finished it said so): the recorded ones in order, then handing it back in
     const known=QUEST_STEPS_KNOWN[q.questId];

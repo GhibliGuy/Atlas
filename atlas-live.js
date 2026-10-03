@@ -5538,12 +5538,23 @@ function newsHtml(){
   // links ([[#/npc/x|Name]]), map buttons ([[map:npc:x|Name]]) and spots ([[spot:x,y|Label]]) put in by the toolbar;
   // saving sends them to the app (save-page-edit), which writes page-edits.js and publishes a minute later.
   let qeEl=null,qeState=null,qeFocus=null,qeCaret=null;   // qeCaret: the box and cursor you were last in
+  // a step as the page shows it -> the editor's text: links, map buttons, spots and bold kept as their codes
+  function qeTokens(el){let out='';for(const n of el.childNodes){
+    if(n.nodeType===3){out+=n.nodeValue;continue}if(n.nodeType!==1)continue;
+    const t=n.textContent.replace(/\s+/g,' ').trim(),clean=x=>String(x).replace(/[\[\]|]/g,'').trim();
+    if(n.matches('a[href^="#/"]')){out+=`[[${n.getAttribute('href')}|${clean(t)}]]`;continue}
+    if(n.matches('.show-on-map')&&n.dataset.mapKind){const k=n.dataset.mapKind,id=n.dataset.mapId||'',label=clean(t.replace(/^\u{1F4CD}\s*/u,''))||'Show on map';
+      if(k==='spot'){const [x,y,l]=id.split('|');out+=`[[spot:${x},${y}|${clean(l||label)}]]`}else if(/^(npc|monster|item|resource|place|zone)$/.test(k))out+=`[[map:${k}:${id}|${label}]]`;else out+=t;continue}
+    if(n.matches('b,strong')){out+=`**${t}**`;continue}
+    if(n.matches('br')){out+='\n';continue}
+    out+=qeTokens(n)}
+    return out.replace(/[ \t]+/g,' ').replace(/ *\n */g,'\n').trim()}
   function qeEntries(){try{return globalSearchEntries()}catch{return []}}
   const qeMapTarget=href=>{let m=String(href||'').match(/^#\/(npc|monster|item|resource|zone)\/(.+)$/);if(m){try{return [m[1],decodeURIComponent(m[2])]}catch{return [m[1],m[2]]}}m=String(href||'').match(/^#\/map\/place\/(.+)$/);if(m){try{return ['place',decodeURIComponent(m[1])]}catch{return ['place',m[1]]}}return null};
   function qeInsert(text,into,at){if(!into&&qeCaret&&document.contains(qeCaret.ta)){into=qeCaret.ta;at=qeCaret.pos}const ta=into&&document.contains(into)?into:qeFocus&&document.contains(qeFocus)?qeFocus:qeEl?.querySelector('textarea');if(!ta)return;const a=at!=null?at:ta.selectionStart??ta.value.length,b=at!=null?at:ta.selectionEnd??a;ta.value=ta.value.slice(0,a)+text+ta.value.slice(b);ta.selectionStart=ta.selectionEnd=a+text.length;qeCaret={ta,pos:a+text.length};ta.dispatchEvent(new Event('input',{bubbles:true}));ta.focus()}
   function qeSync(){if(!qeEl||!qeState)return;qeState.steps=[...qeEl.querySelectorAll('.qe-step textarea')].map(t=>t.value);qeState.notes=qeEl.querySelector('#qeNotes').value;qeState.done=qeEl.querySelector('#qeDone').checked}
   function qePreview(){if(!qeEl)return;qeSync();const r=globalThis.bxcEditText||(x=>esc(x));qeEl.querySelector('#qePreview').innerHTML='<ol class="q-steps">'+qeState.steps.filter(x=>x.trim()).map(x=>'<li>'+r(x)+'</li>').join('')+'</ol>'+(qeState.notes.trim()?'<div class="q-notes">'+r(qeState.notes)+'</div>':'')}
-  function qeDrawSteps(){const box=qeEl.querySelector('#qeSteps');box.innerHTML=qeState.steps.map((t,i)=>`<div class="qe-step"><span class="qe-n">${i+2}.</span><textarea rows="2" placeholder="What to do">${esc(t)}</textarea><span class="qe-mv"><button type="button" data-qe="up" data-i="${i}" title="Move up">\u2191</button><button type="button" data-qe="down" data-i="${i}" title="Move down">\u2193</button><button type="button" data-qe="del" data-i="${i}" title="Remove this step">\u2715</button></span></div>`).join('');qePreview()}
+  function qeDrawSteps(){const box=qeEl.querySelector('#qeSteps');box.innerHTML=qeState.steps.map((t,i)=>`<div class="qe-step"><span class="qe-n">${i+1}.</span><textarea rows="2" placeholder="What to do">${esc(t)}</textarea><span class="qe-mv"><button type="button" data-qe="up" data-i="${i}" title="Move up">\u2191</button><button type="button" data-qe="down" data-i="${i}" title="Move down">\u2193</button><button type="button" data-qe="del" data-i="${i}" title="Remove this step">\u2715</button></span></div>`).join('');qePreview()}
   // the search for Link / Show on map: the Atlas's own search, at most 12 results
   function qePick(mode){const box=qeEl.querySelector('#qePick');box.hidden=false;box.dataset.mode=mode;const inp=box.querySelector('input');inp.value='';inp.placeholder=mode==='map'?'Find a person, monster, item, resource, place or cave to show on the map\u2026':'Find a page to link: a person, monster, item, quest, guide, place\u2026';box.querySelector('.qe-res').innerHTML='';inp.focus()}
   function qePickResults(){const box=qeEl.querySelector('#qePick'),mode=box.dataset.mode,qv=box.querySelector('input').value;let r=qv.trim()?globalSearchMatches(qeEntries(),qv):[];if(mode==='map')r=r.filter(e=>qeMapTarget(e.href));
@@ -5560,14 +5571,15 @@ function newsHtml(){
   function openQuestEditor(questId){
     const q=(snapshot?.quests||[]).find(x=>x.questId===questId);if(!q)return;
     const cur=((globalThis.BXC_PAGE_EDITS||{}).pages||{})['quest:'+questId]||{};
-    // nothing written yet: start from the steps the page shows now (as plain text, without its first step - taking the quest)
-    const shown=[...(content?.querySelectorAll('.q-steps > li')||[])].slice(1).map(li=>li.innerText.replace(/\s*Show on map\s*/g,' ').replace(/\s+/g,' ').trim()).filter(Boolean);
-    qeState={questId,name:q.name,steps:Array.isArray(cur.steps)&&cur.steps.length?[...cur.steps]:shown.length?shown:[''],notes:cur.notes||'',done:!!cur.done};
+    // what the page shows now, links and map buttons kept: the starting point for anything not written yet
+    const shown=[...(content?.querySelectorAll('.q-steps > li')||[])].map(qeTokens).filter(Boolean);
+    const first=String(cur.first||'').trim()?cur.first:(shown[0]||''),rest=Array.isArray(cur.steps)&&cur.steps.length?[...cur.steps]:shown.slice(1);
+    qeState={questId,name:q.name,steps:[first,...rest],notes:cur.notes||'',done:!!cur.done};   // steps[0] is step 1
     if(qeEl)qeEl.remove();qeEl=document.createElement('div');qeEl.id='qEditor';qeEl.setAttribute('role','dialog');
     qeEl.innerHTML=`<div class="qe-head"><b>Edit \u201c${esc(q.name)}\u201d</b><button type="button" data-qe="close" title="Close without saving">\u2715</button></div>
       <div class="qe-tools"><button type="button" data-qe="link">Link\u2026</button><button type="button" data-qe="map">Show on map\u2026</button><button type="button" data-qe="spot">Spot on map</button><span class="muted">They go where the cursor is. **bold** for bold.</span></div>
       <div id="qePick" hidden><input type="search"><div class="qe-res"></div></div>
-      <h4>Steps <span class="muted">(step 1, taking the quest, is written for you)</span></h4><div id="qeSteps"></div><button type="button" data-qe="add">+ Add a step</button>
+      <h4>Steps <span class="muted">(step 1 is taking the quest)</span></h4><div id="qeSteps"></div><button type="button" data-qe="add">+ Add a step</button>
       <h4>Notes</h4><textarea id="qeNotes" rows="4" placeholder="Tips, warnings, anything else">${esc(qeState.notes)}</textarea>
       <label class="qe-done"><input type="checkbox" id="qeDone"${qeState.done?' checked':''}> The steps are complete (takes off \u201cnot fully written yet\u201d)</label>
       <h4>Preview</h4><div id="qePreview" class="qe-preview"></div>
@@ -5585,7 +5597,8 @@ function newsHtml(){
       if(a==='link'||a==='map'){qePick(a);return}
       if(a==='spot'){qeSpot();return}
       if(a==='save'){qeSync();const msg=qeEl.querySelector('#qeMsg');msg.textContent='Saving\u2026';b.disabled=true;
-        const entry={steps:qeState.steps.map(x=>x.trim()).filter(Boolean),notes:qeState.notes.trim(),done:qeState.done},key='quest:'+qeState.questId;
+        const [first,...rest]=qeState.steps.map(x=>x.trim());
+        const entry={first:first||'',steps:rest.filter(Boolean),notes:qeState.notes.trim(),done:qeState.done},key='quest:'+qeState.questId;
         bridgeSend('save-page-edit',{key,entry}).then(r=>{if(!r||r.ok!==true)throw new Error((r&&r.error)||'the app did not save it (it may need its latest update)');
           const E=globalThis.BXC_PAGE_EDITS||(globalThis.BXC_PAGE_EDITS={v:1,pages:{}});E.pages=E.pages||{};E.pages[key]={...entry,updatedAt:Date.now()};
           qeEl.remove();qeEl=null;qeState=null;if(pageNow)renderPage();
