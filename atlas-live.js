@@ -182,14 +182,26 @@
     for(let i=lo-1;i>=0;i--){const d=tt-times[i];if(d>windowMs||d>=bestD)break;const x=rows[i];if(pred&&!pred(x)||!sameSession(x,target))continue;best=x;bestD=d;break}
     return best;
   }
-  function latestSkillNear(skill,time,sessionId,windowMs=10000){
-    let best=null,bestD=Infinity;
-    for(const x of snapshot?.skillObservations||[]){
-      if(String(x.skill||'').toLowerCase()!==String(skill||'').toLowerCase())continue;
-      if(sessionId&&x.sessionId&&sessionId!==x.sessionId)continue;
-      const d=Math.abs((num(x.time)||0)-(num(time)||0));
-      if(d<=windowMs&&d<bestD){best=x;bestD=d}
+  // Skill readings grouped by skill and sorted by time, built once per snapshot array: latestSkillNear is called once
+  // per gem (thousands), and scanning every reading each time was quadratic (gems x 20k readings).
+  const skillIdxCache=new WeakMap();
+  function skillIndex(){
+    const arr=snapshot?.skillObservations||[];let c=skillIdxCache.get(arr);
+    if(!c||c.n!==arr.length){
+      const by=new Map();
+      for(const x of arr){const t=num(x.time);if(t===null)continue;const k=String(x.skill||'').toLowerCase();let e=by.get(k);if(!e)by.set(k,e=[]);e.push(x)}
+      for(const [k,rows] of by){rows.sort((a,b)=>num(a.time)-num(b.time));by.set(k,{rows,times:rows.map(x=>num(x.time))})}
+      c={n:arr.length,by};skillIdxCache.set(arr,c);
     }
+    return c.by;
+  }
+  function latestSkillNear(skill,time,sessionId,windowMs=10000){
+    const e=skillIndex().get(String(skill||'').toLowerCase());if(!e)return null;
+    const tt=num(time)||0,{rows,times}=e;
+    let lo=0,hi=times.length;while(lo<hi){const m=(lo+hi)>>1;if(times[m]<tt)lo=m+1;else hi=m}
+    let best=null,bestD=Infinity;
+    for(let i=lo;i<times.length&&times[i]-tt<=windowMs;i++){const x=rows[i];if(sessionId&&x.sessionId&&sessionId!==x.sessionId)continue;const d=times[i]-tt;if(d<bestD){best=x;bestD=d}break}
+    for(let i=lo-1;i>=0&&tt-times[i]<=windowMs;i--){const x=rows[i];if(sessionId&&x.sessionId&&sessionId!==x.sessionId)continue;const d=tt-times[i];if(d<bestD){best=x;bestD=d}break}
     return best;
   }
 
@@ -409,16 +421,22 @@
     if(item){ const u=objectIconUrl(item,prettyId(item)); if(u)return u; }
     return objectIconUrl(o.typeId,o.name);
   }
+  // one icon per picture, shared by every marker that shows it (an icon builds each marker's element from the same
+  // options), instead of a new icon object for each of thousands of resources on every redraw
+  const resourceIconCache=new Map();
   function resourceMapIcon(o){
     if(typeof L==='undefined')return null;
     const url=resourceIconUrl(o);
     if(!url)return null;
-    return L.divIcon({
+    if(resourceIconCache.has(url))return resourceIconCache.get(url);
+    if(resourceIconCache.size>500)resourceIconCache.clear();
+    const icon=L.divIcon({
       className:'bxc-resource-icon',
       html:`<div style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:rgba(20,15,10,.55);border-radius:50%;box-shadow:0 0 3px rgba(0,0,0,.8)"><img src="${url}" style="width:18px;height:18px;object-fit:contain"></div>`,
       iconSize:[22,22],
       iconAnchor:[11,11]
     });
+    resourceIconCache.set(url,icon);return icon;
   }
   function resourceMarkerStyle(typeId){
     const skill=state.objectSkillByType?.get(typeId);
@@ -2391,6 +2409,14 @@ function centerZoneViewport(vp,z){
 function redrawZoneOverlay(){if(state.openZone!=null){lastRenderedZoneOverlayZ=state.openZone;openZoneOverlay(state.openZone)}}
 function stopZoneTools(){state.addSubLevelArmed=false;state.markExitArmed=false;state.setEntranceForChildZ=null;setSubLevelPlacementCursor(false);redrawZoneOverlay()}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(state.addSubLevelArmed||state.markExitArmed||state.setEntranceForChildZ!=null))stopZoneTools()});
+// Your own position moving shouldn't rebuild the open room layout under the mouse: at most every 3 s, and not while
+// the pointer is over it or a monster's popup is open (the project's rule: never rebuild what you're using).
+function refreshZoneOverlaySoon(){
+  const el=zoneOverlayEl;if(state.openZone==null)return;
+  if(el&&(el.matches(':hover')||el.querySelector('.zmon-pop')))return;
+  const now=Date.now();if(now-(state.zoneOverlayAt||0)<3000)return;state.zoneOverlayAt=now;
+  openZoneOverlay(state.openZone);
+}
 function openZoneOverlay(z){
   if(!state.zones.has(z))return;
   if(state.openZone!==z)state.addSubLevelArmed=false;
@@ -3795,10 +3821,14 @@ function newsHtml(){
     if(keep){const c=content.querySelector(`.card[data-t="${CSS.escape(keep)}"]`);if(c){c.tabIndex=-1;c.focus({preventScroll:true})}}
     for(const t of outlined){const c=content.querySelector(`.card[data-t="${CSS.escape(t)}"]`);if(c)c.style.outline='2px solid #e6bf69'}
   }
-  function applySnapshot(s){
+  // opts.layoutOnly: only the layout stores changed (world objects, zones, regions, hand-added spots - syncLayout, every
+  // few seconds while you walk), so only what's built from them is redone, and a reference page you're reading is not
+  // rebuilt under you: it gets the "New data - refresh" link instead (the project's rule for live updates).
+  function applySnapshot(s,opts={}){
     rawSnapshot=s||{};snapshot=splitPlaces(rawSnapshot);window.BINXONIA_COLLECTOR_SNAPSHOT=snapshot;if(!state.visitBaseline)state.visitBaseline={...(loadStoredBaseline()||snapshot.stats||{})};
     console.time('applySnapshot:derive');
-    deriveResourceSkills();deriveResourceCatalog();deriveGatherStats();deriveGems();deriveXp();deriveKills();deriveDrops();deriveItems();deriveZones();deriveSelf();deriveAssets();deriveResearch();deriveMonsters();
+    if(opts.layoutOnly){deriveResourceSkills();deriveResourceCatalog();deriveItems();deriveZones();deriveSelf();deriveResearch()}
+    else{deriveResourceSkills();deriveResourceCatalog();deriveGatherStats();deriveGems();deriveXp();deriveKills();deriveDrops();deriveItems();deriveZones();deriveSelf();deriveAssets();deriveResearch();deriveMonsters()}
     console.timeEnd('applySnapshot:derive');
     const mapSig=snapSig(snapshot,false);
     if(mapSig!==lastMapSig||!legendControl){
@@ -3810,6 +3840,7 @@ function newsHtml(){
     }
     lastFullSig=snapSig(rawSnapshot,true);
     setTimeout(openFromHash,0);state.lastSyncAt=Date.now();lastSnapshotStats={...(snapshot.stats||{})};updateStatus();
+    if(opts.layoutOnly&&!LIVE_TABS.has(tab)){showStaleLink();return}
     keepSidebarView(()=>{if(tab!=='calc'&&tab!=='gemcombine'){render();augmentCurrentTab()}else augmentCurrentTab()});
   }
   function loadStoredBaseline(){try{return JSON.parse(localStorage.getItem(LAST_SEEN_KEY)||'null')?.stats||null}catch{return null}}
@@ -3912,7 +3943,7 @@ function newsHtml(){
     syncing=true;let again=false;
     try{
       const s=takeSame(await bridgeRequest('get-snapshot',{only:LAYOUT_STORES,have:haveStamps()}));
-      if(s&&s.partial){const {partial,keys,...rest}=s;applySnapshot(Object.assign({},rawSnapshot,rest))}
+      if(s&&s.partial){const {partial,keys,...rest}=s;applySnapshot(Object.assign({},rawSnapshot,rest),{layoutOnly:true})}
       else if(s){if(rehydrateAssets(s))applySnapshot(s);else again=true}
     }catch(err){setCollectorStatus('Collector: not connected');console.warn(err)}finally{syncing=false}
     if(again)syncNow();
@@ -3960,7 +3991,7 @@ function newsHtml(){
     }
     let selfChanged=false;
     if(Array.isArray(push?.selfState)){snapshot.selfState=push.selfState;selfChanged=true;changed=true}
-    if(selfChanged){deriveSelf();drawSelfMarker();if(state.openZone!=null)openZoneOverlay(state.openZone);
+    if(selfChanged){deriveSelf();drawSelfMarker();if(state.openZone!=null)refreshZoneOverlaySoon();
       try{if(typeof globalThis.bxcCombatSync==='function')globalThis.bxcCombatSync()}catch(_){}}   // gear or stats changed: the combat calculator follows
     if(!changed)return;
     liveZoneTransitions=liveZoneTransitions||zoneTransitionsChanged;
@@ -5294,9 +5325,11 @@ function newsHtml(){
     // One fetch, once, ever - no live collector to re-sync with or poll. applySnapshot() itself already calls
     // openFromHash once the data's in, same as the live path below.
     setCollectorStatus('Loading…');
-    // the snapshot lists its big stores as separate files (data/snap/<store>.json); they are fetched side by side
+    // the snapshot lists its big stores as separate files (data/snap/<store>.json); they are fetched side by side.
+    // A part may come as a table ({cols, rows}: one array per record, terrain does) - turned back into records here.
+    const partRows=p=>Array.isArray(p)?p:p&&Array.isArray(p.cols)&&Array.isArray(p.rows)?p.rows.map(r=>{const o={};for(let i=0;i<p.cols.length;i++)o[p.cols[i]]=r[i];return o}):[];
     fetch('data/snapshot.json').then(r=>r.json()).then(async s=>{
-      if(Array.isArray(s.parts))await Promise.all(s.parts.map(async k=>{const p=s[k]&&s[k].part;s[k]=p?await fetch('data/'+p).then(r=>r.json()):[]}));
+      if(Array.isArray(s.parts))await Promise.all(s.parts.map(async k=>{const p=s[k]&&s[k].part;s[k]=p?partRows(await fetch('data/'+p).then(r=>r.json())):[]}));
       return s}).then(applySnapshot).catch(err=>setCollectorStatus('Could not load data: '+err.message));
   }else{
     syncNow().then(openFromHash);setInterval(fullSyncIfNeeded,600000);
