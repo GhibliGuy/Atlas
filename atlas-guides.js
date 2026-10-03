@@ -592,7 +592,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   const questDone=q=>QUEST_COMPLETE.has(q.questId);
   const ALERT_SVG='<svg class="q-alert-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20z" fill="currentColor"/><path d="M12 10v5M12 17.6v.4" stroke="#1b1300" stroke-width="2.2" stroke-linecap="round"/></svg>';
   const questLink=q=>`<a href="#/guide/${enc(questSlug(q))}">${esc(q.name)}</a>`;
-  const Q_CATS=[['story','Story'],['unlock','Unlock quests'],['skillunlock','Skill unlocks'],['combat','Combat skill unlocks'],['side','Side quests'],['skill','Skill quests']];
+  const Q_CATS=[['story','Story'],['unlock','Unlock quests'],['skillunlock','Skill unlocks'],['combat','Combat skill unlocks'],['side','Side quests']];   // (a skill quest that unlocks nothing, e.g. A Winter's Wool, is a side quest)
   // by what the reward unlocks, whatever the game files the quest under: a mount or the pack mule -> Unlock quests;
   // a skill (Carpentry, Herblore) -> Skill unlocks; a weapon skill or a magic school -> Combat skill unlocks
   const nonEmpty=a=>Array.isArray(a)&&a.length>0;
