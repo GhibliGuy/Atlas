@@ -592,8 +592,9 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   const questDone=q=>QUEST_COMPLETE.has(q.questId);
   const ALERT_SVG='<svg class="q-alert-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20z" fill="currentColor"/><path d="M12 10v5M12 17.6v.4" stroke="#1b1300" stroke-width="2.2" stroke-linecap="round"/></svg>';
   const questLink=q=>`<a href="#/guide/${enc(questSlug(q))}">${esc(q.name)}</a>`;
-  const Q_CATS=[['story','Story'],['side','Side quests'],['skill','Skill quests']];
-  const questCat=q=>Q_CATS.some(c=>c[0]===q.category)?q.category:'side';
+  const Q_CATS=[['story','Story'],['unlock','Unlock quests'],['side','Side quests'],['skill','Skill quests']];
+  // a quest whose reward is a mount or the pack mule is an unlock quest, whatever the game files it under
+  const questCat=q=>{const r=q.rewards||{};if(r.unlockPackMule||(Array.isArray(r.unlockMounts)&&r.unlockMounts.length))return 'unlock';return Q_CATS.some(c=>c[0]===q.category)?q.category:'side'};
   const qn=v=>Math.round(+v||0).toLocaleString('en-US');
   const questZone=z=>{const r=((globalThis.BINXONIA_COLLECTOR_SNAPSHOT||{}).zones||[]).find(x=>Number(x.z)===Number(z));return r&&(r.name||r.label)||null};
   function questGiver(q){
@@ -835,6 +836,9 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   }});
   reg({slug:'travel',group:'World',title:'Travel & quests',blurb:'Horses, warp scrolls, keys, and how quests work.',build:()=>({lede:'Getting around faster, and the basics of quests.',sections:[
     ['horse','Horses',`<p>A horse costs <b>2,500 gold</b> at a stable and makes you <b>50% faster on roads</b>. Press <b>H</b> to mount or dismount; you get off by yourself to gather. Being overloaded slows you even on a horse.</p>`],
+    // the pack mule: from the quest's own reward (unlockPackMule) and the Stablemaster's own stable window (each level's
+    // room and the next upgrade's price, as recorded 3 Oct 2026)
+    ['mule','Pack mule',`<p>Finishing <a href="#/guide/quest-binxonia-runaway-horses">The Runaways</a> for the Stablemaster in Binxonia gives you a gray <b>pack mule</b>: extra room for your things that you call up when you want it. She starts with room for <b>5 items</b>, and a Stablemaster can make her bigger:</p>`+table(['Level','Room','To get there'],[['1','5 items','The Runaways'],['2','10 items','1,000 gold'],['3','15 items','2,500 gold'],['4','20 items (the most)','5,000 gold']])],
     ['warps','Warp scrolls',`<p>Scribes make warp scrolls to places like the Mage Tower, Plymouth Wharf, Underleaf, Appleseed Farm, Mirewick and Wispmeyer. Reading one takes about 1.5 s and is broken by moving, damage or a stun, and it is refused within 10 s of a fight. See ${guide('scribing')}.</p>`],
     ['keys','Keys',`<p>A key is used up each time it opens a lock.</p>`],
     ['quests','Quests',`<p><b>!</b> above an NPC means a quest to take, <b>?</b> one to hand in; rewards show before you accept. Kill goals count related creatures too, place goals get a waypoint, and timed quests start their clock when you accept. Some quests teach things for free: the mace and spear for warriors, the other magic schools, and Herblore.</p>`],
