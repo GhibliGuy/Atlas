@@ -588,7 +588,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   const questBySlug=s=>String(s||'').startsWith('quest-')?questList().find(q=>questSlug(q)===s)||null:null;
   // Quest guides the user has confirmed as fully written (quest ids). Every other quest gets an alert: on its card on
   // the Quests page, and a banner on its own page.
-  const QUEST_COMPLETE=new Set(['wasteland-nothing-gets-through','imp-menace','plymouth-cargo-for-the-isle','plymouth-the-ogre-traitor','warrior-spear-beyond-the-point','warrior-mace-the-broken-hammers','plymouth-carpenters-trade']);
+  const QUEST_COMPLETE=new Set(['wasteland-nothing-gets-through','imp-menace','plymouth-cargo-for-the-isle','plymouth-the-ogre-traitor','warrior-spear-beyond-the-point','warrior-mace-the-broken-hammers','plymouth-carpenters-trade','binxonia-runaway-horses']);
   const questDone=q=>QUEST_COMPLETE.has(q.questId);
   const ALERT_SVG='<svg class="q-alert-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20z" fill="currentColor"/><path d="M12 10v5M12 17.6v.4" stroke="#1b1300" stroke-width="2.2" stroke-linecap="round"/></svg>';
   const questLink=q=>`<a href="#/guide/${enc(questSlug(q))}">${esc(q.name)}</a>`;
@@ -638,7 +638,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   // while someone was on the quest (numbered after it); with none recorded, what players reported (QUEST_REQUIRES).
   // Quests whose every step is known: the recorded steps are all of them, and handIn - the last step is going back to
   // the quest-giver (as players who finished it reported).
-  const QUEST_STEPS_KNOWN={'imp-menace':{handIn:true},'plymouth-the-ogre-traitor':{handIn:true},'warrior-spear-beyond-the-point':{handIn:true},'plymouth-carpenters-trade':{handIn:false}};
+  const QUEST_STEPS_KNOWN={'imp-menace':{handIn:true},'plymouth-the-ogre-traitor':{handIn:true},'warrior-spear-beyond-the-point':{handIn:true},'plymouth-carpenters-trade':{handIn:false},'binxonia-runaway-horses':{handIn:false}};
   // Steps the game sent while someone was on the quest, recovered from older collector backups (the quest log of
   // 19-20 Sep 2026) where today's data has none: The Ogre Traitor's stage 1, objective "Kill the Ogre Traitor" (1).
   // Steps players reported for a quest with none recorded; the items and places named are the game's own (its catalog:
@@ -670,6 +670,14 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     return `<div class="q-chain" role="note"><b>Quest chain</b> <span class="muted">· part ${i+1} of ${c.ids.length}${left?`, ${left} more after this one`:', the last one'}</span>
       <div class="q-chain-row">${c.ids.map(step).join('<span class="q-chain-arrow">→</span>')}<span class="q-chain-arrow">→</span><span class="q-chain-step end">🔓 ${esc(c.ends)}</span></div></div>`;
   }
+  // Places for recorded objectives that come without one (by objective id). The Runaways: the game only names its three
+  // horses (runaway-horse-black/-brown/-white) and never sends where they stand, so these are where the user stood
+  // sending each home on 2 Oct 2026 (the walk they clicked ended at the horse), and the teleport scrolls they read to
+  // get there (Appleseed Farm lands at 452,152, Underleaf at -55,197).
+  const questObjectivePlaces=()=>({
+    'binxonia-runaway-horses__s0__o0':{waypoints:[{z:0,x:24,y:-57}],afterHtml:'a short ride from the Stablemaster, on the way to the Binxonia Iron Mine'},
+    'binxonia-runaway-horses__s0__o1':{waypoints:[{z:0,x:-24,y:188}],afterHtml:`a short walk from where an ${item('warp-underleaf','Underleaf teleport scroll')} drops you`},
+    'binxonia-runaway-horses__s0__o2':{waypoints:[{z:0,x:456,y:157}],afterHtml:`right next to where an ${item('warp-appleseed-farm','Appleseed Farm teleport scroll')} drops you`}});
   const QUEST_STAGES_RECOVERED={'warrior-spear-beyond-the-point':[
       {n:0,text:'Kill orcs near the Orc Lair for 8',objectives:[{text:'Kill orcs near the Orc Lair for 8',required:1,itemTypeId:'stolen-patrol-fitting',after:'each orc drops one'}]},
       {n:1,text:'Bring the fittings back to Guard Tobin Reed',objectives:[{text:'Bring the fittings back to Guard Tobin Reed',required:1,npc:'Guard Tobin Reed',after:'he tells you who leads the raids'}]},
@@ -679,26 +687,30 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   const objText=o=>{const t=String(o.text||''),nm=o.npc||null,p=nm&&globalThis.bxcNpcByName?globalThis.bxcNpcByName(nm):null;
     if(!p||!t.includes(nm))return esc(t);const i=t.indexOf(nm);return esc(t.slice(0,i))+`<a href="${esc(p.href)}">${esc(nm)}</a>`+esc(t.slice(i+nm.length))};
   function questSteps(q){
-    const st=((q.stages||[]).some(s=>s.objectives&&s.objectives.length)?q.stages:(QUEST_STAGES_RECOVERED[q.questId]||[])).filter(s=>s.objectives&&s.objectives.length);
+    const extra=questObjectivePlaces();
+    const st=((q.stages||[]).some(s=>s.objectives&&s.objectives.length)?q.stages:(QUEST_STAGES_RECOVERED[q.questId]||[])).filter(s=>s.objectives&&s.objectives.length)
+      .map(s=>({...s,objectives:s.objectives.map(o=>{const x=extra[o.id];return x?{...o,waypoints:o.waypoints&&o.waypoints.length?o.waypoints:x.waypoints,afterHtml:x.afterHtml}:o})}));
     const placeOf=w=>(globalThis.bxcPlaceAt&&globalThis.bxcPlaceAt(w.z,w.x,w.y))||questZone(w.z);   // the building or dungeon it is in, not just its zone number
     // a named place links to it on the map: the game's own marker (Imp Tree), else the building's or cave's entrance
     const placeLink=w=>{const n=placeOf(w);if(!n)return '';const poi=(typeof D!=='undefined'&&D.pois||[]).find(p=>p.name===n);return `<a href="#" class="show-on-map" data-map-kind="${poi?'place':'zone'}" data-map-id="${esc(poi?poi.name:String(w.z))}">${esc(n)}</a>`};
-    const where=w=>w?(w.z&&w.z!==0?` <span class="muted">inside ${placeOf(w)?placeLink(w):'a cave or building'}${placeOf(w)?'':` (${Math.round(w.x)}, ${Math.round(w.y)})`}</span>`:` <span class="muted">at ${Math.round(w.x)}, ${Math.round(w.y)}</span>`):'';
+    const where=(w,label)=>w?(w.z&&w.z!==0?` <span class="muted">inside ${placeOf(w)?placeLink(w):'a cave or building'}${placeOf(w)?'':` (${Math.round(w.x)}, ${Math.round(w.y)})`}</span>`:` <span class="muted">at ${Math.round(w.x)}, ${Math.round(w.y)}</span> <button type="button" class="show-on-map" data-map-kind="spot" data-map-id="${esc(Math.round(w.x)+'|'+Math.round(w.y)+'|'+(label||''))}">Show on map</button>`):'';
     const g=q.giverName?(globalThis.bxcQuestGivers?globalThis.bxcQuestGivers():[]).find(x=>x.name===q.giverName):null;
     const p=!g&&q.giverName&&globalThis.bxcNpcByName?globalThis.bxcNpcByName(q.giverName):null;
     const who=q.giverName?(g||p?`<a href="${esc((g||p).href)}">${esc(q.giverName)}</a>`:esc(q.giverName)):'the quest-giver';
-    const whereGiver=g&&g.where&&g.where[0]?` <span class="muted">(${esc(g.where[0])})</span>`:'';
-    const mapBtn=(g&&g.onMap)||(p&&p.onMap)?` <button type="button" class="show-on-map" data-map-kind="npc" data-map-id="${esc((g||p).slug)}">Show on map</button>`:'';
+    // the quest names which one gives it (q.giverNpcId): its own spot, not the first of everyone with that name
+    const gs=q.giverNpcId&&globalThis.bxcNpcSpot?globalThis.bxcNpcSpot(q.giverNpcId):null,gsOut=gs&&!gs.z;
+    const whereGiver=gsOut?` <span class="muted">(outdoors ${esc(gs.near||'')})</span>`:g&&g.where&&g.where[0]?` <span class="muted">(${esc(g.where[0])})</span>`:'';
+    const mapBtn=gsOut?` <button type="button" class="show-on-map" data-map-kind="spot" data-map-id="${esc(Math.round(gs.x)+'|'+Math.round(gs.y)+'|'+(q.giverName||''))}">Show on map</button>`:(g&&g.onMap)||(p&&p.onMap)?` <button type="button" class="show-on-map" data-map-kind="npc" data-map-id="${esc((g||p).slug)}">Show on map</button>`:'';
     const steps=[`<li value="1">Talk to ${who}${whereGiver} to get the quest.${mapBtn}</li>`];
     // every step known (players who finished it said so): the recorded ones in order, then handing it back in
     const known=QUEST_STEPS_KNOWN[q.questId];
     if(st.length&&known){
-      st.forEach((s,k)=>steps.push(`<li value="${k+2}">${s.text&&!s.objectives.some(o=>o.text===s.text)?`<b>${esc(s.text)}</b><br>`:''}${s.objectives.map(o=>`${objText(o)}${o.required>1?` <span class="muted">(${qn(o.required)})</span>`:''}${o.itemTypeId?' - '+item(o.itemTypeId):''}${where((o.waypoints||[])[0])}${o.after?` <span class="muted">- ${esc(o.after)}</span>`:''}`).join('<br>')}</li>`));
+      st.forEach((s,k)=>steps.push(`<li value="${k+2}">${s.text&&!s.objectives.some(o=>o.text===s.text)?`<b>${esc(s.text)}</b><br>`:''}${s.objectives.map(o=>`${objText(o)}${o.required>1?` <span class="muted">(${qn(o.required)})</span>`:''}${o.itemTypeId?' - '+item(o.itemTypeId):''}${where((o.waypoints||[])[0],o.text)}${o.afterHtml||o.after?` <span class="muted">- ${o.afterHtml||esc(o.after)}</span>`:''}`).join('<br>')}</li>`));
       if(known.handIn)steps.push(`<li value="${st.length+2}">Go back to ${who} to finish the quest.${mapBtn}</li>`);
       return '<ol class="q-steps">'+steps.join('')+'</ol>';
     }
     if(st.length){
-      for(const s of st)steps.push(`<li value="${(s.n||0)+2}">${s.text&&!s.objectives.some(o=>o.text===s.text)?`<b>${esc(s.text)}</b><br>`:''}${s.objectives.map(o=>`${objText(o)}${o.required>1?` <span class="muted">(${qn(o.required)})</span>`:''}${o.itemTypeId?' - '+item(o.itemTypeId):''}${where((o.waypoints||[])[0])}${o.after?` <span class="muted">- ${esc(o.after)}</span>`:''}`).join('<br>')}</li>`);
+      for(const s of st)steps.push(`<li value="${(s.n||0)+2}">${s.text&&!s.objectives.some(o=>o.text===s.text)?`<b>${esc(s.text)}</b><br>`:''}${s.objectives.map(o=>`${objText(o)}${o.required>1?` <span class="muted">(${qn(o.required)})</span>`:''}${o.itemTypeId?' - '+item(o.itemTypeId):''}${where((o.waypoints||[])[0],o.text)}${o.afterHtml||o.after?` <span class="muted">- ${o.afterHtml||esc(o.after)}</span>`:''}`).join('<br>')}</li>`);
       return '<ol class="q-steps">'+steps.join('')+'</ol>'+((st[0].n||0)>0?note('Some steps in between were not recorded.'):'');
     }
     const rep=QUEST_REPORTED_STEPS[q.questId];

@@ -4230,6 +4230,10 @@ function newsHtml(){
       const [z,ai]=zonePlaceId(id),nm=placeName(z,ai),pt=placeEntrancePoint(z,ai);
       return `<p class="map-panel-kind">Cave, mine or building</p><div class="card"><div class="name">${esc(nm)}</div><div class="s muted">${pt?'The way in is circled on the map.':'Its entrance has not been recorded yet.'}</div>${!ai&&typeof zoneQuestNote==='function'?zoneQuestNote(z):''}<button type="button" class="open-zone" data-zone="${z}" data-area="${ai}">Open the layout</button></div>`;
     }
+    if(kind==='spot'){   // one spot outdoors, "x|y|label" (a quest step's place)
+      const [x,y,...l]=id.split('|'),p={x:+x,y:+y};if(!isFinite(p.x)||!isFinite(p.y))return '<p class="muted">Unknown spot.</p>';
+      return `<p class="map-panel-kind">Spot</p>${questRegionNote([p],'It is')}<div class="card"><div class="name">${esc(l.join('|')||'This spot')}</div><div class="s muted">World ${Math.round(p.x)}, ${Math.round(p.y)} · circled on the map</div></div>`;
+    }
     if(kind==='place'){
       const p=(D.pois||[]).find(x=>x.name===id);if(!p)return '<p class="muted">Unknown place.</p>';
       const mons=monsterTypesNear(p,70).filter(t=>!ROAMING_NPC_TYPES.has(t));
@@ -4387,6 +4391,11 @@ function newsHtml(){
       const [z,ai]=zonePlaceId(id),pt=placeEntrancePoint(z,ai);if(!pt){focus(false);return null}
       circlePoints([pt],false);focus(true);if(fit)flyToCluster([pt]);   // the move that the map's edge rule cannot cancel
       return {text:'Entrance to '+placeName(z,ai)+' '+nearText(pt)};
+    }
+    if(kind==='spot'){
+      const [x,y]=id.split('|').map(Number);if(!isFinite(x)||!isFinite(y))return null;
+      circlePoints([{x:x-.5,y:y-.5}],false);focus(true);if(fit)map.setView(latlng({x,y},false),Math.max(map.getZoom(),0));
+      return null;
     }
     if(kind==='place'){
       const p=(D.pois||[]).find(x=>x.name===id);
@@ -4995,6 +5004,8 @@ function newsHtml(){
   }
   // for the guides: every trainer, and (filtered there) the ones for one skill guide
   // a person's page by name (the Quests guide links its quest-givers): null when nobody by that name was recorded
+  // one recorded person by id (several share a name: five Stablemasters), for a quest that names its giver's id
+  globalThis.bxcNpcSpot=id=>{const n=(snapshot?.npcs||[]).find(x=>x&&x.id===id),p=n&&n.position;if(!p||!Number.isFinite(p.x))return null;return {x:p.x,y:p.y,z:p.z||0,near:p.z?null:nearText(p)}};
   globalThis.bxcNpcByName=name=>{const e=namedNpcs().get(npcSlug(name));return e?{slug:e.slug,href:pageHref('npc',e.slug),onMap:e.pts.length>0}:null};
   globalThis.bxcTrainers=()=>trainerList().map(t=>({...t,href:pageHref('npc',t.slug),img:trainerImg(t),where:t.spots.map(trainerWhere)}));
   // the named ones of a type, on the type's page
