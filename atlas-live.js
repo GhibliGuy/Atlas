@@ -17,10 +17,12 @@
     p=p.replace(/(^|\/)index\.html$/,'').replace(/\.html$/,'').replace(/\/$/,'');
     return p?'#/'+p+(location.search||''):(location.hash||'');
   }
-  // Lite start (the website): the map's own slim data, the base file and the pictures list instead of the whole
-  // database; pages, map panels and search come from files drawn at publish, and anything else (the section lists,
-  // cave layouts) loads the whole database the moment it is opened. ?lite=1 turns it on (remembered), ?lite=0 off.
-  const LITE=PUBLIC_MODE&&(()=>{try{const v=new URLSearchParams(location.search).get('lite');if(v==='1'||v==='0')localStorage.setItem('bxcLite',v);return localStorage.getItem('bxcLite')==='1'}catch{return false}})();
+  // Lite start (the website, the normal way in): the map's own slim data, the base file, the pictures and search
+  // lists; pages and map panels come from files drawn at publish, the section lists, guides and calculators from
+  // data/lists.json and cave layouts from data/zones.json, each the first time it is needed. The whole database is
+  // only a fallback (a file missing). ?lite=0 turns it off in this browser (remembered), ?lite=1 back on. The app's
+  // publish draws the pages from the whole database: it opens the site from this computer (127.0.0.1), always full.
+  const LITE=PUBLIC_MODE&&location.hostname!=='127.0.0.1'&&(()=>{try{const v=new URLSearchParams(location.search).get('lite');if(v==='1'||v==='0')localStorage.setItem('bxcLite',v);return localStorage.getItem('bxcLite')!=='0'}catch{return true}})();
   const routeUrl=h=>PATH_MODE&&/^#\//.test(h)?ROUTE_ROOT+h.slice(2):h;
   function isFull(){return !!snapshot&&!snapshot.bxcLite}   // the whole database is in (always, inside the app)
   globalThis.bxcRouteNow=routeNow;globalThis.bxcRouteUrl=routeUrl;
