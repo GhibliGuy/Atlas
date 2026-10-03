@@ -51,6 +51,15 @@ let html = fs.readFileSync(path.join(SRC, 'atlas.html'), 'utf8');
 if (!html.includes('<title>Binxonia Atlas</title>')) throw new Error('atlas.html has no <title>Binxonia Atlas</title> to replace');
 html = html.replace('<title>Binxonia Atlas</title>', '<!--bxc-head-->\n<base href="./">\n<title>Binxonia Atlas</title>\n<!--/bxc-head-->\n' + HEAD_SCRIPT);
 if (FORBIDDEN_RE.test(html)) throw new Error('Refusing to build: atlas.html contains private text');
+// Every script and stylesheet link carries a fingerprint of its file (atlas-live.js?v=<hash>): browsers keep GitHub
+// Pages files for 10 minutes, so without it a visitor right after an update could run a new page with old code. A
+// changed file gets a new address and is fetched fresh; an unchanged one keeps its fingerprint (no new page files).
+const crypto = require('crypto');
+for (const f of CODE_FILES.concat(VENDOR_FILES)) {
+  const v = crypto.createHash('sha1').update(fs.readFileSync(path.join(OUT, f))).digest('hex').slice(0, 10);
+  const esc = f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  html = html.replace(new RegExp(`((?:src|href)=")${esc}(?:\\?v=[0-9a-f]+)?(")`, 'g'), `$1${f}?v=${v}$2`);
+}
 fs.writeFileSync(path.join(OUT, 'index.html'), html);
 // a page file for every guide, item, monster, person and cave, and the 404.html fallback (see build-pages.js)
 const pagesDone = require('./build-pages.js').writePages(OUT);
