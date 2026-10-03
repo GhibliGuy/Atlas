@@ -6,6 +6,11 @@
   // shown-then-disabled, so there is no code path in this mode that could reach a live collector even if one
   // happened to be running on the same machine.
   const PUBLIC_MODE=!!globalThis.BXC_PUBLIC;
+  // The editing tools (moving people and entrances, adding resources and zones): always in the app's own copy, and on
+  // the website only when the collector app opened it and handed it its editing link (window.bxcEdit, a few named
+  // actions and nothing else). A visitor's browser never has that, so they never see the tools.
+  const EDIT=!PUBLIC_MODE||!!(globalThis.bxcEdit&&typeof globalThis.bxcEdit.send==='function');
+  const SITE_EDIT_CMDS=new Set(['set-npc-spot','set-zone-entrance','clear-zone-entrance','set-zone-exit','set-zone-name','set-zone-parent','clear-zone-parent','create-manual-zone','link-manual-zone','delete-zone','create-manual-resource','delete-manual-resource','remove-drop-row','set-place']);
   // Addresses. Inside the app every page is #/<kind>/<id> (it loads from a file). On the website the same pages have
   // clean paths instead, /Atlas/<kind>/<id> (BXC_PATHS: set by the page's head, see atlas-public/build.js): the
   // #/... form stays the one used inside the code and its links, and is turned into a path only at the address bar.
@@ -22,7 +27,9 @@
   // data/lists.json and cave layouts from data/zones.json, each the first time it is needed. The whole database is
   // only a fallback (a file missing). ?lite=0 turns it off in this browser (remembered), ?lite=1 back on. The app's
   // publish draws the pages from the whole database: it opens the site from this computer (127.0.0.1), always full.
-  const LITE=PUBLIC_MODE&&location.hostname!=='127.0.0.1'&&(()=>{try{const v=new URLSearchParams(location.search).get('lite');if(v==='1'||v==='0')localStorage.setItem('bxcLite',v);return localStorage.getItem('bxcLite')!=='0'}catch{return true}})();
+  // (and never while editing: the saved pages and panels are drawn without the editing buttons, so the app's own
+  // editing view of the website draws everything itself from the whole database, like the local copy)
+  const LITE=PUBLIC_MODE&&!globalThis.bxcEdit&&location.hostname!=='127.0.0.1'&&(()=>{try{const v=new URLSearchParams(location.search).get('lite');if(v==='1'||v==='0')localStorage.setItem('bxcLite',v);return localStorage.getItem('bxcLite')!=='0'}catch{return true}})();
   const routeUrl=h=>PATH_MODE&&/^#\//.test(h)?ROUTE_ROOT+h.slice(2):h;
   function isFull(){return !!snapshot&&!snapshot.bxcLite}   // the whole database is in (always, inside the app)
   globalThis.bxcRouteNow=routeNow;globalThis.bxcRouteUrl=routeUrl;
@@ -239,7 +246,11 @@
   }
   function bridgeSend(cmd,extra={}){
     // The public build never has a collector to ask - fail fast instead of a silent 3s timeout on every call.
-    if(PUBLIC_MODE)return Promise.reject(new Error('Not available in the shared Atlas'));
+    if(PUBLIC_MODE){
+      // the website, opened by the app: an edit goes to your collector (and out with the next publish)
+      if(EDIT&&SITE_EDIT_CMDS.has(cmd))return globalThis.bxcEdit.send(cmd,JSON.parse(JSON.stringify(extra||{})));
+      return Promise.reject(new Error('Not available in the shared Atlas'));
+    }
     if(typeof chrome!=='undefined' && chrome.runtime && chrome.runtime.id)return chrome.runtime.sendMessage({cmd,...extra});
     return new Promise((resolve,reject)=>{
       const requestId=`atlas-${Date.now()}-${++requestCounter}`;
@@ -274,7 +285,7 @@
     if(PUBLIC_MODE){
       const cs=document.createElement('span');cs.id='collectorStatus';cs.className='collector-status';
       const status=document.getElementById('status');bar.insertBefore(cs,status);
-      return;
+      if(!EDIT)return;
     }
     const sync=document.createElement('button');sync.id='collectorSync';sync.textContent='Sync now';sync.title='Pull the latest persistent collector database into this page';
     const exp=document.createElement('button');exp.id='collectorExport';exp.textContent='Export data';
@@ -282,8 +293,10 @@
     const mark=document.createElement('button');mark.id='collectorMarkSeen';mark.textContent='Mark seen';mark.title='Reset the new-since-last-visit counters';
     const addZone=document.createElement('button');addZone.id='collectorAddZone';addZone.textContent='Add zone';addZone.title='Click, then click a spot on the map to manually place a named zone/entrance marker there';
     const addRes=document.createElement('button');addRes.id='collectorAddResource';addRes.textContent='Add resource';addRes.title='Pick a skill and a resource, then click the map to place it there by hand';
-    const cs=document.createElement('span');cs.id='collectorStatus';cs.className='collector-status';cs.textContent='Collector: checking…';
-    const status=document.getElementById('status');bar.insertBefore(sync,status);bar.insertBefore(exp,status);bar.insertBefore(imp,status);bar.insertBefore(mark,status);bar.insertBefore(addZone,status);bar.insertBefore(addRes,status);bar.insertBefore(cs,status);
+    const status=document.getElementById('status');
+    if(PUBLIC_MODE){const cs0=document.getElementById('collectorStatus');bar.insertBefore(addZone,cs0||status);bar.insertBefore(addRes,cs0||status)}   // (the website: just the two placing tools)
+    else{const cs=document.createElement('span');cs.id='collectorStatus';cs.className='collector-status';cs.textContent='Collector: checking…';
+      bar.insertBefore(sync,status);bar.insertBefore(exp,status);bar.insertBefore(imp,status);bar.insertBefore(mark,status);bar.insertBefore(addZone,status);bar.insertBefore(addRes,status);bar.insertBefore(cs,status)}
     addRes.onclick=()=>{if(state.addResourceArmed){cancelResourcePlacement();return}openAddResourceDialog()};
     sync.title='Back up the collector data (if it changed since the last backup), then pull the latest into this page';sync.onclick=syncAndBackup;exp.onclick=()=>bridgeRequest('open-export').catch(err=>setCollectorStatus('Collector: '+err.message));
     imp.onclick=()=>bridgeRequest('open-import').catch(err=>setCollectorStatus('Collector: '+err.message));
@@ -370,7 +383,10 @@
       updatePlacementCursor(true);
     },0);
   }
-  function setCollectorStatus(t){const el=document.getElementById('collectorStatus');if(el)el.textContent=t}
+  function setCollectorStatus(t){const el=document.getElementById('collectorStatus');if(!el)return;
+    // on the website (opened by the app, editing): an edit's message also says when the website catches up
+    if(PUBLIC_MODE&&EDIT&&/^Collector: (?!checking|syncing)/.test(String(t))&&!/^Collector: .*(error|failed|not )/i.test(String(t))){t=String(t).replace(/^Collector: /,'');t=t.charAt(0).toUpperCase()+t.slice(1)+' — saved in your collector; the website shows it after the next publish, in a few minutes'}
+    el.textContent=t}
   // A bar on the map while a click there is awaited (the layout panel is out of the way), with Cancel and Esc.
   let placementBannerEl=null,placementBannerCancel=null;
   function mapPlacementBanner(html,onCancel){
@@ -682,7 +698,7 @@
   function manualLocationsHtml(r){
     const list=(state.manualResources||[]).filter(m=>!m.hidden&&m.key===r.key);
     if(!list.length)return '';
-    return `<div class="s">${list.map(m=>`Added by you at ${esc(fmt(m.x,1))}, ${esc(fmt(m.y,1))}${PUBLIC_MODE?'':` <button type="button" class="manualres-remove" data-id="${esc(m.id)}" title="Remove this manually added location">Remove</button>`}`).join('<br>')}</div>`;
+    return `<div class="s">${list.map(m=>`Added by you at ${esc(fmt(m.x,1))}, ${esc(fmt(m.y,1))}${!EDIT?'':` <button type="button" class="manualres-remove" data-id="${esc(m.id)}" title="Remove this manually added location">Remove</button>`}`).join('<br>')}</div>`;
   }
   function resourcesHtml(search=''){
     const s=String(search||'').toLowerCase().trim();
@@ -1927,7 +1943,7 @@ function zonesHtml(search=''){
   const zoneCard=r=>{
     const parentName=r.parentZ!=null?(state.zones.get(r.parentZ)?.name||('Zone '+r.parentZ)):null;
     const statusLine=parentName?`Inside ${esc(parentName)}`:(r.entrance?.manual?'Manually placed entrance':r.entrance?`Entrance located from ${fmt(r.entrance.samples)} visit${r.entrance.samples===1?'':'s'}`:'Entrance location not yet observed');
-    const writeButtons=PUBLIC_MODE?'':`<button type="button" class="zoneedit-btn" data-zone="${r.z}">Edit</button>`;
+    const writeButtons=!EDIT?'':`<button type="button" class="zoneedit-btn" data-zone="${r.z}">Edit</button>`;
     const own=[{z:r.z,area:null}];
     const meta=[r.pvpMode&&r.pvpMode!=='none'?esc(prettyId(r.pvpMode)):'',placeLife(life,own),r.objectCount?fmt(r.objectCount)+' resource'+(r.objectCount===1?'':'s'):''].filter(Boolean).join(' · ');
     const hasLayout=tilesByZ.get(r.z)||objsByZ.get(r.z);
@@ -2030,13 +2046,13 @@ function zoneOverlayContent(z){
     const kick=dgKey!=null?'Dungeon room':floor?'A floor of '+esc(floor):parentName?'Inside '+esc(parentName):'Cave, mine or building';
     const title=dgKey!=null?nm+' · '+(roomLabelFor(z)||''):floor||nm;
     return `<div class="zn-kicker">${kick}</div><div class="zn-ov-title">${esc(title)}</div>`})()}</div>
-  <div class="zn-ov-tools">${PUBLIC_MODE?'':zoneEditMenuHtml(z,r,parentName)}<button type="button" id="zoneOverlayClose" class="zn-ov-close" title="Close">×</button></div>
+  <div class="zn-ov-tools">${!EDIT?'':zoneEditMenuHtml(z,r,parentName)}<button type="button" id="zoneOverlayClose" class="zn-ov-close" title="Close">×</button></div>
   </div>
   ${roomBannerHtml(z)}
   ${zoneQuestNote(z)}
   ${parentName&&!(state.dungeonOfZone?.has(z)&&state.dungeonOfZone.get(z)===state.dungeonOfZone.get(r.parentZ))?`<div class="muted" style="margin:-4px 0 6px">Inside <a href="#" id="zoneOverlayParentLink" data-parent-zone="${r.parentZ}">${esc(parentName)}</a> — click to go back</div>`:''}
   ${childExitNames.length?`<div class="muted" style="margin:-4px 0 6px">Leads to: ${childExitNames.map(esc).join(', ')} — click its door on the layout to go there</div>`:''}
-  ${PUBLIC_MODE?'':zoneModeBarHtml(z,parentName)}
+  ${!EDIT?'':zoneModeBarHtml(z,parentName)}
   <div class="zn-meta">${[r.pvpMode&&r.pvpMode!=='none'?esc(prettyId(r.pvpMode)):'',monsterRows.length?fmt(monsterRows.length)+' monster type'+(monsterRows.length===1?'':'s'):'',peopleRows.length?fmt(peopleRows.length)+(peopleRows.length===1?' person':' people'):'',objectRows.length?fmt(objectRows.length)+' resource'+(objectRows.length===1?'':'s'):'',!monsterRows.length&&!peopleRows.length&&!objectRows.length?'Nothing seen inside yet':''].filter(Boolean).join(' · ')}</div>
   <div class="zn-zoom"><button type="button" id="zoneDetailZoomOut" title="Zoom out">−</button><button type="button" id="zoneDetailZoomReset" title="Reset zoom">${Math.round(getZoneZoom(z)*100)}%</button><button type="button" id="zoneDetailZoomIn" title="Zoom in">+</button><span class="zn-legend">Scroll over the layout to zoom, drag to pan. <i class="zn-dot" style="background:#5fd38a"></i>way outside <i class="zn-dot" style="background:#ffd54a"></i>way back</span></div>
   ${zoneHasLayout(z)?'':`<div class="note" style="margin:0 0 8px"><b>Nothing recorded inside this one yet.</b> ${r.entrance?.manual||state.zones.get(z)?.manual?'You placed this entrance by hand, so it has no layout of its own. Walk inside with the collector running and it fills in automatically. If this place is already recorded under another zone, use <b>Edit ▾ → Link to a recorded place</b> to attach this entrance to it (nothing recorded is deleted).':'The layout will appear as data for it comes in.'}</div>`}
@@ -3337,7 +3353,7 @@ function newsHtml(){
       else{const st=manualMarkerStyle(m.skill);cm=L.circleMarker(pos,{radius:5,weight:2,color:st.color,fillColor:st.fillColor,fillOpacity:1})}
       cm.bindTooltip(tooltipManualResource(m),{sticky:true});
       cm.on('click',ev=>{if(armedPassthrough(ev))return;goToCard('resources','r',m.key)});
-      if(!PUBLIC_MODE)cm.on('contextmenu',ev=>{if(ev.originalEvent)L.DomEvent.preventDefault(ev.originalEvent);removeManualResource(m)});
+      if(EDIT)cm.on('contextmenu',ev=>{if(ev.originalEvent)L.DomEvent.preventDefault(ev.originalEvent);removeManualResource(m)});
       cm.addTo(getResourceLayer(m.key));
       if(!state.resourceMarkersByType.has(m.key))state.resourceMarkersByType.set(m.key,[]);
       state.resourceMarkersByType.get(m.key).push(cm);
@@ -3993,7 +4009,9 @@ function newsHtml(){
     if(s.snapStamps){const v={...(heldStamps&&heldStamps.boot===s.snapStamps.boot?heldStamps.v:{}),...s.snapStamps.v};heldStamps={boot:s.snapStamps.boot,v}}
     delete s.same;delete s.snapStamps;return s;
   }
-  async function syncNow(quiet){if(syncing)return;syncing=true;if(quiet!==true)setCollectorStatus('Collector: syncing…');try{
+  // (on the website, after an edit: it is saved in your collector and goes out with the next publish)
+  if(PUBLIC_MODE&&EDIT)globalThis.bxcSiteEditSaved=()=>{setCollectorStatus('Saved in your collector \u2014 the website shows it after the next publish, in a few minutes (reload then)');return Promise.resolve()};
+  async function syncNow(quiet){if(PUBLIC_MODE){return EDIT&&globalThis.bxcSiteEditSaved?globalThis.bxcSiteEditSaved():undefined}if(syncing)return;syncing=true;if(quiet!==true)setCollectorStatus('Collector: syncing…');try{
     let s=takeSame(await bridgeRequest('get-snapshot',{knownAssets:knownAssetSigs(),have:haveStamps()}));
     if(!rehydrateAssets(s)){assetStore.clear();heldStamps=null;s=takeSame(await bridgeRequest('get-snapshot'));rehydrateAssets(s)}
     if(quiet===true&&snapshot&&snapSig(s,true)===lastFullSig){state.lastSyncAt=Date.now();updateStatus();return}
@@ -4341,7 +4359,7 @@ function newsHtml(){
     if(kind==='npc'){
       const e=namedNpcs().get(id);if(!e)return '<p class="muted">Not met yet.</p>';
       const lv=[...e.levels.keys()].sort((a,b)=>a-b);
-      return `<p class="map-panel-kind">Named ${esc(prettyId(e.typeId))}</p><div class="card"><div class="name">${esc(e.name)}</div><div class="s muted">${lv.length?'Level '+(lv.length>1?lv[0]+'–'+lv[lv.length-1]:lv[0])+' · ':''}seen ${fmt(e.seen)}×</div></div><a class="map-panel-open" href="${pageHref('npc',id)}">Open the full page →</a>${PUBLIC_MODE?'':`<div class="npc-edit"><button type="button" class="npc-move" data-name="${esc(e.name)}">Move on the map</button>${npcSpotOf(e.name)?`<button type="button" class="npc-reset" data-name="${esc(e.name)}">Use the recorded spot</button>`:''}</div>`}`;
+      return `<p class="map-panel-kind">Named ${esc(prettyId(e.typeId))}</p><div class="card"><div class="name">${esc(e.name)}</div><div class="s muted">${lv.length?'Level '+(lv.length>1?lv[0]+'–'+lv[lv.length-1]:lv[0])+' · ':''}seen ${fmt(e.seen)}×</div></div><a class="map-panel-open" href="${pageHref('npc',id)}">Open the full page →</a>${!EDIT?'':`<div class="npc-edit"><button type="button" class="npc-move" data-name="${esc(e.name)}">Move on the map</button>${npcSpotOf(e.name)?`<button type="button" class="npc-reset" data-name="${esc(e.name)}">Use the recorded spot</button>`:''}</div>`}`;
     }
     if(kind==='zone'){
       const [z,ai]=zonePlaceId(id),nm=placeName(z,ai),pt=placeEntrancePoint(z,ai);
