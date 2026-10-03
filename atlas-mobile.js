@@ -58,6 +58,7 @@
     nav.querySelectorAll('button[data-i]').forEach(b => { const t = TABS[+b.dataset.i]; b.classList.toggle('on', !home && !!t[2] && !!cur && cur.matches(t[2])); });
   }
   addEventListener('hashchange', () => setTimeout(paint, 60));
+  document.addEventListener('bxc-route', () => setTimeout(paint, 60));   // the website's clean addresses
   document.addEventListener('click', () => setTimeout(paint, 60), true);
   new MutationObserver(() => paint()).observe(document.body, { childList: true });
 

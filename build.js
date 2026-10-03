@@ -36,14 +36,27 @@ fs.cpSync(path.join(SRC, 'tiles'), path.join(OUT, 'tiles'), { recursive: true })
 // index.html is atlas.html itself, plus one injected line (window.BXC_PUBLIC=true, read once at the top of
 // atlas-live.js) and one changed data-loading detail: fetch('data/snapshot.json') instead of a live bridge -
 // atlas-live.js already knows to do this itself once PUBLIC_MODE is on, so nothing else here needs to differ.
+//
+// Every page's head starts with a <base> (page files sit at different depths, so their scripts and data load from the
+// site's top folder), its title and link-preview tags (build-pages.js fills these in per page), then the flag that
+// this is the website and the clean-address setup: the site's top folder (BXC_PATHS.root, from the <base>), an old
+// #/... link turned into its clean address in place, and whether the address is a page of its own (BXC_DEEP: then
+// the start page is skipped). Inside the app none of this runs (it loads atlas.html from a file, with #/... links).
+const HEAD_SCRIPT = String.raw`<script>window.BXC_PUBLIC=true;(function(){try{if(!/^https?:$/.test(location.protocol))return;` +
+  String.raw`var root=new URL(document.baseURI).pathname;window.BXC_PATHS={root:root};var h=location.hash;` +
+  String.raw`if(/^#\//.test(h)){history.replaceState(null,"",root+h.slice(2))}` +
+  String.raw`var p=location.pathname;p=p.indexOf(root)===0?p.slice(root.length):"";p=p.replace(/(^|\/)index\.html$/,"").replace(/\.html$/,"").replace(/\/$/,"");` +
+  String.raw`window.BXC_DEEP=!!p}catch(e){}})();</script>`;
 let html = fs.readFileSync(path.join(SRC, 'atlas.html'), 'utf8');
-if (!html.includes('BXC_PUBLIC')) {
-  html = html.replace('<title>Binxonia Atlas</title>', '<title>Binxonia Atlas</title>\n<script>window.BXC_PUBLIC=true;</script>');
-}
+if (!html.includes('<title>Binxonia Atlas</title>')) throw new Error('atlas.html has no <title>Binxonia Atlas</title> to replace');
+html = html.replace('<title>Binxonia Atlas</title>', '<!--bxc-head-->\n<base href="./">\n<title>Binxonia Atlas</title>\n<!--/bxc-head-->\n' + HEAD_SCRIPT);
 if (FORBIDDEN_RE.test(html)) throw new Error('Refusing to build: atlas.html contains private text');
 fs.writeFileSync(path.join(OUT, 'index.html'), html);
+// a page file for every guide, item, monster, person and cave, and the 404.html fallback (see build-pages.js)
+const pagesDone = require('./build-pages.js').writePages(OUT);
 
 console.log('Built atlas-public/ from', SRC);
+console.log('Pages:', pagesDone.pages, 'listed,', pagesDone.changed, 'written,', pagesDone.removed, 'removed');
 console.log('Copied:', CODE_FILES.concat(VENDOR_FILES).join(', '), 'and tiles/');
 console.log('Wrote index.html (with window.BXC_PUBLIC=true)');
 console.log('Note: data/snapshot.json was NOT touched - run build-snapshot.js separately to refresh data.');

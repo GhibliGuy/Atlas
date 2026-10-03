@@ -133,7 +133,7 @@
     el.querySelector('.splash-search').addEventListener('submit',e=>{e.preventDefault();search(el.querySelector('#splashQ').value)});
     el.querySelector('.splash-enter').addEventListener('click',()=>go('map'));
     el.addEventListener('click',e=>{const b=e.target.closest('.splash-tile');if(b){go(TILES[+b.dataset.i][0]);return}
-      const f=e.target.closest('.splash-feature-go');if(f){close();location.hash='#/monster/'+encodeURIComponent(f.dataset.monster);return}
+      const f=e.target.closest('.splash-feature-go');if(f){close();(globalThis.bxcGo||(h=>{location.hash=h}))('#/monster/'+encodeURIComponent(f.dataset.monster));return}
       if(e.target.closest('.splash-new a'))close()});
     el.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close()}});
   }
@@ -203,7 +203,7 @@
     addEventListener('mouseup',e=>{if(e.button===3){e.preventDefault();goBack()}});
     addEventListener('keydown',e=>{if(e.altKey&&e.key==='ArrowLeft'&&!e.ctrlKey&&!e.metaKey){e.preventDefault();goBack()}});
   }
-  const deepLink=/[#&](monster|item)=/.test(location.hash)||/^#\/./.test(location.hash);
+  const here=globalThis.bxcRouteNow?globalThis.bxcRouteNow():location.hash,deepLink=/[#&](monster|item)=/.test(here)||/^#\/./.test(here);
   if(!deepLink&&get(SKIP_KEY)!=='1')open();
   document.documentElement.classList.remove('splash-pending');   // set early in atlas.html so the Atlas does not flash first
   for(const ms of [800,2500,6000])setTimeout(()=>{if(el&&!el.hidden)refreshCounts()},ms);

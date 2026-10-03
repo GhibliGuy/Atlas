@@ -6,6 +6,19 @@
   // shown-then-disabled, so there is no code path in this mode that could reach a live collector even if one
   // happened to be running on the same machine.
   const PUBLIC_MODE=!!globalThis.BXC_PUBLIC;
+  // Addresses. Inside the app every page is #/<kind>/<id> (it loads from a file). On the website the same pages have
+  // clean paths instead, /Atlas/<kind>/<id> (BXC_PATHS: set by the page's head, see atlas-public/build.js): the
+  // #/... form stays the one used inside the code and its links, and is turned into a path only at the address bar.
+  const PATH_MODE=!!(PUBLIC_MODE&&globalThis.BXC_PATHS&&/^https?:$/.test(location.protocol));
+  const ROUTE_ROOT=PATH_MODE?globalThis.BXC_PATHS.root:'';
+  function routeNow(){
+    if(!PATH_MODE)return location.hash||'';
+    let p=location.pathname;p=p.startsWith(ROUTE_ROOT)?p.slice(ROUTE_ROOT.length):p.replace(/^\//,'');
+    p=p.replace(/(^|\/)index\.html$/,'').replace(/\.html$/,'').replace(/\/$/,'');
+    return p?'#/'+p+(location.search||''):(location.hash||'');
+  }
+  const routeUrl=h=>PATH_MODE&&/^#\//.test(h)?ROUTE_ROOT+h.slice(2):h;
+  globalThis.bxcRouteNow=routeNow;globalThis.bxcRouteUrl=routeUrl;
   const ATLAS='binxonia-atlas', BRIDGE='binxonia-research-collector-bridge';
   const LAST_SEEN_KEY='binxoniaAtlasCollectorLastSeenV2';
   const ROAMING_NPC_TYPES=new Set(['human']);
@@ -2042,7 +2055,7 @@ function ensureZoneOverlay(){
     if(e.target.closest('.zmon-pop-x')){zmonSelect(null);return;}
     { const zm=!e.target.closest('.zmon-pop')&&e.target.closest('.zmon,tr[data-zmon-type],tr[data-zmon-name]');if(zm){zmonSelect(zm,e);return;} }
     const monsterRow=e.target.closest('.monsterlink');
-    if(monsterRow&&monsterRow.dataset.npc){closeZoneOverlay();location.hash='#/npc/'+encodeURIComponent(monsterRow.dataset.npc);return;}
+    if(monsterRow&&monsterRow.dataset.npc){closeZoneOverlay();goRoute('#/npc/'+encodeURIComponent(monsterRow.dataset.npc));return;}
     if(monsterRow){goToMonsterCard(monsterRow.dataset.monster);return;}
     const iconLink=e.target.closest('.dropicon-link');
     if(iconLink){goToItemCard(iconLink.dataset.item);return;}
@@ -4452,7 +4465,7 @@ function newsHtml(){
   // in-game target card (#monster=<id>&t=...) still open the monster.
   const PAGE_TAB={monster:'monsters',npc:'monsters',item:'items',resource:'resources',guide:'guides'};
   const PAGE_SECTION={monster:['monsters','Bestiary'],npc:['monsters','Bestiary'],item:['items','Items'],resource:['resources','Resources'],guide:['guides','Guides']};
-  var pageNow=null,lastRoute=location.hash||'',routing=false;   // var: read by augmentCurrentTab, which can run first
+  var pageNow=null,lastRoute=routeNow(),routing=false;   // var: read by augmentCurrentTab, which can run first
   const tabKey=b=>b.dataset.calc?'calc-'+b.dataset.calc:b.dataset.ggroup?'guides-'+b.dataset.ggroup:b.dataset.gpage?'guide-'+b.dataset.gpage:b.dataset.tab;
   const tabButton=key=>[...document.querySelectorAll('.tab')].find(b=>tabKey(b)===key);
   const pageHref=(kind,id)=>'#/'+kind+'/'+encodeURIComponent(id);
@@ -4464,7 +4477,18 @@ function newsHtml(){
     document.dispatchEvent(new Event('bxc-nav'))}
   globalThis.bxcNavDepth=()=>navDepth;
   let restoringRoute=false;   // while a Back/Forward step is being shown, a page it settles on replaces that step
-  function setRoute(h){if(h===lastRoute&&location.hash===h)return;lastRoute=h;if(location.hash!==h&&restoringRoute){try{history.replaceState({bxcDepth:navDepth},'',h)}catch(_){}return}if(location.hash!==h){try{history.pushState({bxcDepth:navDepth+1},'',h);navDepth++;document.dispatchEvent(new Event('bxc-nav'))}catch{location.hash=h}}}
+  function setRoute(h){const now=routeNow();if(h===lastRoute&&now===h)return;lastRoute=h;if(now!==h&&restoringRoute){try{history.replaceState({bxcDepth:navDepth},'',routeUrl(h))}catch(_){}return}if(now!==h){try{history.pushState({bxcDepth:navDepth+1},'',routeUrl(h));navDepth++;document.dispatchEvent(new Event('bxc-nav'))}catch{if(!PATH_MODE)location.hash=h}}}
+  // going to a page from code (a clicked row, a map marker): a new history step, then the page
+  function goRoute(h){
+    if(!PATH_MODE){location.hash=h;return}
+    if(h!==routeNow()){try{history.pushState({bxcDepth:navDepth+1},'',routeUrl(h));navDepth++;document.dispatchEvent(new Event('bxc-nav'))}catch(_){location.href=routeUrl(h);return}}
+    openFromHash();document.dispatchEvent(new Event('bxc-route'));
+  }
+  globalThis.bxcGo=goRoute;
+  // on the website the browser tab names the page that is open (its heading, else the section)
+  let titleT=0;
+  function syncTitle(){if(!PUBLIC_MODE)return;clearTimeout(titleT);titleT=setTimeout(()=>{const h=document.querySelector('#content h1')||document.getElementById('sectionTitle'),t=(h&&h.textContent.trim())||(document.querySelector('.tab.on:not(.bxc-menu-btn)')?.textContent.trim()||'');document.title=(t&&t!=='Binxonia Atlas'?t+' - ':'')+'Binxonia Atlas'},120)}
+  document.addEventListener('bxc-route',syncTitle);document.addEventListener('bxc-nav',syncTitle);
   function clickTab(b){routing=true;try{b.click()}finally{routing=false}}
   // a section clicked in the menu becomes a history step too
   document.addEventListener('click',e=>{const b=e.target.closest('.tab:not(.bxc-menu-btn)');if(!b||routing)return;   // not the menu buttons themselves
@@ -4720,7 +4744,7 @@ function newsHtml(){
     const en=hit&&c>0?{ench:hit[0],c}:null,ea=en?wEnchAdd(g,en):null;
     return {base:gearStats(g,t).main,key:hit?hit[0]:null,add:ea?ea.txt:null,total:ea?gearStats(g,t,en).main:null,glow:en&&/^(weapon|staff)$/.test(g.type)?'e-glow-'+en.ench:''}};
   // "Plan it on Quality & enchanting" opens that page with this item picked
-  document.addEventListener('click',e=>{const tr=e.target.closest('tr[data-href]');if(tr&&!e.target.closest('a,button'))location.hash=tr.dataset.href});
+  document.addEventListener('click',e=>{const tr=e.target.closest('tr[data-href]');if(tr&&!e.target.closest('a,button'))goRoute(tr.dataset.href)});
   document.addEventListener('click',e=>{const a=e.target.closest('[data-qe]');if(a)window.bxcQEPreselect=a.dataset.qe},true);
   // ---- Monster levels ---------------------------------------------------------------------------------------
   // One monster type spawns at several levels. The game works its stats out from the level (rules file): HP =
@@ -4968,7 +4992,7 @@ function newsHtml(){
       const icon=L.divIcon({className:'bxc-questlock',html:`<span>🔒 ${esc(q.place)}<small>needs ${esc(quest.name||q.questName)}</small></span>`,iconSize:null,iconAnchor:[0,0]});
       const m=L.marker(latlng(c,true),{icon,zIndexOffset:400,keyboard:false});
       m.bindTooltip(`<b>${esc(q.place)}</b><br>Reached only after finishing ${esc(quest.name||q.questName)}${quest.giverName?' ('+esc(quest.giverName)+')':''}`,{direction:'top'});
-      m.on('click',ev=>{if(armedPassthrough(ev))return;location.hash=questHref(quest)});
+      m.on('click',ev=>{if(armedPassthrough(ev))return;goRoute(questHref(quest))});
       m.addTo(questGiverLayer)}
     // one marker per person and spot (a person placed by hand has just the one)
     for(const t of questGiverList())for(const s of t.spots){if(!s.pt)continue;{
@@ -4977,7 +5001,7 @@ function newsHtml(){
         m.bindTooltip(`<b>${esc(t.name)}</b>${t.quests.length?'<br>'+t.quests.map(q=>esc(q.name)).join('<br>'):'<br><span style="opacity:.8">Has quests (none recorded yet)</span>'}<br>${esc(trainerWhere(s))}`,{direction:'top'});
         m.on('click',ev=>{if(armedPassthrough(ev))return;
           if(s.indoors){if(!state.zoneArea)state.zoneArea=new Map();state.zoneArea.set(s.z,s.area);lastRenderedZoneOverlayZ=null}
-          if(onMapPage())openMapPanel('npc',t.slug,{});else location.hash=pageHref('npc',t.slug)});
+          if(onMapPage())openMapPanel('npc',t.slug,{});else goRoute(pageHref('npc',t.slug))});
         m.addTo(questGiverLayer);
       }
     }
@@ -4997,7 +5021,7 @@ function newsHtml(){
         m.bindTooltip(`<b>${esc(t.name)}</b>${t.skill?' — teaches '+esc(t.skill):''}<br>${esc(trainerWhere(s))}`,{direction:'top'});
         m.on('click',ev=>{if(armedPassthrough(ev))return;
           if(s.indoors){if(!state.zoneArea)state.zoneArea=new Map();state.zoneArea.set(s.z,s.area);lastRenderedZoneOverlayZ=null}
-          if(onMapPage())openMapPanel('npc',t.slug,{});else location.hash=pageHref('npc',t.slug)});
+          if(onMapPage())openMapPanel('npc',t.slug,{});else goRoute(pageHref('npc',t.slug))});
         m.addTo(trainerLayer);
       }
     }
@@ -5158,7 +5182,7 @@ function newsHtml(){
   }
   // Reading the address: Back/Forward, a clicked link, or a link someone shared.
   function handleRoute(force){
-    const h=location.hash||'';
+    const h=routeNow();
     if(!force&&h===lastRoute)return;
     lastRoute=h;
     const old=/(?:^#|&)(monster|item)=([^&]+)/.exec(h);
@@ -5314,8 +5338,8 @@ function newsHtml(){
     // the reader has started using it (then it is left alone - the tab's own live refresh fills in the rest)
     // the quest pages and lists are built from the data alone and have nothing to type into, so they are always
     // drawn again once it is in (they were showing "Nothing recorded yet" when drawn before it arrived)
-    const dataPage=/^#\/(guide\/quests?|guide\/quest-|guides-quests|npc\/)/.test(location.hash);
-    if(!routedOnce){routedOnce=true;if(location.hash&&(dataPage||!(routedEarly&&touchedEarly)))handleRoute(true);return}
+    const here=routeNow(),dataPage=/^#\/(guide\/quests?|guide\/quest-|guides-quests|npc\/)/.test(here);
+    if(!routedOnce){routedOnce=true;if(here&&(dataPage||!(routedEarly&&touchedEarly)))handleRoute(true);return}
     handleRoute(false);
   }
   // On a load or Reload panels, pages that do not need the collector's data (guides, calculators, lists) open at once
@@ -5324,14 +5348,31 @@ function newsHtml(){
   // not already opened it
   function routeEarly(){
     if(routedOnce)return;
-    const h=location.hash||'',a=h.replace(/^#\/?/,'').split(/[/?]/)[0];
+    const h=routeNow(),a=h.replace(/^#\/?/,'').split(/[/?]/)[0];
     if(!a||/[=&]/.test(a)||['map','zone','search','monster','npc','item','resource'].includes(a))return;
     try{handleRoute(true);routedEarly=true}catch(e){console.warn('[atlas] early route',e);lastRoute=null}
     const mark=()=>{touchedEarly=true};content?.addEventListener('input',mark,{once:true});content?.addEventListener('mousedown',mark,{once:true});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',routeEarly,{once:true});else setTimeout(routeEarly,0);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(openFromHash,150)});
-  window.addEventListener('hashchange',()=>{syncNavDepth();restoringRoute=true;try{openFromHash()}finally{restoringRoute=false}});
+  window.addEventListener('hashchange',()=>{
+    // on the website an old #/... link (or one typed in) becomes its clean path in place
+    if(PATH_MODE&&/^#\//.test(location.hash)){try{history.replaceState(history.state,'',routeUrl(location.hash))}catch(_){}}
+    syncNavDepth();restoringRoute=true;try{openFromHash()}finally{restoringRoute=false}document.dispatchEvent(new Event('bxc-route'))});
+  if(PATH_MODE){
+    window.addEventListener('popstate',()=>{syncNavDepth();restoringRoute=true;try{openFromHash()}finally{restoringRoute=false}document.dispatchEvent(new Event('bxc-route'))});
+    // links are written #/... ; a plain click opens the page in place, and a link shows (and copies, and opens in a
+    // new tab as) its clean address from the moment the pointer or keyboard reaches it
+    const toPath=a=>{const h=a.getAttribute('href');if(h&&/^#\//.test(h)){a.dataset.route=h;a.setAttribute('href',routeUrl(h))}};
+    for(const ev of ['pointerover','focusin','contextmenu'])document.addEventListener(ev,e=>{const a=e.target.closest&&e.target.closest('a[href^="#/"]');if(a)toPath(a)},true);
+    document.addEventListener('click',e=>{
+      if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;
+      const a=e.target.closest&&e.target.closest('a[href]');if(!a||(a.target&&a.target!=='_self'))return;
+      const raw=a.dataset.route||a.getAttribute('href');
+      if(raw==='#'){e.preventDefault();return}   // a link that is really a button: never a trip to the home page
+      if(/^#\//.test(raw)){e.preventDefault();goRoute(raw)}
+    });
+  }
   if(PUBLIC_MODE){
     // One fetch, once, ever - no live collector to re-sync with or poll. applySnapshot() itself already calls
     // openFromHash once the data's in, same as the live path below.
