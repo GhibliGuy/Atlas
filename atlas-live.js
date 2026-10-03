@@ -4686,7 +4686,7 @@ function newsHtml(){
     if(liveStale)deriveLive();
     const {kind,id}=pageNow;
     if(kind==='item')setTimeout(autoMarket,0);
-    content.innerHTML=kind==='monster'?monsterPageHtml(id):kind==='npc'?npcPageHtml(id):kind==='item'?itemPageHtml(id):kind==='guide'?(globalThis.bxcGuides?.pageHtml(id)||''):resourcePageHtml(id);
+    content.innerHTML=(kind==='monster'?monsterPageHtml(id):kind==='npc'?npcPageHtml(id):kind==='item'?itemPageHtml(id):kind==='guide'?(globalThis.bxcGuides?.pageHtml(id)||''):resourcePageHtml(id));applyPageEdits(content,kind,id);pgShowBtn();
     pageHeading();
     if(kind==='guide'&&id==='gems'){globalThis.bxcGemWitchPlan?.();globalThis.bxcGemMineRefresh?.()}
     if(kind==='resource')showResourceSelection(id,true);   // the map is beside the Resources section
@@ -5552,8 +5552,130 @@ function newsHtml(){
   function qeEntries(){try{return globalSearchEntries()}catch{return []}}
   const qeMapTarget=href=>{let m=String(href||'').match(/^#\/(npc|monster|item|resource|zone)\/(.+)$/);if(m){try{return [m[1],decodeURIComponent(m[2])]}catch{return [m[1],m[2]]}}m=String(href||'').match(/^#\/map\/place\/(.+)$/);if(m){try{return ['place',decodeURIComponent(m[1])]}catch{return ['place',m[1]]}}return null};
   function qeInsert(text,into,at){if(!into&&qeCaret&&document.contains(qeCaret.ta)){into=qeCaret.ta;at=qeCaret.pos}const ta=into&&document.contains(into)?into:qeFocus&&document.contains(qeFocus)?qeFocus:qeEl?.querySelector('textarea');if(!ta)return;const a=at!=null?at:ta.selectionStart??ta.value.length,b=at!=null?at:ta.selectionEnd??a;ta.value=ta.value.slice(0,a)+text+ta.value.slice(b);ta.selectionStart=ta.selectionEnd=a+text.length;qeCaret={ta,pos:a+text.length};ta.dispatchEvent(new Event('input',{bubbles:true}));ta.focus()}
-  function qeSync(){if(!qeEl||!qeState)return;qeState.steps=[...qeEl.querySelectorAll('.qe-step textarea')].map(t=>t.value);qeState.notes=qeEl.querySelector('#qeNotes').value;qeState.done=qeEl.querySelector('#qeDone').checked}
-  function qePreview(){if(!qeEl)return;qeSync();const r=globalThis.bxcEditText||(x=>esc(x));qeEl.querySelector('#qePreview').innerHTML='<ol class="q-steps">'+qeState.steps.filter(x=>x.trim()).map(x=>'<li>'+r(x)+'</li>').join('')+'</ol>'+(qeState.notes.trim()?'<div class="q-notes">'+r(qeState.notes)+'</div>':'')}
+  function qeSync(){if(!qeEl||!qeState||qeState.mode)return;qeState.steps=[...qeEl.querySelectorAll('.qe-step textarea')].map(t=>t.value);qeState.notes=qeEl.querySelector('#qeNotes').value;const dn=qeEl.querySelector('#qeDone');qeState.done=dn?dn.checked:false}
+  // ---- Edit page: any section of any page -----------------------------------------------------------------------
+  // page-edits.js "<kind>:<id>" (a quest's page: "quest:<questId>", beside its steps) -> sections: {<section>: {top,
+  // end, replace, hide}} and added: [{id, after, title, text}]. Laid over the drawn page (and the pages drawn ahead for
+  // the website), so the page's own data keeps updating around your text. "_intro" is the part above the first heading.
+  var pgEditing=false;   // var: the page can be drawn before this part runs
+  function pgKey(kind,id){return kind==='guide'&&/^quest-/.test(id)?'quest:'+String(id).slice(6):kind+':'+id}
+  function pgEntry(key){return ((globalThis.BXC_PAGE_EDITS||{}).pages||{})[key]||{}}
+  function pgSlug(t){return String(t||'').toLowerCase().replace(/\(.*?\)/g,'').replace(/[0-9]+/g,'').replace(/[^a-z]+/g,'-').replace(/^-|-$/g,'')||'section'}
+  function pgText(t){return '<div class="q-notes pg-text">'+(globalThis.bxcEditText||esc)(t)+'</div>'}
+  function pgHeadText(h){const c=h.cloneNode(true);c.querySelectorAll('.pg-btn').forEach(b=>b.remove());return c.textContent.trim()}
+  // the page's sections: each <h2> (alone, or heading a <section>) with what follows it, and the part above the first
+  function pgSections(root){
+    const main=root.querySelector('.wp-main')||root,list=[],intro={key:'_intro',title:'Top of the page',h:null,box:null,nodes:[]};let cur=intro;
+    for(const n of [...main.children]){
+      const h=n.tagName==='H2'?n:n.tagName==='SECTION'?n.querySelector(':scope > h2'):null;
+      if(h){cur={key:pgSlug(h.textContent),title:h.textContent.trim(),h,box:n.tagName==='SECTION'?n:null,nodes:[n]};list.push(cur);continue}
+      cur.nodes.push(n);
+    }
+    const seen={};for(const s of list){seen[s.key]=(seen[s.key]||0)+1;if(seen[s.key]>1)s.key+='-'+seen[s.key]}
+    return {main,list:[intro,...list]};
+  }
+  function applyPageEdits(root,kind,id){
+    const key=pgKey(kind,id),e=pgEntry(key),S=e.sections||{},added=Array.isArray(e.added)?e.added:[],ed=pgEditing&&EDIT;
+    if(!ed&&!Object.keys(S).length&&!added.length)return;
+    const {main,list}=pgSections(root);
+    const frag=html=>{const t=document.createElement('template');t.innerHTML=html;return t.content};
+    const btn=(attrs,label,cls='')=>'<button type="button" class="pg-btn '+cls+'" '+attrs+'>'+label+'</button>';
+    for(const s of list){
+      const x=S[s.key]||{},isIntro=!s.h;
+      if(isIntro&&!s.nodes.length&&!x.top&&!x.end&&!x.replace&&!ed)continue;
+      const body=s.box?[...s.box.children].filter(n=>n!==s.h):s.nodes.slice(isIntro?0:1);
+      let last;   // what added sections and the "add a section" button go after
+      if(x.hide){
+        const ph=frag(ed?'<div class="pg-hidden">Hidden: <b>'+esc(s.title)+'</b> '+btn('data-pg="sec" data-sec="'+esc(s.key)+'" data-title="'+esc(s.title)+'"','\u270E Edit')+'</div>':'');
+        const ref=s.nodes[0]||null;last=ph.lastChild;
+        if(ref)ref.before(ph);else main.prepend(ph);
+        s.nodes.forEach(n=>n.remove());if(!last)continue;
+      }else{
+        if(x.replace)body.forEach(n=>n.remove());
+        const top=frag((x.replace?pgText(x.replace):'')+(x.top?pgText(x.top):'')),topLast=top.lastChild;
+        if(s.h)s.h.after(top);else main.prepend(top);
+        if(x.end){const endF=frag(pgText(x.end)),endN=endF.lastChild;if(s.box)s.box.append(endF);else{const after=(x.replace?null:body[body.length-1])||topLast||s.h;if(after)after.after(endF);else main.prepend(endF)}if(!s.box)last=endN}
+        if(ed){const b=frag(btn('data-pg="sec" data-sec="'+esc(s.key)+'" data-title="'+esc(s.title)+'"',isIntro?'\u270E Edit the top of the page':'\u270E Edit section',isIntro?'pg-intro':''));
+          if(s.h)s.h.append(b);else main.prepend(b)}
+        last=s.box||last||(x.replace?null:body[body.length-1])||topLast||s.h||null;
+      }
+      // your own sections after this one, then (when editing) "+ Add a section here"
+      let html='';
+      for(const a of added.filter(a=>a.after===s.key))html+='<section class="pg-new" id="pg-'+esc(a.id)+'"><h2>'+esc(a.title||'Notes')+(ed?' '+btn('data-pg="added" data-id="'+esc(a.id)+'" data-title="'+esc(a.title||'')+'"','\u270E Edit section'):'')+'</h2>'+pgText(a.text||'')+'</section>';
+      if(ed)html+='<p class="pg-add-row">'+btn('data-pg="add" data-after="'+esc(s.key)+'"','+ Add a section here','pg-add')+'</p>';
+      if(html){const f=frag(html);if(last&&last.parentNode)last.after(f);else main.prepend(f)}
+    }
+    // sections whose place is gone: at the end
+    const known=new Set(list.map(s=>s.key)),lost=added.filter(a=>!known.has(a.after));
+    if(lost.length)main.append(frag(lost.map(a=>'<section class="pg-new" id="pg-'+esc(a.id)+'"><h2>'+esc(a.title||'Notes')+(ed?' '+btn('data-pg="added" data-id="'+esc(a.id)+'" data-title="'+esc(a.title||'')+'"','\u270E Edit section'):'')+'</h2>'+pgText(a.text||'')+'</section>').join('')));
+    // a guide's "On this page" list follows: hidden ones out, your own in
+    const toc=[...root.querySelectorAll('ol.g-toc')].find(o=>o.querySelector('[data-g-jump]'));
+    if(toc){const href=toc.querySelector('a').getAttribute('href')||'';
+      toc.innerHTML=[...main.querySelectorAll(':scope > section[id]')].map(s=>{const h=s.querySelector(':scope > h2');return h?'<li><a href="'+esc(href)+'" data-g-jump="'+esc(s.id)+'">'+esc(pgHeadText(h))+'</a></li>':''}).join('')}
+  }
+  // for the pages drawn ahead for the website
+  function withPageEdits(html,kind,id){const e=pgEntry(pgKey(kind,id));if(!Object.keys(e.sections||{}).length&&!(e.added||[]).length)return html;const box=document.createElement('div');box.innerHTML=html;applyPageEdits(box,kind,id);return box.innerHTML}
+  // the editor for one section (or one of your own)
+  function openSectionEditor(o){
+    const e=pgEntry(o.key),x=(e.sections||{})[o.sec]||{},a=o.addedId?(e.added||[]).find(y=>y.id===o.addedId):null,own=!!(a||o.after!=null);
+    qeState={mode:own?'added':'section',key:o.key,sec:o.sec,addedId:o.addedId||null,after:o.after,steps:[],notes:''};
+    if(qeEl)qeEl.remove();qeEl=document.createElement('div');qeEl.id='qEditor';qeEl.setAttribute('role','dialog');
+    const head=own?(a?'Your section \u201c'+esc(a.title||'')+'\u201d':'A new section'):o.sec==='_intro'?'The top of the page':'Section \u201c'+esc(o.title||'')+'\u201d';
+    qeEl.innerHTML='<div class="qe-head"><b>'+head+'</b><button type="button" data-qe="close" title="Close without saving">\u2715</button></div>'+
+      '<div class="qe-tools"><button type="button" data-qe="link">Link\u2026</button><button type="button" data-qe="map">Show on map\u2026</button><button type="button" data-qe="spot">Spot on map</button><span class="muted">They go where the cursor is. **bold** for bold.</span></div>'+
+      '<div id="qePick" hidden><input type="search"><div class="qe-res"></div></div>'+
+      (own?'<h4>Heading</h4><input id="pgTitle" class="pg-title-in" maxlength="120" placeholder="Notes" value="'+esc(a?a.title||'':'')+'">'+
+        '<h4>Text</h4><textarea id="pgText" rows="8" placeholder="Tips, where to find it, what it is good for\u2026">'+esc(a?a.text||'':'')+'</textarea>'
+      :'<h4>Your text at the top of it</h4><textarea id="pgTop" rows="3">'+esc(x.top||'')+'</textarea>'+
+        '<label class="qe-done"><input type="checkbox" id="pgRepOn"'+(x.replace?' checked':'')+'> Replace what the page shows here with my own text</label>'+
+        '<div id="pgRepBox"'+(x.replace?'':' hidden')+'><p class="muted">Anything the Atlas works out here (numbers, lists, spots) stops updating while it is replaced.</p><textarea id="pgRep" rows="6">'+esc(x.replace||'')+'</textarea></div>'+
+        '<h4>Your text at the end of it</h4><textarea id="pgEnd" rows="3">'+esc(x.end||'')+'</textarea>'+
+        '<label class="qe-done"><input type="checkbox" id="pgHide"'+(x.hide?' checked':'')+'> Hide this section</label>')+
+      '<h4>Preview</h4><div id="qePreview" class="qe-preview"></div>'+
+      '<div class="qe-foot"><button type="button" data-qe="save" class="qe-save">Save</button><button type="button" data-qe="close">Cancel</button>'+(a?'<button type="button" data-qe="pgdel">Delete this section</button>':'')+(own||!Object.keys(x).length?'':'<button type="button" data-qe="pgreset">Undo all my changes here</button>')+'<span id="qeMsg" class="muted"></span></div>';
+    document.body.append(qeEl);qeWire();qePreview();
+  }
+  function pgPreview(){const f=s=>qeEl.querySelector(s),r=t=>t&&t.trim()?pgText(t):'';
+    if(qeState.mode==='added'){f('#qePreview').innerHTML='<h2>'+esc(f('#pgTitle').value.trim()||'Notes')+'</h2>'+r(f('#pgText').value);return}
+    f('#pgRepBox').hidden=!f('#pgRepOn').checked;
+    f('#qePreview').innerHTML=f('#pgHide').checked?'<p class="muted">Hidden on the page.</p>':(r(f('#pgTop').value)+(f('#pgRepOn').checked?r(f('#pgRep').value):'<p class="muted">(what the page shows here)</p>')+r(f('#pgEnd').value))}
+  // what to save: the page's whole set of section changes and own sections, with this one changed
+  function pgCollect(how){const f=s=>qeEl.querySelector(s),st=qeState,e=pgEntry(st.key);
+    const sections={...(e.sections||{})},added=(Array.isArray(e.added)?e.added:[]).map(y=>({...y}));
+    if(st.mode==='section'){
+      const v=how==='reset'?{}:{top:f('#pgTop').value.trim(),end:f('#pgEnd').value.trim(),replace:f('#pgRepOn').checked?f('#pgRep').value.trim():'',hide:f('#pgHide').checked};
+      for(const k of Object.keys(v))if(!v[k])delete v[k];
+      if(Object.keys(v).length)sections[st.sec]=v;else delete sections[st.sec];
+    }else{
+      const title=f('#pgTitle').value.trim(),text=f('#pgText').value.trim(),i=added.findIndex(y=>y.id===st.addedId);
+      if(how==='delete'||(!title&&!text)){if(i>=0)added.splice(i,1)}
+      else if(i>=0)Object.assign(added[i],{title,text});
+      else added.push({id:Date.now().toString(36),after:st.after,title,text});
+    }
+    return {sections,added};
+  }
+  function pgSave(b,how){const msg=qeEl.querySelector('#qeMsg'),key=qeState.key,entry=pgCollect(how);msg.textContent='Saving\u2026';b.disabled=true;
+    bridgeSend('save-page-edit',{key,entry}).then(r=>{if(!r||r.ok!==true)throw new Error((r&&r.error)||'the app did not save it (it may need its latest update)');
+      const E=globalThis.BXC_PAGE_EDITS||(globalThis.BXC_PAGE_EDITS={v:1,pages:{}});E.pages=E.pages||{};E.pages[key]={...(E.pages[key]||{}),...entry,updatedAt:Date.now()};
+      qeEl.remove();qeEl=null;qeState=null;if(pageNow)renderPage();
+      setCollectorStatus(PUBLIC_MODE?'Page saved \u2014 the website shows it after the next publish, in a few minutes':'Page saved \u2014 on the website after the next publish');
+    }).catch(err=>{msg.textContent='Not saved: '+err.message;b.disabled=false})}
+  // the "Edit page" switch in the top bar (only where editing works) and the section buttons it shows
+  var pgBtn=EDIT?document.createElement('button'):null;
+  function pgShowBtn(){if(!pgBtn)return;pgBtn.hidden=!pageNow;pgBtn.textContent=pgEditing?'Done editing':'Edit page';pgBtn.classList.toggle('on',pgEditing);document.body.classList.toggle('pg-editing',pgEditing&&!!pageNow)}
+  if(pgBtn){pgBtn.id='pgEditToggle';pgBtn.type='button';pgBtn.title='Add your own text to any section of this page, replace or hide one, or add sections of your own';
+    const fit=document.getElementById('fit');if(fit)fit.after(pgBtn);
+    pgBtn.onclick=()=>{pgEditing=!pgEditing;pgShowBtn();if(pageNow)renderPage()};
+    document.addEventListener('bxc-route',pgShowBtn);document.addEventListener('click',()=>setTimeout(pgShowBtn,0),true);pgShowBtn();
+    document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.pg-btn');if(!b||!pageNow)return;e.preventDefault();e.stopPropagation();
+      const key=pgKey(pageNow.kind,pageNow.id),d=b.dataset;
+      if(d.pg==='sec'&&key.startsWith('quest:')&&(d.sec==='steps'||d.sec==='notes')){openQuestEditor(key.slice(6));return}   // a quest's steps: its own editor
+      if(d.pg==='sec')openSectionEditor({key,sec:d.sec,title:d.title});
+      else if(d.pg==='added')openSectionEditor({key,addedId:d.id});
+      else if(d.pg==='add')openSectionEditor({key,after:d.after});
+    });
+  }
+  function qePreview(){if(!qeEl)return;if(qeState&&qeState.mode){pgPreview();return}qeSync();const r=globalThis.bxcEditText||(x=>esc(x));qeEl.querySelector('#qePreview').innerHTML=(qeState.steps.some(x=>x.trim())?'<ol class="q-steps">'+qeState.steps.filter(x=>x.trim()).map(x=>'<li>'+r(x)+'</li>').join('')+'</ol>':'')+(qeState.notes.trim()?'<div class="q-notes">'+r(qeState.notes)+'</div>':'')}
   function qeDrawSteps(){const box=qeEl.querySelector('#qeSteps');box.innerHTML=qeState.steps.map((t,i)=>`<div class="qe-step"><span class="qe-n">${i+1}.</span><textarea rows="2" placeholder="What to do">${esc(t)}</textarea><span class="qe-mv"><button type="button" data-qe="up" data-i="${i}" title="Move up">\u2191</button><button type="button" data-qe="down" data-i="${i}" title="Move down">\u2193</button><button type="button" data-qe="del" data-i="${i}" title="Remove this step">\u2715</button></span></div>`).join('');qePreview()}
   // the search for Link / Show on map: the Atlas's own search, at most 12 results
   function qePick(mode){const box=qeEl.querySelector('#qePick');box.hidden=false;box.dataset.mode=mode;const inp=box.querySelector('input');inp.value='';inp.placeholder=mode==='map'?'Find a person, monster, item, resource, place or cave to show on the map\u2026':'Find a page to link: a person, monster, item, quest, guide, place\u2026';box.querySelector('.qe-res').innerHTML='';inp.focus()}
@@ -5584,7 +5706,9 @@ function newsHtml(){
       <label class="qe-done"><input type="checkbox" id="qeDone"${qeState.done?' checked':''}> The steps are complete (takes off \u201cnot fully written yet\u201d)</label>
       <h4>Preview</h4><div id="qePreview" class="qe-preview"></div>
       <div class="qe-foot"><button type="button" data-qe="save" class="qe-save">Save</button><button type="button" data-qe="close">Cancel</button><span id="qeMsg" class="muted"></span></div>`;
-    document.body.append(qeEl);qeDrawSteps();
+    document.body.append(qeEl);qeDrawSteps();qeWire();
+  }
+  function qeWire(){
     qeEl.addEventListener('focusin',e=>{if(e.target.matches('textarea'))qeFocus=e.target});
     for(const ev of ['click','keyup','select','input'])qeEl.addEventListener(ev,e=>{if(e.target.matches&&e.target.matches('textarea')){qeFocus=e.target;qeCaret={ta:e.target,pos:e.target.selectionStart}}});
     qeEl.addEventListener('input',e=>{if(e.target.closest('#qePick'))qePickResults();else qePreview()});
@@ -5596,11 +5720,12 @@ function newsHtml(){
       if(a==='up'||a==='down'||a==='del'){qeSync();const s=qeState.steps;if(a==='del')s.splice(i,1);else{const j=a==='up'?i-1:i+1;if(j<0||j>=s.length)return;[s[i],s[j]]=[s[j],s[i]]}if(!s.length)s.push('');qeDrawSteps();return}
       if(a==='link'||a==='map'){qePick(a);return}
       if(a==='spot'){qeSpot();return}
+      if(qeState.mode&&(a==='save'||a==='pgdel'||a==='pgreset')){pgSave(b,a==='pgdel'?'delete':a==='pgreset'?'reset':'');return}
       if(a==='save'){qeSync();const msg=qeEl.querySelector('#qeMsg');msg.textContent='Saving\u2026';b.disabled=true;
         const [first,...rest]=qeState.steps.map(x=>x.trim());
-        const entry={first:first||'',steps:rest.filter(Boolean),notes:qeState.notes.trim(),done:qeState.done},key='quest:'+qeState.questId;
+        const key='quest:'+qeState.questId,entry={first:first||'',steps:rest.filter(Boolean),notes:qeState.notes.trim(),done:qeState.done};
         bridgeSend('save-page-edit',{key,entry}).then(r=>{if(!r||r.ok!==true)throw new Error((r&&r.error)||'the app did not save it (it may need its latest update)');
-          const E=globalThis.BXC_PAGE_EDITS||(globalThis.BXC_PAGE_EDITS={v:1,pages:{}});E.pages=E.pages||{};E.pages[key]={...entry,updatedAt:Date.now()};
+          const E=globalThis.BXC_PAGE_EDITS||(globalThis.BXC_PAGE_EDITS={v:1,pages:{}});E.pages=E.pages||{};E.pages[key]={...(E.pages[key]||{}),...entry,updatedAt:Date.now()};
           qeEl.remove();qeEl=null;qeState=null;if(pageNow)renderPage();
           setCollectorStatus(PUBLIC_MODE?'Page saved \u2014 the website shows it after the next publish, in a few minutes':'Page saved \u2014 on the website after the next publish');
         }).catch(err=>{msg.textContent='Not saved: '+err.message;b.disabled=false})}
@@ -5623,7 +5748,7 @@ function newsHtml(){
     const pages={},keep=pageNow,yieldNow=()=>new Promise(r=>setTimeout(r,0));let n=0;
     const draw=async(path,kind,id,fn,opts={})=>{
       pageNow={kind,id:String(id),q:opts.q||null,lv:opts.lv!=null?Number(opts.lv):null};
-      try{const html=fn(id);if(html)pages[path]={title:pageTitle(kind,id),html}}catch(e){console.warn('[export]',path,e)}
+      try{const html=fn(id);if(html)pages[path]={title:pageTitle(kind,id),html:withPageEdits(html,kind,id)}}catch(e){console.warn('[export]',path,e)}
       if(++n%25===0)await yieldNow();
     };
     const enc=pageFileId;

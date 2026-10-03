@@ -290,7 +290,16 @@ a.map-panel-open:hover{border-color:var(--accent);background:var(--panel2)}
 .qe-preview{border:1px dashed var(--edge);border-radius:6px;padding:6px 10px}
 .qe-done{display:block;margin-top:8px}
 .qe-foot{display:flex;gap:8px;align-items:center;margin-top:12px}.qe-save{font-weight:600}
-.q-notes{padding:4px 0}.q-map-btn{margin:0 2px}
+.q-notes{padding:4px 0}
+/* Edit page: section buttons only while editing; a quest's own "Edit steps" button moves to its Steps heading */
+#content .q-edit-btn{display:none}
+#pgEditToggle.on{background:#6b5a1e;color:#fff}
+.pg-btn{font:12px/1.4 inherit;margin-left:10px;padding:2px 8px;vertical-align:middle;cursor:pointer}
+.pg-btn.pg-intro{margin:0 0 8px}
+.pg-add-row{margin:6px 0 14px}.pg-btn.pg-add{margin-left:0;opacity:.75;border-style:dashed}.pg-btn.pg-add:hover{opacity:1}
+.pg-hidden{opacity:.6;font-style:italic;padding:6px 0;border-top:1px dashed currentColor;margin:10px 0}
+.pg-text{margin:6px 0}
+#qEditor .pg-title-in{width:100%;box-sizing:border-box}.q-map-btn{margin:0 2px}
 .g-subhead{margin:18px 0 8px;font-size:15px;color:var(--accent)}.g-subhead .muted{font-size:13px;font-weight:400}
 .g-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
 .g-card{display:flex;flex-direction:column;gap:3px;padding:12px 14px;background:var(--panel);border:1px solid var(--edge);border-top:2px solid var(--accent-soft);color:var(--ink)!important;text-decoration:none}
