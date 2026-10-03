@@ -3889,15 +3889,34 @@ function newsHtml(){
     trainerList=function(){return !isFull()&&litePeople&&litePeople.trainers?litePeople.trainers:trBase()}}
   // sections listing everything (and the cave layouts): they need the whole database
   const LITE_LIST_TABS=new Set(['monsters','items','resources','zones','gems','drops','xp','research','assets']);
-  const liteListWaits=()=>{if(!PUBLIC_MODE||isFull()||!LITE_LIST_TABS.has(tab))return false;try{return !(pageNow&&tab===PAGE_TAB[pageNow.kind])}catch{return true}};   // (PAGE_TAB is set further down)
+  const liteListWaits=()=>{if(!PUBLIC_MODE||isFull()||!LITE_LIST_TABS.has(tab))return false;try{if(tab==='zones'&&zonesIn)return false;return !(pageNow&&tab===PAGE_TAB[pageNow.kind])}catch{return true}};   // (set further down: PAGE_TAB, zonesIn)   // (PAGE_TAB is set further down)
   if(PUBLIC_MODE){const augBase=augmentCurrentTab;augmentCurrentTab=function(){if(liteListWaits())return;return augBase.apply(this,arguments)}}
   if(PUBLIC_MODE&&typeof render==='function'){const liteBase=render;render=function(){
-    if(liteListWaits()){content.innerHTML='<p class="muted">Loading…</p>';globalThis.bxcEnsureFull?.().then(()=>{render();augmentCurrentTab()});return}
+    if(liteListWaits()){content.innerHTML='<p class="muted">Loading…</p>';(tab==='zones'?ensureZones():globalThis.bxcEnsureFull?.()).then(()=>{render();augmentCurrentTab()});return}   // the Zones list needs only the caves' data
     return liteBase.apply(this,arguments)}}
+  // The caves' and buildings' own data (data/zones.json, a few dozen KB), the first time a layout is opened: merged
+  // into the lite snapshot (a new snapshot object, so the layouts' caches start fresh) with what the publish worked
+  // out from it. Without that file (an older publish) the whole database is loaded instead.
+  let zonesLoad=null,zonesIn=false;
+  function ensureZones(){
+    if(isFull()||zonesIn)return Promise.resolve();
+    return zonesLoad||(zonesLoad=fetch('data/zones.json').then(r=>{if(!r.ok)throw new Error('no zones file');return r.json()}).then(d=>{
+      if(isFull())return;
+      const outdoors=a=>(a||[]).filter(r=>!(r&&r.position&&r.position.z));   // the lite rows inside caves are replaced by the full ones
+      rawSnapshot=snapshot={...snapshot,terrain:d.terrain||[],worldObjects:[...outdoors(snapshot.worldObjects),...(d.worldObjects||[])],npcs:[...outdoors(snapshot.npcs),...(d.npcs||[])],npcObservations:d.npcObservations||[],zoneTransitions:d.zoneTransitions||[]};
+      window.BINXONIA_COLLECTOR_SNAPSHOT=snapshot;
+      deriveResourceSkills();deriveResourceCatalog();
+      const st=d.state||{},toMap=a=>new Map(a||[]);
+      state.dungeons=toMap(st.dungeons);state.dungeonOfZone=toMap(st.dungeonOfZone);state.zoneParent=toMap(st.zoneParent);
+      state.zoneInternalExits=toMap(st.zoneInternalExits);state.zoneSurfaceExits=toMap(st.zoneSurfaceExits);
+      state.zoneContents=new Map((st.zoneContents||[]).map(([z,c])=>[z,{monsters:toMap(c.monsters),objects:toMap(c.objects)}]));
+      zonesIn=true;
+    }).catch(err=>{zonesLoad=null;console.warn('[atlas] cave data',err);return globalThis.bxcEnsureFull?.()}));
+  }
   if(PUBLIC_MODE){
     const zoneBase=openZoneOverlay,dungeonBase=openDungeonOverlay;
-    openZoneOverlay=function(...a){if(!isFull()&&globalThis.bxcEnsureFull){globalThis.bxcEnsureFull().then(()=>openZoneOverlay(...a));return}return zoneBase.apply(this,a)};
-    openDungeonOverlay=function(...a){if(!isFull()&&globalThis.bxcEnsureFull){globalThis.bxcEnsureFull().then(()=>openDungeonOverlay(...a));return}return dungeonBase.apply(this,a)};
+    openZoneOverlay=function(...a){if(!isFull()&&!zonesIn){ensureZones().then(()=>openZoneOverlay(...a));return}return zoneBase.apply(this,a)};
+    openDungeonOverlay=function(...a){if(!isFull()&&!zonesIn){ensureZones().then(()=>openDungeonOverlay(...a));return}return dungeonBase.apply(this,a)};
   }
   function loadStoredBaseline(){try{return JSON.parse(localStorage.getItem(LAST_SEEN_KEY)||'null')?.stats||null}catch{return null}}
 
@@ -5520,9 +5539,17 @@ function newsHtml(){
     const givers=questGiverList().map(t=>({slug:t.slug,name:t.name,quests:t.quests.map(q=>({questId:q.questId,name:q.name,recommendedLevel:q.recommendedLevel??null})),spots:t.spots.map(spot)}));
     const trainers=trainerList().map(t=>({slug:t.slug,name:t.name,skill:t.skill||null,spots:t.spots.map(spot)}));
     const mapData={v:1,npcTypes,npcs,objects,zones,entrances,contents,givers,trainers};
+    // every cave and building: its floor, objects, sightings and people, every crossing between places, and the rooms,
+    // exits and contents worked out from them - what drawing a layout reads (loaded the first time one is opened)
+    const inside=r=>r&&r.position&&r.position.z;
+    const entries=mp=>[...(mp||new Map())].map(([k,v])=>[k,v]);
+    const contentsAll=[...(state.zoneContents||[])].map(([z,c])=>[z,{monsters:entries(c.monsters),objects:entries(c.objects)}]);
+    const zonesData={v:1,terrain:(snapshot.terrain||[]).filter(r=>r.z),worldObjects:(snapshot.worldObjects||[]).filter(inside).map(o=>{const d=o.data&&(o.data.quantity!=null||o.data.fishTypes)?{quantity:o.data.quantity,fishTypes:o.data.fishTypes}:undefined;return {id:o.id,typeId:o.typeId,name:o.name,position:o.position,status:o.status,firstSeen:o.firstSeen,lastSeen:o.lastSeen,data:d}}),
+      npcObservations:(snapshot.npcObservations||[]).filter(inside),npcs:(snapshot.npcs||[]).filter(inside),zoneTransitions:snapshot.zoneTransitions||[],
+      state:{dungeons:entries(state.dungeons),dungeonOfZone:entries(state.dungeonOfZone),zoneParent:entries(state.zoneParent),zoneInternalExits:entries(state.zoneInternalExits),zoneSurfaceExits:entries(state.zoneSurfaceExits),zoneContents:contentsAll}};
     // the search list: what the search box finds, with each result's address (and its picture when it has a file)
     const search=globalSearchEntries().map(e=>{let img=null;try{const u=e.image&&e.image();if(typeof u==='string'&&/^data\/img\//.test(u))img=u}catch{}return [e.kind,e.name,e.detail||'',e.href,img]});
-    return {pages,panels,map:mapData,search,builtAt:snapshot.generatedAt||null};
+    return {pages,panels,map:mapData,zones:zonesData,search,builtAt:snapshot.generatedAt||null};
   };
   if(PUBLIC_MODE){
     // One fetch, once, ever - no live collector to re-sync with or poll. applySnapshot() itself already calls
