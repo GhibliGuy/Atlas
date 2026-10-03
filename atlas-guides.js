@@ -853,7 +853,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   const orderOf=s=>{const i=ORDER.indexOf(s);return i<0?999:i};
   // one card per recorded quest (the Quests section of the guide index), each opening its own page
   // the quests in their groups (story, side, skill - the game's own categories), each under its own heading
-  function questGroups(){return Q_CATS.map(([k,t])=>{const qs=questList().filter(q=>questCat(q)===k);return qs.length?`<h3 class="g-subhead">${esc(t)} <span class="muted">(${qs.length})</span></h3><div class="g-cards">${questCards(qs)}</div>`:''}).join('')}
+  function questGroups(){return Q_CATS.map(([k,t])=>{const qs=questList().filter(q=>questCat(q)===k);return qs.length?`<h3 class="g-subhead" id="qg-${k}">${esc(t)} <span class="muted">(${qs.length})</span></h3><div class="g-cards">${questCards(qs)}</div>`:''}).join('')}
   function questCards(list){return (list||questList()).map(q=>`<a class="g-card" href="#/guide/${enc(questSlug(q))}">${questDone(q)?'':`<span class="q-alert" role="note">${ALERT_SVG}Not fully written yet</span>`}<b>${esc(q.name)}</b><span>Level ${q.recommendedLevel||'?'} · ${esc(pretty(q.lengthTag||''))}${q.giverName?' · '+esc(q.giverName):''}</span></a>`).join('')}
   function indexHtml(only){
     const groups=only?GROUPS.filter(gr=>slug(gr)===only):GROUPS;
@@ -885,7 +885,9 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     has:s=>byslug.has(s)||!!questBySlug(s),
     // the guide for a skill name as the game or a recipe spells it ("Armor Smithing", "mining")
     forSkill:skill=>{const s=skillGuideSlug(skill);return byslug.has(s)?s:null},
-    link:(s,label)=>byslug.has(s)?guide(s,label):''
+    link:(s,label)=>byslug.has(s)?guide(s,label):'',
+    // a quest page's group on the Quests page ({key, title}), for its breadcrumb
+    questGroup:s=>{const q=questBySlug(s);if(!q)return null;const c=Q_CATS.find(x=>x[0]===questCat(q));return c?{key:c[0],title:c[1]}:null}
   };
   // Gems guide: "the witch" in the intro jumps to her section (instantly: a hidden window never animates a scroll)
   document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('.gg-to-witch');if(!b)return;e.preventDefault();document.getElementById('g-witch')?.scrollIntoView({block:'start'})});

@@ -4636,9 +4636,16 @@ function newsHtml(){
   function pageHeading(){
     if(!pageNow)return;
     const [key,label]=PAGE_SECTION[pageNow.kind],t=document.getElementById('sectionTrail'),h=document.getElementById('sectionTitle'),d=document.getElementById('sectionDescription');
-    if(t)t.innerHTML=`Atlas / <a href="#/${key}">${esc(label)}</a>`;
+    if(t)t.innerHTML=pageTrail(pageNow,key,label);
     if(h)h.textContent=pageTitle(pageNow.kind,pageNow.id);
     if(d)d.textContent='';
+  }
+  // the breadcrumb: Atlas / <section>; a quest's page goes Atlas / Guides / Quests / <its group>, the group linking to
+  // its heading on the Quests page
+  function pageTrail(p,key,label){
+    const qg=p&&p.kind==='guide'&&/^quest-/.test(p.id)&&globalThis.bxcGuides?.questGroup?globalThis.bxcGuides.questGroup(p.id):null;
+    if(qg)return `Atlas / <a href="#/guides">Guides</a> / <a href="#/guides-quests">Quests</a> / <a href="#/guides-quests?g=${esc(qg.key)}">${esc(qg.title)}</a>`;
+    return `Atlas / <a href="#/${key}">${esc(label)}</a>`;
   }
   function pageTitle(kind,id){
     if(kind==='monster')return (D.catalog||[]).find(x=>x.typeId===id)?.name||monsterNameFor(id);
@@ -4664,7 +4671,8 @@ function newsHtml(){
       const want=pageNow;content.innerHTML='<p class="muted">Loading…</p>';
       loadPageDoc(want).then(doc=>{if(isFull()||pageNow!==want)return;   // the data came first, or another page was opened
         if(!doc){content.innerHTML='<p class="muted">Loading the Atlas data…</p>';return}
-        content.innerHTML=doc.html;const h=document.getElementById('sectionTitle');if(h)h.textContent=doc.title;document.dispatchEvent(new Event('bxc-route'))});
+        content.innerHTML=doc.html;const h=document.getElementById('sectionTitle');if(h)h.textContent=doc.title;
+        {const t=document.getElementById('sectionTrail'),[k,lb]=PAGE_SECTION[want.kind]||['guides','Guides'];if(t)t.innerHTML=pageTrail(want,k,lb)}document.dispatchEvent(new Event('bxc-route'))});
       return;
     }
     // a guide reads the same facts as the lists (gem finds, monster counts, outfits): on the website's lite start
@@ -5345,6 +5353,7 @@ function newsHtml(){
     if(a==='xp'){openPage('guide','levels-and-xp');return}
     if(a==='gemcombine'){openTabKey('gems');setTimeout(()=>document.getElementById('g-witch')?.scrollIntoView({block:'start'}),60);return}   // the Gem combiner is now the witch section of the Gems page
     if(a==='guides'&&b&&openTabKey('guides-'+b))return;
+    if(a==='guides-quests'&&qp.get('g')){openTabKey(a);const g=qp.get('g');setTimeout(()=>document.getElementById('qg-'+g)?.scrollIntoView({block:'start'}),80);return}
     if(a==='search'&&b){const box=document.getElementById('q');if(box){box.value=decodeURIComponent(b);box.dispatchEvent(new Event('input',{bubbles:true}));setTimeout(()=>box.focus(),50)}return}   // from the app's address bar   // the XP tables page is now the Levels and XP guide
     openTabKey(a);
   }
