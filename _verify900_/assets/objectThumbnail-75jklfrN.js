@@ -1,1 +1,0 @@
-import"./spriteAssets-e52nvnuG.js";import{X as o,Y as l,Z as u}from"./index-C8u1oDXN.js";const c=new Map;function b(t){return c.get(t)}function m(t){const n=c.get(t);if(n!==void 0)return n;let e=null;const r=o(t);if(r)e=r.url;else try{const{svg:a}=l(u(t));e=`data:image/svg+xml;charset=utf-8,${encodeURIComponent(a)}`}catch{e=null}return c.set(t,e),e}export{b as c,m as o};

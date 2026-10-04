@@ -1,1 +1,0 @@
-import{bd as s}from"./game-rules-DDHgZIqT.js";const t=(n,e)=>{const l=n.find(r=>r.skillId===e);return l?{known:!0,level:l.level}:{known:!1,level:0,lockedReason:`Requires the ${s[e].displayName} skill`}};export{t as c};
