@@ -1,4 +1,8 @@
 [
+{"sessionId":"8a800f09","time":1791153170975,"fromZ":11001,"toZ":0,"kind":"outdoors","outX":125,"outY":-85,"key":2188},
+{"sessionId":"7bb380d8","time":1791153167070,"fromZ":11001,"toZ":0,"kind":"outdoors","outX":125,"outY":-85,"key":2187},
+{"sessionId":"8a800f09","time":1791153130408,"fromZ":null,"toZ":11001,"zoneName":"GhibliGuy's home, Plymouth Wharf","pvpMode":"none","atX":17,"atY":8,"key":2186},
+{"sessionId":"7bb380d8","time":1791153129455,"fromZ":null,"toZ":11001,"zoneName":"GhibliGuy's home, Plymouth Wharf","pvpMode":"none","atX":17,"atY":8,"key":2185},
 {"sessionId":"84a1123a","time":1791145345055,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":2184},
 {"sessionId":"84a1123a","time":1791145333785,"fromZ":0,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":2183},
 {"sessionId":"84a1123a","time":1791145329709,"fromZ":20,"toZ":0,"kind":"outdoors","outX":149.6,"outY":-69.32,"key":2182},
