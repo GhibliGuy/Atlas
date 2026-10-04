@@ -603,6 +603,13 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     }).replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
   }
   globalThis.bxcEditText=editText;
+  function editBlocks(t){
+    return String(t||'').replace(/\r/g,'').split(/\n\s*\n/).map(b=>b.trim()).filter(Boolean).map(b=>{const ls=b.split('\n').map(x=>x.trim()).filter(Boolean);
+      if(ls.every(x=>/^\d+[.)]\s/.test(x)))return '<ol>'+ls.map(x=>'<li>'+editText(x.replace(/^\d+[.)]\s+/,''))+'</li>').join('')+'</ol>';
+      if(ls.every(x=>/^[-*\u2022]\s/.test(x)))return '<ul>'+ls.map(x=>'<li>'+editText(x.replace(/^[-*\u2022]\s+/,''))+'</li>').join('')+'</ul>';
+      return '<p>'+editText(ls.join('\n'))+'</p>'}).join('');
+  }
+  globalThis.bxcEditBlocks=editBlocks;
   // where the editor opens (only where editing works: the app's own copy, or the website inside the app)
   const questEditBtn=q=>globalThis.bxcCanEdit?`<p><button type="button" class="q-edit-btn" data-quest-id="${esc(q.questId)}">Edit steps &amp; notes</button></p>`:'';
   const ALERT_SVG='<svg class="q-alert-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 21h20z" fill="currentColor"/><path d="M12 10v5M12 17.6v.4" stroke="#1b1300" stroke-width="2.2" stroke-linecap="round"/></svg>';

@@ -5545,9 +5545,10 @@ function newsHtml(){
     if(n.matches('a[href^="#/"]')){out+=`[[${n.getAttribute('href')}|${clean(t)}]]`;continue}
     if(n.matches('.show-on-map')&&n.dataset.mapKind){const k=n.dataset.mapKind,id=n.dataset.mapId||'',label=clean(t.replace(/^\u{1F4CD}\s*/u,''))||'Show on map';
       if(k==='spot'){const [x,y,l]=id.split('|');out+=`[[spot:${x},${y}|${clean(l||label)}]]`}else if(/^(npc|monster|item|resource|place|zone)$/.test(k))out+=`[[map:${k}:${id}|${label}]]`;else out+=t;continue}
+    if(n.matches('.entity-chip[data-item]')){const l=n.querySelector('.entity-chip-label'),st=n.querySelector('.entity-chip-stat');out+=`[[#/item/${n.dataset.item}|${clean(l?l.textContent:t)}]]`+(st?' '+st.textContent.trim():'')+' ';continue}   // an item chip: a link
     if(n.matches('b,strong')){out+=`**${t}**`;continue}
     if(n.matches('br')){out+='\n';continue}
-    out+=qeTokens(n)}
+    out+=qeTokens(n)+(n.matches('div,td,th,p,li,dd,dt')?' ':'')}
     return out.replace(/[ \t]+/g,' ').replace(/ *\n */g,'\n').trim()}
   function qeEntries(){try{return globalSearchEntries()}catch{return []}}
   const qeMapTarget=href=>{let m=String(href||'').match(/^#\/(npc|monster|item|resource|zone)\/(.+)$/);if(m){try{return [m[1],decodeURIComponent(m[2])]}catch{return [m[1],m[2]]}}m=String(href||'').match(/^#\/map\/place\/(.+)$/);if(m){try{return ['place',decodeURIComponent(m[1])]}catch{return ['place',m[1]]}}return null};
@@ -5561,7 +5562,24 @@ function newsHtml(){
   function pgKey(kind,id){return kind==='guide'&&/^quest-/.test(id)?'quest:'+String(id).slice(6):kind+':'+id}
   function pgEntry(key){return ((globalThis.BXC_PAGE_EDITS||{}).pages||{})[key]||{}}
   function pgSlug(t){return String(t||'').toLowerCase().replace(/\(.*?\)/g,'').replace(/[0-9]+/g,'').replace(/[^a-z]+/g,'-').replace(/^-|-$/g,'')||'section'}
-  function pgText(t){return '<div class="q-notes pg-text">'+(globalThis.bxcEditText||esc)(t)+'</div>'}
+  function pgText(t){return '<div class="q-notes pg-text">'+(globalThis.bxcEditBlocks||globalThis.bxcEditText||esc)(t)+'</div>'}
+  // a section as the editor's text: paragraphs, numbered and plain lists ("1. ", "- "), table rows as list lines
+  function pgToText(nodes){const out=[],wrapOne=ch=>{const d=document.createElement('div');d.append(ch.cloneNode(true));return d};
+    for(const n of nodes){if(n.nodeType===3){const t=n.nodeValue.trim();if(t)out.push(t);continue}if(n.nodeType!==1||n.matches('.pg-btn,.pg-add-row,script,style,canvas'))continue;
+      if(n.matches('ol'))out.push([...n.children].filter(li=>li.tagName==='LI').map((li,i)=>(i+1)+'. '+qeTokens(li).replace(/\n+/g,' ')).join('\n'));
+      else if(n.matches('ul'))out.push([...n.children].filter(li=>li.tagName==='LI').map(li=>'- '+qeTokens(li).replace(/\n+/g,' ')).join('\n'));
+      else if(n.matches('table'))out.push([...n.querySelectorAll('tr')].map(tr=>'- '+[...tr.children].map(td=>qeTokens(td).replace(/\n+/g,' ')).filter(Boolean).join(' \u00b7 ')).filter(x=>x.length>2).join('\n'));
+      else if(n.matches('.chip-row'))out.push([...n.querySelectorAll('.entity-chip')].map(ch=>'- '+qeTokens(wrapOne(ch)).trim()).join('\n'));
+      else if(n.matches('h3,h4'))out.push('**'+n.textContent.trim()+'**');
+      else if(n.matches('section,div')&&n.querySelector(':scope > p, :scope > ol, :scope > ul, :scope > table, :scope > div, :scope > h3'))out.push(pgToText([...n.childNodes]));
+      else{const t=qeTokens(n);if(t)out.push(t)}}
+    return out.filter(Boolean).join('\n\n')}
+  // the page's own text for a section (drawn afresh, without your changes)
+  function pgOriginal(kind,id,sec){
+    let html='';try{html=kind==='monster'?monsterPageHtml(id):kind==='npc'?npcPageHtml(id):kind==='item'?itemPageHtml(id):kind==='guide'?(globalThis.bxcGuides?.pageHtml(id)||''):resourcePageHtml(id)}catch{}
+    const box=document.createElement('div');box.innerHTML=html;const s=pgSections(box).list.find(x=>x.key===sec);if(!s)return {text:'',rich:false};
+    const body=s.box?[...s.box.children].filter(n=>n!==s.h):s.nodes.slice(s.h?1:0);
+    return {text:pgToText(body),rich:body.some(n=>n.matches&&(n.matches('table,img,canvas,.collector-extra')||!!n.querySelector('table,img,canvas')))}}
   function pgHeadText(h){const c=h.cloneNode(true);c.querySelectorAll('.pg-btn').forEach(b=>b.remove());return c.textContent.trim()}
   // the page's sections: each <h2> (alone, or heading a <section>) with what follows it, and the part above the first
   function pgSections(root){
@@ -5619,17 +5637,17 @@ function newsHtml(){
   function openSectionEditor(o){
     const e=pgEntry(o.key),x=(e.sections||{})[o.sec]||{},a=o.addedId?(e.added||[]).find(y=>y.id===o.addedId):null,own=!!(a||o.after!=null);
     qeState={mode:own?'added':'section',key:o.key,sec:o.sec,addedId:o.addedId||null,after:o.after,steps:[],notes:''};
+    if(!own){qeState.orig=pgOriginal(pageNow.kind,pageNow.id,o.sec);   // what the box starts with: your text if you changed it, else the page's
+      qeState.start=[x.top,x.replace||qeState.orig.text,x.end].filter(t=>t&&String(t).trim()).join('\n\n')}
     if(qeEl)qeEl.remove();qeEl=document.createElement('div');qeEl.id='qEditor';qeEl.setAttribute('role','dialog');
     const head=own?(a?'Your section \u201c'+esc(a.title||'')+'\u201d':'A new section'):o.sec==='_intro'?'The top of the page':'Section \u201c'+esc(o.title||'')+'\u201d';
     qeEl.innerHTML='<div class="qe-head"><b>'+head+'</b><button type="button" data-qe="close" title="Close without saving">\u2715</button></div>'+
       '<div class="qe-tools"><button type="button" data-qe="link">Link\u2026</button><button type="button" data-qe="map">Show on map\u2026</button><button type="button" data-qe="spot">Spot on map</button><span class="muted">They go where the cursor is. **bold** for bold.</span></div>'+
       '<div id="qePick" hidden><input type="search"><div class="qe-res"></div></div>'+
       (own?'<h4>Heading</h4><input id="pgTitle" class="pg-title-in" maxlength="120" placeholder="Notes" value="'+esc(a?a.title||'':'')+'">'+
-        '<h4>Text</h4><textarea id="pgText" rows="8" placeholder="Tips, where to find it, what it is good for\u2026">'+esc(a?a.text||'':'')+'</textarea>'
-      :'<h4>Your text at the top of it</h4><textarea id="pgTop" rows="3">'+esc(x.top||'')+'</textarea>'+
-        '<label class="qe-done"><input type="checkbox" id="pgRepOn"'+(x.replace?' checked':'')+'> Replace what the page shows here with my own text</label>'+
-        '<div id="pgRepBox"'+(x.replace?'':' hidden')+'><p class="muted">Anything the Atlas works out here (numbers, lists, spots) stops updating while it is replaced.</p><textarea id="pgRep" rows="6">'+esc(x.replace||'')+'</textarea></div>'+
-        '<h4>Your text at the end of it</h4><textarea id="pgEnd" rows="3">'+esc(x.end||'')+'</textarea>'+
+        '<h4>Text</h4><textarea id="pgText" rows="10" placeholder="Tips, where to find it, what it is good for\u2026">'+esc(a?a.text||'':'')+'</textarea>'
+      :'<h4>Section text</h4><p class="muted">Change anything and the page shows your text here instead; leave it as it is and the page keeps its own (which updates with new data). A blank line starts a paragraph, lines starting \u201c1. \u201d or \u201c- \u201d make a list.'+(qeState.orig.rich?' <b>Tables and pictures here become plain text if you change it.</b>':'')+'</p>'+
+        '<textarea id="pgSec" rows="14">'+esc(qeState.start)+'</textarea>'+
         '<label class="qe-done"><input type="checkbox" id="pgHide"'+(x.hide?' checked':'')+'> Hide this section</label>')+
       '<h4>Preview</h4><div id="qePreview" class="qe-preview"></div>'+
       '<div class="qe-foot"><button type="button" data-qe="save" class="qe-save">Save</button><button type="button" data-qe="close">Cancel</button>'+(a?'<button type="button" data-qe="pgdel">Delete this section</button>':'')+(own||!Object.keys(x).length?'':'<button type="button" data-qe="pgreset">Undo all my changes here</button>')+'<span id="qeMsg" class="muted"></span></div>';
@@ -5637,13 +5655,14 @@ function newsHtml(){
   }
   function pgPreview(){const f=s=>qeEl.querySelector(s),r=t=>t&&t.trim()?pgText(t):'';
     if(qeState.mode==='added'){f('#qePreview').innerHTML='<h2>'+esc(f('#pgTitle').value.trim()||'Notes')+'</h2>'+r(f('#pgText').value);return}
-    f('#pgRepBox').hidden=!f('#pgRepOn').checked;
-    f('#qePreview').innerHTML=f('#pgHide').checked?'<p class="muted">Hidden on the page.</p>':(r(f('#pgTop').value)+(f('#pgRepOn').checked?r(f('#pgRep').value):'<p class="muted">(what the page shows here)</p>')+r(f('#pgEnd').value))}
+    const v=f('#pgSec').value,same=pgSame(v,qeState.orig.text);
+    f('#qePreview').innerHTML=f('#pgHide').checked?'<p class="muted">Hidden on the page.</p>':same?'<p class="muted">(unchanged: the page\u2019s own text, kept up to date)</p>':r(v)}
+  function pgSame(a,b){const n=t=>String(t||'').replace(/\s+/g,' ').trim();return n(a)===n(b)}
   // what to save: the page's whole set of section changes and own sections, with this one changed
   function pgCollect(how){const f=s=>qeEl.querySelector(s),st=qeState,e=pgEntry(st.key);
     const sections={...(e.sections||{})},added=(Array.isArray(e.added)?e.added:[]).map(y=>({...y}));
     if(st.mode==='section'){
-      const v=how==='reset'?{}:{top:f('#pgTop').value.trim(),end:f('#pgEnd').value.trim(),replace:f('#pgRepOn').checked?f('#pgRep').value.trim():'',hide:f('#pgHide').checked};
+      const txt=f('#pgSec').value.trim(),v=how==='reset'?{}:{replace:pgSame(txt,st.orig.text)?'':txt,hide:f('#pgHide').checked};
       for(const k of Object.keys(v))if(!v[k])delete v[k];
       if(Object.keys(v).length)sections[st.sec]=v;else delete sections[st.sec];
     }else{
