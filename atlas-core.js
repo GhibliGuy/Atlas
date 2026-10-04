@@ -848,6 +848,22 @@ function monsterCardHtml(m,opts={}){return `<div class="card monstercard" data-t
  <div class="s ${m.count?'obs':'muted'}">${m.count?m.count+' observed • observed levels '+val(m.obsMinLevel)+'–'+val(m.obsMaxLevel):'No location captured yet'}</div>
  ${m.eliteObserved?`<div class="s good">⭐ ${m.eliteObserved} observed elite (${(m.eliteRate*100).toFixed(1)}% of seen instances) — elites have 3x HP, hit 1.4x harder, give 3x kill XP and 2.5x loot, and double odds at a cape, pendant, ring, kill gem, or crafting tome</div>`:''}
  ${m.mechanics?`<div class="s">Special: ${m.mechanics}</div>`:''}${!opts.noMapButton&&m.count?`<button type="button" class="show-on-map" data-map-kind="monster" data-map-id="${m.typeId}">Show on map</button>`:''}</div>`}
+// The Bestiary's compact row: picture, name and kind on the left, the numbers beside them, drops below (filled in by
+// the collector part when the row comes into view). The map panel keeps the full card above.
+function monsterRowHtml(m){
+ const st=(k,v,t)=>v==null||v===''?'':`<span class="mon-st"${t?` title="${escXml(t)}"`:''}><i>${k}</i> <b>${escXml(v)}</b></span>`;
+ const cd=m.cooldownMs?(Math.round(m.cooldownMs/100)/10)+'s':null;
+ const extra=[m.dropsGems?'<span class="mon-tag">Drops gems</span>':'',Number(m.baseLevel)>=25?'<span class="mon-tag">Can drop pendant/cape</span>':'',
+  m.eliteObserved?`<span class="mon-tag good" title="Elites have 3x HP, hit 1.4x harder, give 3x kill XP and 2.5x loot">⭐ Elite ${(m.eliteRate*100).toFixed(1)}%</span>`:'',
+  m.count?`<span class="mon-tag obs">Seen ${m.count}× · Lv ${val(m.obsMinLevel)}–${val(m.obsMaxLevel)}</span>`:'<span class="mon-tag muted">Location not captured yet</span>'].join('');
+ return `<div class="card monstercard mon-row" data-t="${m.typeId}"><img class="thumb monsterthumb" src="${monsterImg(m)}" alt="${escXml(m.name)}" loading="lazy">
+ <div class="mon-id"><div class="name"><a class="page-link" href="#/monster/${encodeURIComponent(m.typeId)}">${m.name}</a> <span class="muted">Lv ${m.baseLevel}</span></div>
+ <div class="s">${m.archetype} • ${m.attackType} • ${m.attackStyle}</div><div class="s">${tagChipsLine(m.weakTo,m.resists,m.family)}</div></div>
+ <div class="mon-stats">${st('HP',val(m.maxHp))}${st('Dmg',val(m.attackDamage),'Damage')}${st('XP',val(m.xp))}${st('Speed',cd,'Time between attacks')}${st('Range',val(m.attackRange),'Attack range')}${st('Aggro',val(m.aggroRange),'How close you can get before it attacks')}${m.locomotion&&m.locomotion!=='ground'?st('Moves',m.locomotion):''}
+ <div class="mon-tags">${extra}${m.mechanics?`<span class="mon-tag">Special: ${m.mechanics}</span>`:''}${m.count?`<button type="button" class="show-on-map" data-map-kind="monster" data-map-id="${m.typeId}">Show on map</button>`:''}</div></div></div>`;
+}
+// which families are open in the Bestiary (closed to start with; all open while a filter or search is on)
+const monFamOpen=new Set();
 function render(){
  let s=q.value.toLowerCase().trim(),only=onlyObserved.checked;
  // The World map page has no list: the map is the page.
@@ -871,9 +887,10 @@ function render(){
  const order=[...fams.keys()].sort((x,y)=>famLow.get(x)-famLow.get(y)||famLabel(x).localeCompare(famLabel(y)));
  for(const k of order)fams.get(k).sort((x,y)=>lvOf(x)-lvOf(y)||String(x.name).localeCompare(String(y.name)));
  const famId=k=>'fam-'+String(k).replace(/[^\w-]/g,'');
- const jump=order.length>1?`<label class="mon-jump">Jump to a family <select data-mon-jump><option value="">Choose…</option>${order.map(k=>`<option value="${famId(k)}">${escXml(famLabel(k))} (Lv ${lvOf(fams.get(k)[0])}+)</option>`).join('')}</select></label>`:'';
+ const filtered=!!(s||needW.length||needR.length||only);   // a filter or search on: every family open
+ const jump=order.length>1?`<div class="mon-tools"><label class="mon-jump">Jump to a family <select data-mon-jump><option value="">Choose…</option>${order.map(k=>`<option value="${famId(k)}">${escXml(famLabel(k))} (Lv ${lvOf(fams.get(k)[0])}+)</option>`).join('')}</select></label><button type="button" data-mon-all="open">Open all</button><button type="button" data-mon-all="close">Close all</button></div>`:'';
  content.innerHTML=weakFilterBar()+(want&&!a.length?'<div class="note">No monsters '+want+'.</div>':'')+jump+order.map(k=>{const list=fams.get(k),lo=lvOf(list[0]),hi=lvOf(list[list.length-1]);
-   return `<h3 class="mon-fam" id="${famId(k)}">${escXml(famLabel(k))} <span class="muted">Lv ${lo}${hi>lo?'–'+hi:''} · ${list.length} ${list.length===1?'monster':'monsters'}</span></h3>`+list.map(m=>monsterCardHtml(m)).join('')}).join('');
+   return `<details class="mon-fam-box" id="${famId(k)}" data-fam="${escXml(k)}"${monFamOpen.has(k)?' open':filtered?' open data-auto="1"':''}><summary class="mon-fam"><span class="mon-fam-name">${escXml(famLabel(k))}</span> <span class="mon-fam-lv">Lv ${lo}${hi>lo?'–'+hi:''}</span> <span class="mon-fam-n">${list.length} ${list.length===1?'monster':'monsters'}</span></summary>`+list.map(m=>monsterRowHtml(m)).join('')+'</details>'}).join('');
  document.querySelectorAll('.card[data-t]').forEach(e=>e.onclick=ev=>{if(ev.target.closest('.dropicon-link'))return;if(document.getElementById('main')?.dataset.view!=='wide')focus(e.dataset.t)});}
  else if(tab==='families'){content.innerHTML=D.families.filter(f=>!s||JSON.stringify(f).toLowerCase().includes(s)).map(f=>`<div class="card"><div class="name">${f[1]}</div><div class="s">${f[0]} • ${f[2]} • attacks with ${f[3]}</div><div class="s">${tagChipsLine(f[5],f[4],f[0])}</div></div>`).join('')}
  else if(tab==='guides'){content.innerHTML=globalThis.bxcGuides?globalThis.bxcGuides.indexHtml(guideGroup):'';}

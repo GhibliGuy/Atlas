@@ -867,7 +867,11 @@
       `<section class="it-group" id="it-${k}"><h3>${esc(label)} <span class="muted">${fmt(grouped.get(k).length)}${k==='other'?' · where these come from is not recorded yet':''}</span></h3>${k==='jewelry'?accessoryDropRules():''}<div class="it-grid">${grouped.get(k).map(tile).join('')}</div></section>`).join('');
   }
   // the Bestiary's family list: jump to one
-  document.addEventListener('change',e=>{const sl=e.target.closest&&e.target.closest('[data-mon-jump]');if(!sl||!sl.value)return;document.getElementById(sl.value)?.scrollIntoView({block:'start'});sl.value=''});
+  document.addEventListener('change',e=>{const sl=e.target.closest&&e.target.closest('[data-mon-jump]');if(!sl||!sl.value)return;const d=document.getElementById(sl.value);if(d){d.open=true;d.scrollIntoView({block:'start'})}sl.value=''});
+  // families open / closed: remembered while the page is open (a filter redraws the list)
+  document.addEventListener('toggle',e=>{const d=e.target;if(!d.matches||!d.matches('details.mon-fam-box')||typeof monFamOpen==='undefined')return;if(d.dataset.auto){delete d.dataset.auto;return}   // opened for a filter, not by you
+    if(d.open)monFamOpen.add(d.dataset.fam);else monFamOpen.delete(d.dataset.fam)},true);
+  document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-mon-all]');if(!b)return;const open=b.dataset.monAll==='open';document.querySelectorAll('#content details.mon-fam-box').forEach(d=>{d.open=open})});
   // the group chips and the order: redraw just the list
   document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-it-group]');if(!b)return;itemsView.group=b.dataset.itGroup;
     try{sessionStorage.setItem('bxcItemsView',JSON.stringify(itemsView))}catch{}augmentCurrentTab();document.getElementById('content')?.scrollIntoView({block:'start'})});
