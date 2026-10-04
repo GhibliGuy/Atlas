@@ -792,13 +792,85 @@
     });
     return '<div style="margin-top:10px"><b>Recorded monster drops</b>'+chipRowHtml(chips)+'<div class="s muted" style="margin-top:6px">Share of logged loot events from this monster, not a per-kill chance.</div></div>';
   }
+  // one item's full card (the map panel's "where it comes from")
+  function itemCardHtml(r){return `<div class="card" data-item="${esc(r.itemTypeId)}"><img class="thumb itemthumb" src="${itemImgFor(r.itemTypeId)}" alt="${esc(prettyId(r.itemTypeId))}"><div class="name"><a class="page-link" href="${pageHref('item',r.itemTypeId)}">${esc(prettyId(r.itemTypeId))}</a>${questItem(r.itemTypeId)?` <span class="quest-badge" title="Asked for by ${esc(questItem(r.itemTypeId).quests.join(' / '))}">Quest item</span>`:''}</div><div class="s">${esc(itemSourcesText(r))}</div>${itemMonsterRates(r)}<div class="s muted">Last seen ${when(r.lastSeen)}</div>${(r.monsterSources.size||[...(state.resourceCatalog?.values()||[])].some(x=>x.yieldItem===r.itemTypeId))?`<button type="button" class="show-on-map" data-map-kind="item" data-map-id="${esc(r.itemTypeId)}">Show on map</button>`:''}</div>`}
+  // What an item is, from the game's own data: the skill that crafts it (its recipes), the skill that gathers it, its
+  // lists of gems, rings, pendants, tomes, weapon and tool kinds, the outfits' clothes and the quests' items; then
+  // whether monsters drop it. The groups, in the order the Items page shows them:
+  const ITEM_GROUPS=[['weapons','Weapons'],['ammo','Ammunition'],['armor','Armor & clothing'],['tools','Tools'],['jewelry','Jewelry & capes'],['gems','Gems'],
+    ['potions','Potions & poisons'],['food','Food'],['scrolls','Scrolls & tomes'],['resources','Gathered resources'],['materials','Crafting materials'],
+    ['furniture','Furniture & workbenches'],['parts','Monster drops'],['quest','Quest items'],['other','Other']];
+  let itemGroupIdx=null;
+  function itemGroupIndex(){
+    if(itemGroupIdx)return itemGroupIdx;
+    const R=globalThis.BXC_GAME_RECIPES||{},G=globalThis.BXC_GAME_DATA||{},recipe=new Map(),cookIn=new Set(),usedIn=new Set(),gather=new Map();
+    for(const r of R.recipes||[]){recipe.set(r.id,r);for(const i of r.ingredients||[]){usedIn.add(i.id);if(r.skill==='Cooking')cookIn.add(i.id)}}
+    for(const g of R.gatherables||[])gather.set(g.id,g.skill);
+    const clothes=new Set();for(const o of G.outfits||[])for(const v of Object.values(o.body||{}))clothes.add(v);
+    const ends=keys=>{const k=[...keys].sort((x,y)=>y.length-x.length);return id=>k.some(w=>id===w||id.endsWith('-'+w))};
+    itemGroupIdx={recipe,cookIn,usedIn,gather,clothes,weapon:ends(Object.keys(G.weapons||{})),tool:ends(Object.keys((G.tools||{}).skills||{})),
+      armorPart:ends(['head','torso','legs','arms','feet','fullhelm','spikedhelm','shield'])};
+    return itemGroupIdx;
+  }
+  function itemGroup(id,r){
+    const X=itemGroupIndex(),rc=X.recipe.get(id),sk=rc&&rc.skill;
+    if(/^gem-/.test(id))return 'gems';
+    if(/-ring-|^ring-|^pendant-|^cape-|^amulet-/.test(id))return 'jewelry';
+    if(/^tome-/.test(id)||/^scroll-|^exp-scroll-|^warp-/.test(id)||sk==='Scribing'&&id!=='parchment')return 'scrolls';
+    if(/-potion-/.test(id)||/weapon-poison$/.test(id))return 'potions';
+    if(/(^|-)(arrow|bolt)$/.test(id))return 'ammo';
+    if(sk==='Cooking'||X.cookIn.has(id)||/^(burnt|raw|cooked)-/.test(id)||id==='berries')return 'food';
+    if(sk==='Weapon Smithing'||sk==='Bowyer'||X.weapon(id))return 'weapons';
+    if(sk==='Armor Smithing'||sk==='Tailoring'||sk==='Leatherworking'||X.armorPart(id)||X.clothes.has(id))return 'armor';
+    if(sk==='Tool Smithing'||X.tool(id))return 'tools';
+    if(sk==='Carpentry')return rc.group==='material'?'materials':'furniture';   // the game's own Carpentry groups
+    if(sk)return 'materials';   // Smelting (bars), Herblore pigments and powders, parchment
+    if(X.gather.has(id)||/-(seeds|sapling)$/.test(id)||id==='wool')return 'resources';
+    if(questItem(id))return 'quest';
+    if(r&&r.monsterSources&&r.monsterSources.size)return 'parts';
+    if(X.usedIn.has(id))return 'materials';   // something a recipe calls for
+    return 'other';
+  }
+  // a tile's one line: how you get it
+  function itemTileLine(id,r){
+    const rc=itemGroupIndex().recipe.get(id);
+    if(rc)return esc(rc.skill)+' '+fmt(rc.level);
+    const g=itemGroupIndex().gather.get(id);if(g)return 'Gathered: '+esc(prettyId(g));
+    if(r.craft)return esc(prettyId(r.craft.skill))+(r.craft.level!=null?' '+fmt(r.craft.level):'');
+    if(r.gatherSkill)return 'Gathered: '+esc(prettyId(r.gatherSkill));
+    const mons=[...r.monsterSources.values()].sort((x,y)=>y.events-x.events);
+    if(mons.length)return 'Drops from '+esc(mons.slice(0,2).map(m=>prettyId(m.name)).join(', '))+(mons.length>2?' +'+(mons.length-2):'');
+    const res=[...r.resourceSources.values()];if(res.length)return 'From '+esc(prettyId(res[0].name));
+    return '<span class="muted">Source not seen yet</span>';
+  }
+  let itemsView={group:'all',sort:'type'};
+  try{const v=JSON.parse(sessionStorage.getItem('bxcItemsView')||'null');if(v&&typeof v==='object')itemsView={...itemsView,...v}}catch{}
   function itemsHtml(search=''){
     const s=String(search||'').toLowerCase().trim();
-    const rows=[...(state.items?.values()||[])].filter(r=>itemMatchesSearch(r,s)).sort((a,b)=>b.lastSeen-a.lastSeen);
-    return accessoryDropRules()+`<div class="collector-panel"><div class="collector-title">Observed items</div><div class="statline"><span>${fmt(rows.length)} item types observed</span></div><div class="muted">Every item type your collector has seen, with where it's known to come from so far — crafted, gathered from a resource node, or dropped by a monster. This fills in automatically as you craft, gather, and fight; an item you've only received once (e.g. a quest or vendor reward) may show no known source yet.</div></div>` +
-    (rows.length?rows.map(r=>`<div class="card" data-item="${esc(r.itemTypeId)}"><img class="thumb itemthumb" src="${itemImgFor(r.itemTypeId)}" alt="${esc(prettyId(r.itemTypeId))}"><div class="name"><a class="page-link" href="${pageHref('item',r.itemTypeId)}">${esc(prettyId(r.itemTypeId))}</a>${questItem(r.itemTypeId)?` <span class="quest-badge" title="Asked for by ${esc(questItem(r.itemTypeId).quests.join(' / '))}">Quest item</span>`:''}</div><div class="s">${esc(itemSourcesText(r))}</div>${itemMonsterRates(r)}<div class="s muted">Last seen ${when(r.lastSeen)}</div>${(r.monsterSources.size||[...(state.resourceCatalog?.values()||[])].some(x=>x.yieldItem===r.itemTypeId))?`<button type="button" class="show-on-map" data-map-kind="item" data-map-id="${esc(r.itemTypeId)}">Show on map</button>`:''}</div>`).join('')
-    :'<div class="note">'+(s?'No items match your search.':'No items captured yet.')+'</div>');
+    const all=[...(state.items?.values()||[])].filter(r=>itemMatchesSearch(r,s));
+    const grouped=new Map(ITEM_GROUPS.map(([k])=>[k,[]]));for(const r of all)grouped.get(itemGroup(r.itemTypeId,r)).push(r);
+    const lvl=id=>{const rc=itemGroupIndex().recipe.get(id);return rc?rc.level:1e9};   // crafted ones by level, then the rest by name
+    for(const list of grouped.values())list.sort((x,y)=>lvl(x.itemTypeId)-lvl(y.itemTypeId)||prettyId(x.itemTypeId).localeCompare(prettyId(y.itemTypeId)));
+    const g=itemsView.group!=='all'&&grouped.get(itemsView.group)?.length?itemsView.group:'all';
+    const tile=r=>{const id=r.itemTypeId,qi=questItem(id);
+      return `<a class="it-tile" href="${pageHref('item',id)}" data-item="${esc(id)}"><img class="thumb itemthumb" src="${itemImgFor(id)}" alt="" loading="lazy"><span class="it-name">${esc(prettyId(id))}${qi?' <span class="quest-badge" title="Asked for by '+esc(qi.quests.join(' / '))+'">Quest</span>':''}</span><span class="it-line">${itemTileLine(id,r)}</span></a>`};
+    const chips=`<div class="it-chips" role="toolbar" aria-label="Item groups"><button type="button" class="it-chip${g==='all'?' on':''}" data-it-group="all">All <b>${fmt(all.length)}</b></button>`+
+      ITEM_GROUPS.filter(([k])=>grouped.get(k).length).map(([k,label])=>`<button type="button" class="it-chip${g===k?' on':''}" data-it-group="${k}">${esc(label)} <b>${fmt(grouped.get(k).length)}</b></button>`).join('')+
+      `<label class="it-sort">Order <select data-it-sort><option value="type"${itemsView.sort==='type'?' selected':''}>By type</option><option value="recent"${itemsView.sort==='recent'?' selected':''}>Recently seen</option><option value="name"${itemsView.sort==='name'?' selected':''}>A\u2013Z</option></select></label></div>`;
+    const head=`<div class="it-head"><p class="muted">${fmt(all.length)} items${s?' match your search':' seen so far'}, grouped by what they are. Open one for where it comes from and its drop rates.</p>${chips}</div>`;
+    if(!all.length)return head+'<div class="note">'+(s?'No items match your search.':'No items captured yet.')+'</div>';
+    if(itemsView.sort!=='type'){
+      const flat=(g==='all'?all:grouped.get(g)).slice().sort(itemsView.sort==='recent'?(x,y)=>y.lastSeen-x.lastSeen:(x,y)=>prettyId(x.itemTypeId).localeCompare(prettyId(y.itemTypeId)));
+      return head+`<div class="it-grid">${flat.map(tile).join('')}</div>`;
+    }
+    return head+ITEM_GROUPS.filter(([k])=>(g==='all'||g===k)&&grouped.get(k).length).map(([k,label])=>
+      `<section class="it-group" id="it-${k}"><h3>${esc(label)} <span class="muted">${fmt(grouped.get(k).length)}${k==='other'?' · where these come from is not recorded yet':''}</span></h3>${k==='jewelry'?accessoryDropRules():''}<div class="it-grid">${grouped.get(k).map(tile).join('')}</div></section>`).join('');
   }
+  // the group chips and the order: redraw just the list
+  document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-it-group]');if(!b)return;itemsView.group=b.dataset.itGroup;
+    try{sessionStorage.setItem('bxcItemsView',JSON.stringify(itemsView))}catch{}augmentCurrentTab();document.getElementById('content')?.scrollIntoView({block:'start'})});
+  document.addEventListener('change',e=>{const sl=e.target.closest&&e.target.closest('[data-it-sort]');if(!sl)return;itemsView.sort=sl.value;
+    try{sessionStorage.setItem('bxcItemsView',JSON.stringify(itemsView))}catch{}augmentCurrentTab()});
   function cloneResourceMarker(src){
     let cm;
     if(src instanceof L.CircleMarker){
@@ -4355,7 +4427,7 @@ function newsHtml(){
       return `<p class="map-panel-kind">Resource</p>`+(card||`<div class="card"><div class="name">${esc(prettyId(id))}</div></div>`)+panelOpen('resources','r',id,'Open in Resources');
     }
     if(kind==='item'){
-      const card=cardFromList(itemsHtml(''),`.card[data-item="${CSS.escape(id)}"]`);
+      const card=state.items?.get(id)?itemCardHtml(state.items.get(id)):null;
       return `<p class="map-panel-kind">Item · where it comes from (circled)</p>`+(card||`<div class="card"><div class="name">${esc(prettyId(id))}</div></div>`)+panelOpen('items','item',id,'Open in Items');
     }
     if(kind==='npc'){
