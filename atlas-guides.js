@@ -217,7 +217,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     lede:'Fish catfish, bass, trout and salmon from fishing spots, then cook them into food. Fishing is where pearls and topaz come from.',
     toolLine:'A better fishing rod adds to that chance.',
     tool:'fishing rod',unit:'fish',learn:'Learn it from the Fishing Trainer (one skill point); you fish from the bank.',
-    extra:()=>[['spots','How fishing spots work',`<p>Each spot is for one kind of fish (the map says which). Measured by players: a spot gives <b>1 to 5 catches</b> (about 2.5 on average) and then goes quiet, and comes back in the same place about <b>65 seconds</b> later. Moving between two or three nearby spots keeps you casting.</p>`],['gems','Gems',`<p>Fishing can turn up <b>pearls and topaz</b>.</p>`+gemOdds('fishing')],['eat','Eating it',`<p>Raw fish can’t be eaten: cook it first (${guide('cooking')}).</p>`]],related:['cooking','gems']})});
+    extra:()=>[specialEventBlurb('fishing'),['spots','How fishing spots work',`<p>Each spot is for one kind of fish (the map says which). Measured by players: a spot gives <b>1 to 5 catches</b> (about 2.5 on average) and then goes quiet, and comes back in the same place about <b>65 seconds</b> later. Moving between two or three nearby spots keeps you casting.</p>`],['gems','Gems',`<p>Fishing can turn up <b>pearls and topaz</b>.</p>`+gemOdds('fishing')],['eat','Eating it',`<p>Raw fish can’t be eaten: cook it first (${guide('cooking')}).</p>`]],related:['cooking','gems']})});
   reg({slug:'herblore',group:'Gathering skills',title:'Herblore',blurb:'Plants to gather, and the pigments and potions made from them.',build:()=>{
     const gath=gatheringGuide({skill:'herblore',action:'pick',node:'plant',tool:'herbalist’s sickle',unit:'plant',learn:'Herblore costs no skill point: finishing the quest <a href="#/guide/quest-binxonia-scriptorium-apprentice">The Scriptorium Apprentice</a> (from <a href="#/npc/osric-blane">Osric Blane</a>) unlocks it.',lede:'',related:[]})();
     const craft=craftingGuide({skill:'Herblore',lede:'',chanceNote:'Pigments, powders and weapon poisons never fail. Poisoned arrows and bolts follow the usual crafting odds: 60% at their level, 95% from 14 levels above.'})();
@@ -225,43 +225,53 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       sections:[...gath.sections.filter(s=>s[0]!=='uses').map(s=>[s[0],s[1],s[2]]),specialEventBlurb('herblore'),['recipes','What herblore makes',`<p>Plants are ground into pigments and powders at a <b>pestle and mortar</b> out in the world; grinding uses your Herblore level and never fails.</p>`+craft.sections.find(s=>s[0]==='recipes')[2]],['poison','Weapon poisons',`<p>Drag a poison onto a sword, dagger, mace or spear for <b>60 doses</b>. Every hit that lands uses one and adds a share of the hit as damage over about 2 seconds that <b>ignores armor</b>; a miss uses nothing. For bows and crossbows, one vial and 60 arrows or bolts make 60 poisoned shots.</p>`+table(['Poison','Level','Needs','Adds'],[['Weak weapon poison','30','2 Mandrake Root','10% of each hit'],['Weapon poison','50','2 Wolfsbane','15%'],['Potent weapon poison','70','2 Adderfern Fronds','20%']])],['plan2','Levelling by making things',craft.sections.find(s=>s[0]==='plan')[2]]],related:['tailoring','scribing','cooking']};
   }});
 
-  // ---- Special events (the game's 3 Oct 2026 update) ----------------------------------------------------------------
+  // ---- Special events (the game's 3 Oct 2026 update; shoal and prize ram 4 Oct) ----------------------------------------------------------------
   // From the game's own rules (game-rules-*.js): every so often a rock becomes a rift, a tree a fallen giant and a herb a
   // bloom, for a while. Each copies the node it replaces (skill, level, tool, XP per success, success chance and speed)
   // with both ends of its yield doubled, a bigger footprint (6, 10 and 2 tiles across) and no rest after a gather; the
   // game sends when each opens and closes. How often they come and how long they stay is the server's, not published.
-  // The pictures are drawn by the game's own code (img/events, made 3 Oct 2026).
+  // The 4 Oct update (news "Rifts, Giants and Shoals") added the shoal (a fishing spot's, 3 tiles across) and the prize ram
+  // (a sheep's, 2 across) and says every action on an event succeeds and pays double. Shoal and ram have no per-item yield
+  // in the rules (fish and wool come from the server), so their sections are written out (custom).
+  // The pictures are drawn by the game's own code (img/events, made 3 and 4 Oct 2026).
   const SPECIAL_EVENTS=[
     {kind:'rifts',title:'Rifts',one:'rift',from:'rock',skill:'mining',unit:'ore',size:6,list:[['iron-rift','iron-ore'],['silver-rift','silver-ore'],['gold-rift','gold-ore'],['titanium-rift','titanium-ore']]},
     {kind:'giants',title:'Fallen giants',one:'fallen giant',from:'tree',skill:'lumberjack',unit:'logs',size:10,list:[['fallen-pine','pine-wood'],['fallen-oak','oak-wood'],['fallen-black-walnut','black-walnut-wood'],['fallen-shagbark','shagbark-wood']]},
-    {kind:'blooms',title:'Blooms',one:'bloom',from:'herb',skill:'herblore',unit:'herbs',size:2,list:[['flax-bloom','flax-fiber'],['woad-bloom','woad-leaves'],['madder-bloom','madder-root'],['weld-bloom','weld-stalks'],['mandrake-bloom','mandrake-root'],['wolfsbane-bloom','wolfsbane'],['adderfern-bloom','adderfern-fronds']]}];
+    {kind:'blooms',title:'Blooms',one:'bloom',from:'herb',skill:'herblore',unit:'herbs',size:2,list:[['flax-bloom','flax-fiber'],['woad-bloom','woad-leaves'],['madder-bloom','madder-root'],['weld-bloom','weld-stalks'],['mandrake-bloom','mandrake-root'],['wolfsbane-bloom','wolfsbane'],['adderfern-bloom','adderfern-fronds']]},
+    {kind:'shoals',title:'Shoals',one:'shoal',from:'fishing spot',skill:'fishing',unit:'fish',size:3,list:[['fish-shoal',null]],
+      custom:()=>`<p>A catch can stir up a <b>shoal</b> in open water near the bank: <b>3 by 3 tiles</b>, and you cast at it from the shore like at a fishing spot. It fishes like the spot it came from (Fishing from level 1, with a rod), every cast lands a catch and each pays <b>double</b> what the spot would. Shoals also turn up <b>gems more often</b>. See the <a href="#/guide/fishing">Fishing</a> guide for the fish themselves.</p>`},
+    {kind:'rams',title:'Prize rams',one:'prize ram',from:'sheep',skill:'shearing',unit:'wool',size:2,list:[['prize-ram',null]],
+      custom:()=>`<p>Shearing a sheep can bring out a <b>prize ram</b> (2 by 2 tiles). Shear it like a sheep (Shearing from level 1, with shears, 12 XP each): every clip succeeds and gives <b>double the wool</b>. Its fleece <b>thins as it is shorn</b>, and when it is bare it leaves in a burst of wool. See the <a href="#/guide/shearing">Shearing</a> guide for what wool is for.</p>`}];
   const eventRule=id=>(typeof GATHERABLES!=='undefined'?GATHERABLES:[]).find(g=>g.id===id)||null;
   const eventFig=(id,cap,small)=>`<figure class="ev-fig${small?' small':''}"><img src="img/events/${esc(id)}.svg" alt="${esc(pretty(id))}" loading="lazy"><figcaption>${cap}</figcaption></figure>`;
   const yieldTxt=(a,b)=>a===b?n(a):`${n(a)}–${n(b)}`;
   function eventSection(ev){
+    if(ev.custom)return `<div class="ev-figs">${ev.list.map(([id])=>eventFig(id,esc(pretty(id)))).join('')}</div>`+ev.custom();
     const rows=ev.list.map(([id,yid])=>{const g=eventRule(yid);return [esc(pretty(id)),g?n(g.level):'—',item(yid),g?n(g.xp):'—',g?yieldTxt(g.minYield,g.maxYield):'—',g?`<b>${yieldTxt(g.minYield*2,g.maxYield*2)}</b>`:'—']});
     return `<div class="ev-figs">${ev.list.map(([id,yid])=>{const g=eventRule(yid);return eventFig(id,`${esc(pretty(id))}${g?` <span class="muted">Lv ${n(g.level)}</span>`:''}`)}).join('')}</div>`
       +`<p>A ${esc(ev.from)} that turns into a ${esc(ev.one)} covers <b>${ev.size} by ${ev.size} tiles</b> while it lasts. You gather it with ${esc(pretty(ev.skill))} at the same level as the ${esc(ev.from)} it replaced. See the <a href="#/guide/${esc(ev.skill)}">${esc(pretty(ev.skill))}</a> guide for the skill itself.</p>`
       +table(['Event','Level','Gives','XP each','Normal yield','Event yield'],rows);
   }
-  reg({slug:'special-events',group:'Gathering skills',title:'Special events',blurb:'Rifts, fallen giants and blooms: rocks, trees and herbs that give double for a while.',build:()=>({
-    lede:'Every so often an ordinary rock, tree or herb turns into a <b>special event</b> for a while: a <b>rift</b>, a <b>fallen giant</b> or a <b>bloom</b>. It gathers just like the node it replaced, but every success gives <b>twice as much</b>.',
+  reg({slug:'special-events',group:'Gathering skills',title:'Special events',blurb:'Rifts, fallen giants, blooms, shoals and prize rams: gathering spots that give double for a while.',build:()=>({
+    lede:'Once in a while your gathering sets off a <b>special event</b> close by: a <b>rift</b>, a <b>fallen giant</b>, a <b>bloom</b>, a <b>shoal</b> or a <b>prize ram</b>. It gathers like the node it came from, but every swing, cast, pick or clip <b>succeeds</b> and gives <b>twice as much</b>. Anyone nearby can join in while it lasts.',
     sections:[
       ['how','How they work',`<div class="ev-figs">${SPECIAL_EVENTS.map(ev=>eventFig(ev.list[ev.list.length-1][0],esc(ev.title))).join('')}</div>
-        <ul class="g-list"><li>A <b>rock</b> can become a <b>rift</b> (Mining), a <b>tree</b> a <b>fallen giant</b> (Lumberjack) and a <b>herb</b> a <b>bloom</b> (Herblore). Fishing spots have none.</li>
-        <li>It works exactly like the node it replaced: the <b>same skill, level, tool, XP per success, success chance and speed</b>.</li>
-        <li>Each success gives <b>double</b> the usual yield: the game doubles both the least and the most a gather can give.</li>
+        <ul class="g-list"><li>Every gathering skill has one: <b>mining</b> can tear open a <b>rift</b>, lightning can bring down a <b>fallen giant</b> near a woodcutter, <b>picking herbs</b> can make a <b>bloom</b> spring up, a <b>catch</b> can stir up a <b>shoal</b> and <b>shearing</b> can bring a <b>prize ram</b>.</li>
+        <li>It works like the node it came from: the <b>same skill, level, tool, XP per action and speed</b>.</li>
+        <li><b>Every action on it succeeds</b> and pays <b>double</b> what the ordinary rock, tree, herb, spot or sheep would (the game doubles both the least and the most a gather can give).</li>
+        <li>Rifts, fallen giants and shoals turn up <b>gems more often</b>; fallen giants and blooms give <b>more saplings and seeds</b>.</li>
         <li>The game's rules give it <b>no rest after a gather</b>, so you can keep working it without waiting. It does <b>run out</b>, though: the first fallen shagbark measured gave <b>68 wood over 32 chops</b> (2 or 3 a chop, where the tree gives 1 or 2) and then disappeared.</li>
-        <li>It is <b>big and easy to spot</b>: a rift covers 6 by 6 tiles, a fallen giant 10 by 10 and a bloom 2 by 2. The game's map marks it as <i>Rift</i>, <i>Fallen giant</i> or <i>Bloom</i> in its own colour.</li>
-        <li>It only <b>stays open for a while</b>: the first one measured closed <b>4 minutes</b> after it opened, if nobody used it up first. The game announces it in <b>system chat</b> (“Lightning fells an ancient shagbark nearby.”).</li><li>It seems to come from <b>gathering</b>: that fallen shagbark appeared where its chopper stood, a second after a chop at a shagbark tree. How often it happens is not published, and players are still measuring.</li></ul>`+note('Sizes, levels, XP and yields from the game’s own rules (3 October 2026 update); how long it lasted, how much it held and the chat line were measured by players. The pictures are drawn by the game itself.')],
+        <li>It is <b>easy to spot</b>: a rift covers 6 by 6 tiles, a fallen giant 10 by 10, a shoal 3 by 3 and a bloom or prize ram 2 by 2. The game's map marks it as <i>Rift</i>, <i>Fallen giant</i>, <i>Bloom</i>, <i>Shoal</i> or <i>Prize ram</i> in its own colour.</li>
+        <li>It is <b>shared</b> by everyone working it, and players close by hear when one opens.</li>
+        <li>It closes when it <b>runs dry or its time is up</b>: the first one measured closed <b>4 minutes</b> after it opened, if nobody used it up first. The game announces it in <b>system chat</b> (“Lightning fells an ancient shagbark nearby.”).</li><li>It comes from <b>gathering</b>: the first fallen shagbark appeared where its chopper stood, a second after a chop at a shagbark tree. How often it happens is not published.</li></ul>`+note('Sizes, levels, XP and yields from the game’s own rules (3 and 4 October 2026 updates) and its news post “Rifts, Giants and Shoals”; how long one lasted, how much it held and the chat line were measured by players. The pictures are drawn by the game itself.')],
       ...SPECIAL_EVENTS.map(ev=>[ev.kind,ev.title,eventSection(ev)])
     ],
-    related:['mining','lumberjack','herblore']})});
+    related:['mining','lumberjack','herblore','fishing','shearing']})});
   // the short version for a skill's own page, linking to the full one
   function specialEventBlurb(skill){
     const ev=SPECIAL_EVENTS.find(e=>e.skill===skill);if(!ev)return null;
     return ['events','Special event: '+ev.title.toLowerCase(),`<div class="ev-figs">${ev.list.map(([id])=>eventFig(id,esc(pretty(id)),true)).join('')}</div>
-      <p>Every so often a ${esc(ev.from)} turns into a <b>${esc(ev.one)}</b> for a while. You gather it like the ${esc(ev.from)} it replaced (same level, tool and XP each), but every success gives <b>double the ${esc(ev.unit)}</b>, and it doesn’t rest between gathers, until it runs out or closes a few minutes later. More in <a href="#/guide/special-events">Special events</a>.</p>`];
+      <p>Once in a while your work sets off a <b>${esc(ev.one)}</b> close by. You work it like a ${esc(ev.from)} (same level, tool and XP each), but every action succeeds and gives <b>double the ${esc(ev.unit)}</b>, until it runs dry or closes a few minutes later. More in <a href="#/guide/special-events">Special events</a>.</p>`];
   }
 
   // ---- Crafting skills ----------------------------------------------------------------------------------------------
@@ -610,6 +620,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const uses=usesOf('wool');const skills=[...new Set(uses.map(r=>r.skill))];
     return {lede:'Use shears on a sheep to get wool. The sheep runs off a little, and its fleece grows back in about a minute; most sheep give a second clip and a few a third.',sections:[
       ['levels','Levelling',`<p>Success climbs quickly over the first levels, and after that levels add to how much you get.</p>`],
+      specialEventBlurb('shearing'),
       ['uses','What wool is for',`<p>${skills.map(s=>skillGuideLink(s)).join(' · ')}</p>`+table(['Skill','Level','Makes','Needs'],uses.map(r=>[esc(r.skill),n(r.level),item(r.id,r.item),ingList(r)]))],
       ['where','Where the sheep are',`<p>Sheep are in the <a href="#/monster/sheep">Bestiary</a>; their page shows where they have been seen.</p>`]
     ],related:['tailoring','bowyer','tool-smithing']};
