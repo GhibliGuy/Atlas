@@ -902,13 +902,72 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   // the quests in their groups (story, side, skill - the game's own categories), each under its own heading
   function questGroups(){return Q_CATS.map(([k,t])=>{const qs=questList().filter(q=>questCat(q)===k);return qs.length?`<h3 class="g-subhead" id="qg-${k}">${QG_PAGES[k]?`<a href="#/guide/${QG_PAGES[k][0]}">${esc(t)}</a>`:esc(t)} <span class="muted">(${qs.length})</span></h3><div class="g-cards">${questCards(qs)}</div>`:''}).join('')}
   function questCards(list){return (list||questList()).map(q=>`<a class="g-card" href="#/guide/${enc(questSlug(q))}">${questDone(q)?'':`<span class="q-alert" role="note">${ALERT_SVG}Not fully written yet</span>`}<b>${esc(q.name)}</b><span>Level ${q.recommendedLevel||'?'} · ${esc(pretty(q.lengthTag||''))}${q.giverName?' · '+esc(q.giverName):''}</span></a>`).join('')}
+  // ---- the Guides index: a hero with a live filter and quick starts, then each group as a band with its own picture
+  // and a card per guide carrying the game's own art (data/img via bxcAssetImg - the website's lite start has the
+  // pictures list too; a card whose art isn't known yet fills in once it is, see fillGuideArt)
+  const GX_GROUP={
+    'Start here':{art:['npc-binxonia-guard','monster'],about:'New to Binxonia? The basics, in the order you will need them.'},
+    'Combat':{art:['goblin','monster'],about:'How fights work: damage, armor, specials and what you are up against.'},
+    'Fighting styles':{art:['iron-sword','item'],about:'Melee, ranged and magic: the weapons, skills and spells of each.'},
+    'Melee':{art:['iron-sword','item'],about:'Swords, maces, daggers and spears.'},
+    'Ranged':{art:['pine-bow','item'],about:'Bows, crossbows and their ammo.'},
+    'Magic':{art:['pine-staff','item'],about:'Schools, spells and staves.'},
+    'Gathering skills':{art:['pickaxe','item'],about:'Ore, logs, fish, herbs and wool, and the special events they can set off.'},
+    'Crafting skills':{art:['smithing-hammer','item'],about:'Turn what you gather into bars, gear, food, scrolls, furniture and a home.'},
+    'Gear, gems & enchanting':{art:['gem-ruby','item'],about:'Quality tiers, gems, enchantments and outfits.'},
+    'World':{art:['npc-banker','monster'],about:'Places, trainers, getting around, trading and playing together.'},
+    'Quests':{art:['parchment','item'],about:'Every quest players have recorded, with its steps and rewards.'}};
+  const GX_ART={'getting-started':['npc-binxonia-guard','monster'],'attributes-and-classes':['iron-fullhelm','item'],'levels-and-xp':['gem-amber','item'],'death-and-banking':['npc-banker','monster'],'using-the-atlas':['parchment','item'],
+    combat:['goblin','monster'],'special-attacks':['iron-mace','item'],armor:['iron-torso','item'],'monsters-by-level':['skeleton','monster'],'monster-families':['wolf','monster'],
+    melee:['iron-sword','item'],ranged:['pine-bow','item'],magic:['pine-staff','item'],
+    mining:['pickaxe','item'],lumberjack:['axe','item'],fishing:['fishing-rod','item'],herblore:['woad-leaves','item'],shearing:['shears','item'],'special-events':['img/events/gold-rift.svg'],
+    smelting:['iron-bar','item'],'weapon-smithing':['iron-dagger','item'],'armor-smithing':['iron-shield','item'],'tool-smithing':['smithing-hammer','item'],bowyer:['carving-tool','item'],tailoring:['imp-torso','item'],leatherworking:['deerhide-torso','item'],cooking:['cooked-catfish','item'],scribing:['parchment','item'],carpentry:['saw','item'],housing:['oak-plank','item'],
+    'quality-and-enchanting':['iron-ring-ruby','item'],gems:['gem-sapphire','item'],outfits:['deerhide-torso','item'],
+    places:['ogre','monster'],trainers:['npc-binxonia-guard','monster'],travel:['feather','item'],economy:['gold-coin','item'],'playing-together':['bandit','monster'],quests:['parchment','item']};
+  const GX_NEW=new Set(['special-events']);   // recently added or rewritten: a small "New" tag
+  // the fighting styles have one guide each, so on the all-guides page they share a band
+  const GX_BANDS=[['Start here'],['Combat'],['Fighting styles',['Melee','Ranged','Magic']],['Gathering skills'],['Crafting skills'],['Gear, gems & enchanting'],['World'],['Quests']];
+  const gxArtUrl=a=>{if(!a)return null;if(/^img\//.test(a[0]))return a[0];try{return globalThis.bxcAssetImg?globalThis.bxcAssetImg(a[0],a[1]||'item'):null}catch(_){return null}};
+  const gxArt=(a,cls)=>{const u=gxArtUrl(a);return `<span class="${cls}"${u?'':` data-gx-art="${esc(a?a.join('|'):'')}"`}>${u?`<img src="${esc(u)}" alt="" loading="lazy">`:''}</span>`};
+  // pictures not known when the page was drawn (the list still loading): fill them in as soon as it is
+  let gxFillTimer=0;
+  function fillGuideArt(tries){
+    clearTimeout(gxFillTimer);
+    const left=[...document.querySelectorAll('[data-gx-art]')];if(!left.length)return;
+    for(const el of left){const u=gxArtUrl(el.dataset.gxArt.split('|'));if(u){el.innerHTML=`<img src="${esc(u)}" alt="" loading="lazy">`;el.removeAttribute('data-gx-art')}}
+    if(tries>0&&document.querySelector('[data-gx-art]'))gxFillTimer=setTimeout(()=>fillGuideArt(tries-1),600);
+  }
+  const gxCard=g=>`<a class="gx-card" href="#/guide/${enc(g.slug)}" data-gx-find="${esc((g.title+' '+g.blurb+' '+g.group).toLowerCase())}">${gxArt(GX_ART[g.slug]||(GX_GROUP[g.group]||{}).art,'gx-art')}<span class="gx-txt"><b>${esc(g.title)}</b><span>${esc(g.blurb)}</span></span>${GX_NEW.has(g.slug)?'<em class="gx-new">New</em>':''}</a>`;
+  const gxList=gr=>G.filter(g=>g.group===gr&&g.inIndex!==false&&!(gr==='Quests'&&/^quest-/.test(g.slug))).sort((a,b)=>orderOf(a.slug)-orderOf(b.slug));
+  function gxBand(title,groups,only){
+    const list=groups.flatMap(gxList);if(!list.length)return '';
+    const meta=GX_GROUP[title]||{},isQuests=title==='Quests',nQ=isQuests?questList().length:0,count=isQuests?nQ+' quests':list.length+(list.length===1?' guide':' guides');
+    const head=groups.length===1&&!only?`<a href="#/guides-${slug(title)}">${esc(title)}</a>`:esc(title);
+    return `<section class="gx-band" id="gx-${slug(title)}"><header class="gx-head">${gxArt(meta.art,'gx-head-art')}<div><h2>${head} <span class="gx-count">${count}</span></h2>${meta.about?`<p>${esc(meta.about)}</p>`:''}</div></header>`
+      +`<div class="gx-grid">${list.map(gxCard).join('')}</div>${isQuests?`<div class="gx-quests">${questGroups()}</div>`:''}</section>`;
+  }
   function indexHtml(only){
-    const groups=only?GROUPS.filter(gr=>slug(gr)===only):GROUPS;
-    // All guides: a row of links to each group first, and each heading links to its own page
-    const jump=only?`<p class="g-groups"><a href="#/guides">All guides</a>${GROUPS.filter(gr=>slug(gr)!==only).map(gr=>` · <a href="#/guides-${slug(gr)}">${esc(gr)}</a>`).join('')}</p>`
-      :`<p class="g-groups">${GROUPS.filter(gr=>G.some(g=>g.group===gr)).map(gr=>`<a href="#/guides-${slug(gr)}">${esc(gr)}</a>`).join(' · ')}</p>`;
-    return `<div class="g-index">`+jump+groups.map(gr=>{const list=G.filter(g=>g.group===gr&&g.inIndex!==false).sort((a,b)=>orderOf(a.slug)-orderOf(b.slug));if(!list.length)return '';
-      return `<section><h2>${only?esc(gr):`<a href="#/guides-${slug(gr)}">${esc(gr)}</a>`}</h2><div class="g-cards">${list.map(g=>`<a class="g-card" href="#/guide/${enc(g.slug)}"><b>${esc(g.title)}</b><span>${esc(g.blurb)}</span></a>`).join('')}</div>${gr==='Quests'?questGroups():''}</section>`}).join('')+`</div>`;
+    setTimeout(()=>fillGuideArt(20),0);
+    if(only){
+      const gr=GROUPS.find(x=>slug(x)===only);
+      const chips=`<p class="gx-chips"><a class="gx-chip" href="#/guides">All guides</a>${GROUPS.filter(x=>x!==gr&&G.some(g=>g.group===x)).map(x=>`<a class="gx-chip" href="#/guides-${slug(x)}">${esc(x)}</a>`).join('')}</p>`;
+      return `<div class="gx">${chips}${gr?gxBand(gr,[gr],true):''}</div>`;
+    }
+    const total=G.filter(g=>g.inIndex!==false&&!/^quest-/.test(g.slug)).length;
+    const paths=[['getting-started','New here?','Start with the basics',['npc-binxonia-guard','monster']],['combat','Fight','How combat works',['goblin','monster']],['mining','Gather','Mining and the other gathering skills',['pickaxe','item']],['guides-crafting-skills','Craft','Smithing, cooking, carpentry and more',['smithing-hammer','item']],['quests','Quests','Steps and rewards',['parchment','item']]];
+    const hero=`<div class="gx-hero"><div class="gx-hero-main"><h2>Learn the game</h2><p>${total} guides and ${questList().length} quests, built from the game&rsquo;s own data and what players have recorded.</p>`
+      +`<label class="gx-find"><span class="sr-only">Find a guide</span><input type="search" id="gxFind" placeholder="Find a guide&hellip; (fishing, armor, gems, quests)" autocomplete="off"></label></div>`
+      +`<nav class="gx-paths">${paths.map(([to,t,sub,a])=>`<a class="gx-path" href="#/${/^guides-/.test(to)?to:'guide/'+to}">${gxArt(a,'gx-path-art')}<b>${esc(t)}</b><span>${esc(sub)}</span></a>`).join('')}</nav></div>`;
+    const chips=`<p class="gx-chips">${GX_BANDS.filter(([t,gs])=>(gs||[t]).some(x=>G.some(g=>g.group===x))).map(([t])=>`<a class="gx-chip" href="#/guides" data-gx-jump="gx-${slug(t)}">${esc(t)}</a>`).join('')}</p>`;
+    return `<div class="gx">${hero}${chips}<p class="gx-none" hidden>No guide matches that. Try a skill, an item or a place.</p>${GX_BANDS.map(([t,gs])=>gxBand(t,gs||[t])).join('')}</div>`;
+  }
+  // the filter box and the group chips (one listener for the whole page, set once)
+  if(!globalThis.__gxWired){globalThis.__gxWired=true;
+    document.addEventListener('input',e=>{if(e.target&&e.target.id!=='gxFind')return;const q=e.target.value.trim().toLowerCase(),root=e.target.closest('.gx');if(!root)return;let any=false;
+      for(const band of root.querySelectorAll('.gx-band')){let n=0;for(const c of band.querySelectorAll('.gx-card,.g-card')){const t=(c.dataset.gxFind||c.textContent).toLowerCase();const hit=!q||q.split(/\s+/).every(w=>t.includes(w));c.hidden=!hit;if(hit)n++}
+        for(const h of band.querySelectorAll('.g-subhead'))h.hidden=!!q&&![...(h.nextElementSibling?h.nextElementSibling.children:[])].some(c=>!c.hidden);band.hidden=!n;if(n)any=true}
+      root.querySelector('.gx-none').hidden=any;root.querySelector('.gx-paths').hidden=!!q;});
+    document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-gx-jump]');if(!a)return;const el=document.getElementById(a.dataset.gxJump);if(!el)return;e.preventDefault();el.scrollIntoView({behavior:'smooth',block:'start'})});
   }
   function pageHtml(s){
     const g=byslug.get(s)||questGuide(s);if(!g)return '<p class="muted">No such guide.</p>';   // quest pages are made from their records
