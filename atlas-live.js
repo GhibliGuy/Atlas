@@ -702,12 +702,30 @@
     if(!list.length)return '';
     return `<div class="s">${list.map(m=>`Added by you at ${esc(fmt(m.x,1))}, ${esc(fmt(m.y,1))}${!EDIT?'':` <button type="button" class="manualres-remove" data-id="${esc(m.id)}" title="Remove this manually added location">Remove</button>`}`).join('<br>')}</div>`;
   }
+  // Resources, grouped by the skill that gathers them like the Bestiary's families: each skill a box you open and close
+  // (closed to start; all open while you search), with the levels it spans; inside, by the level the game's rules need.
+  const RES_SKILL_ORDER=['mining','lumberjack','fishing','herblore'];
   function resourcesHtml(search=''){
     const s=String(search||'').toLowerCase().trim();
-    const rows=[...state.resourceCatalog.values()].filter(r=>!s||JSON.stringify(r).toLowerCase().includes(s)).sort((a,b)=>b.lastSeen-a.lastSeen);
-    return `<div class="collector-panel"><div class="collector-title">Observed resources</div><div class="statline"><span>${fmt(rows.length)} gatherable resource types observed</span></div><div class="muted">Only objects you have actually gathered from successfully at least once show up here, so the collector knows for certain they are resources — and, when possible, exactly what they yield (e.g. "Fishing Spot (Trout)"). Click one to highlight every location it has been observed, the same way monsters work in the Bestiary.</div></div>` +
-    (rows.length?rows.map(r=>`<div class="card resourcecard" data-r="${esc(r.key)}"><img class="thumb itemthumb" src="${resourceImg(r)}" alt="${esc(resourceDisplayName(r))}"><div class="name"><a class="page-link" href="${pageHref('resource',r.key)}">${esc(resourceDisplayName(r))}</a> <span class="muted">${resourceCategoryLabel(r.skill)}</span></div><div class="s">${fmt(r.count+(r.manualCount||0))} known location${r.count+(r.manualCount||0)===1?'':'s'}${r.manualCount?` (${fmt(r.manualCount)} added manually)`:''}${r.lastSeen?` · ${r.manualOnly?'added':'last seen'} ${when(r.lastSeen)}`:''}</div>${(t=>t?`<div class="s">${t}</div>`:'')(gemDropText(r.skill,r.yieldItem||r.name||r.typeId))}${(y=>y?`<div class="s"><span class="resource-yield-link" data-item="${esc(y)}" title="Show in Items tab" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer"><img class="thumb itemthumb" src="${esc(itemImgFor(y))}" alt="" style="width:22px;height:22px;flex:none;border-radius:5px"><span>${esc(prettyId(y))}</span></span></div>`:'')(r.yieldItem||null)}${manualLocationsHtml(r)}</div>`).join('')
-    :'<div class="note">No gatherable resources confirmed yet. They appear here as data for them comes in.</div>');
+    const rows=[...state.resourceCatalog.values()].filter(r=>!s||JSON.stringify(r).toLowerCase().includes(s));
+    if(!rows.length)return '<div class="note">'+(s?'No resources match your search.':'No gatherable resources confirmed yet. They appear here as data for them comes in.')+'</div>';
+    const G=typeof GATHERABLES!=='undefined'?GATHERABLES:[],rule=r=>G.find(g=>g.id===r.yieldItem)||null;
+    const lvOf=r=>{const g=rule(r);return g?Number(g.level)||1:null};
+    const groups=new Map();for(const r of rows){const k=String(r.skill||'other').toLowerCase();if(!groups.has(k))groups.set(k,[]);groups.get(k).push(r)}
+    for(const list of groups.values())list.sort((a,b)=>(lvOf(a)??999)-(lvOf(b)??999)||resourceDisplayName(a).localeCompare(resourceDisplayName(b)));
+    const rank=k=>{const i=RES_SKILL_ORDER.indexOf(k);return i<0?99:i};
+    const order=[...groups.keys()].sort((a,b)=>rank(a)-rank(b)||a.localeCompare(b));
+    const row=r=>{const g=rule(r),lv=g?Number(g.level)||1:null,n=r.count+(r.manualCount||0),gem=gemDropText(r.skill,r.yieldItem||r.name||r.typeId),pct=gem&&/([\d.]+%)/.exec(String(gem).replace(/<[^>]+>/g,''));
+      const seen=r.lastSeen?(r.manualOnly?'Added ':'Last seen ')+when(r.lastSeen):'';
+      return `<div class="card resourcecard mon-row res-row" data-r="${esc(r.key)}"><img class="thumb itemthumb" src="${resourceImg(r)}" alt="${esc(resourceDisplayName(r))}" loading="lazy">
+        <div class="mon-id"><div class="name"><a class="page-link" href="${pageHref('resource',r.key)}">${esc(prettyId(r.name))}</a>${lv!=null?` <span class="muted">Lv ${lv}</span>`:''}</div>
+        ${r.yieldItem?`<div class="s"><span class="resource-yield-link" data-item="${esc(r.yieldItem)}" title="Show in Items"><img class="thumb itemthumb" src="${esc(itemImgFor(r.yieldItem))}" alt=""><span>${esc(prettyId(r.yieldItem))}</span></span></div>`:''}</div>
+        <div class="mon-stats">${g?`<span class="mon-st"><i>XP</i> <b>${fmt(g.xp)}</b></span><span class="mon-st" title="Time for one try"><i>Speed</i> <b>${Math.round((Number(g.ms)||0)/100)/10}s</b></span>`:''}
+        <div class="mon-tags"><span class="mon-tag obs"${seen?` title="${esc(seen)}"`:''}>${fmt(n)} known location${n===1?'':'s'}${r.manualCount?` (${fmt(r.manualCount)} added by hand)`:''}</span>${pct?`<span class="mon-tag good" title="${esc(String(gem).replace(/<[^>]+>/g,''))}">Gems ${pct[1]} a gather</span>`:''}</div></div>
+        ${manualLocationsHtml(r)}</div>`};
+    const tools=order.length>1?`<div class="mon-tools"><span class="muted">${fmt(rows.length)} resources${s?' match your search':' gathered so far'}. Click one to circle every spot on the map.</span><button type="button" data-mon-all="open">Open all</button><button type="button" data-mon-all="close">Close all</button></div>`:'';
+    return tools+order.map(k=>{const list=groups.get(k),lvs=list.map(lvOf).filter(x=>x!=null),lo=lvs.length?Math.min(...lvs):null,hi=lvs.length?Math.max(...lvs):null,key='res:'+k;
+      return `<details class="mon-fam-box" id="res-${esc(k)}" data-fam="${esc(key)}"${typeof monFamOpen!=='undefined'&&monFamOpen.has(key)?' open':s?' open data-auto="1"':''}><summary class="mon-fam"><span class="mon-fam-name">${esc(resourceCategoryLabel(k))}</span>${lo!=null?` <span class="mon-fam-lv">Lv ${lo}${hi>lo?'–'+hi:''}</span>`:''} <span class="mon-fam-n">${list.length} ${list.length===1?'resource':'resources'}</span></summary>${list.map(row).join('')}</details>`}).join('');
   }
   function deriveItems(){
     const items=new Map();

@@ -327,6 +327,13 @@ a.map-panel-open:hover{border-color:var(--accent);background:var(--panel2)}
 .mon-row .entity-chip{display:inline-flex!important;flex-direction:row!important;align-items:center;gap:5px;padding:2px 8px 2px 3px!important;width:auto!important;min-width:0!important;height:auto!important;text-align:left}
 .mon-row .entity-chip .thumb{width:22px!important;height:22px!important;margin:0!important}
 .mon-row .entity-chip-label,.mon-row .entity-chip-stat{font-size:11.5px;margin:0!important}
+/* resources: the yield as a small chip; in the narrow map panel a row stacks */
+.res-row .resource-yield-link{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:12.5px}.res-row .resource-yield-link .thumb{width:20px;height:20px;border-radius:4px;flex:none}
+.res-row>:not(img):not(.mon-id):not(.mon-stats){grid-column:1/-1}
+/* the Resources list is the narrow column beside the map: picture and name side by side, the rest under them */
+.res-row{grid-template-columns:44px 1fr;padding:6px 8px;column-gap:10px}.res-row .thumb{width:44px;height:44px}.res-row .mon-stats{grid-column:1/-1}
+.mon-fam-box>.res-row{margin:5px 6px 0}
+#mapPanel .mon-row{grid-template-columns:44px 1fr}#mapPanel .mon-row .thumb{width:44px;height:44px}#mapPanel .mon-row .mon-stats{grid-column:1/-1}
 @media (max-width:700px){.mon-row{grid-template-columns:48px 1fr}.mon-row .thumb{width:48px;height:48px}.mon-stats{grid-column:1/-1}.mon-fam-name{font-size:17px}}
 /* Items page: group chips, compact tiles */
 .it-head{margin-bottom:6px}.it-head>p{margin:0 0 8px}
