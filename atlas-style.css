@@ -291,6 +291,12 @@ a.map-panel-open:hover{border-color:var(--accent);background:var(--panel2)}
 .qe-done{display:block;margin-top:8px}
 .qe-foot{display:flex;gap:8px;align-items:center;margin-top:12px}.qe-save{font-weight:600}
 .q-notes{padding:4px 0}
+/* Special events: the game's own pictures */
+.ev-figs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:8px 0 12px}
+.ev-fig{margin:0;padding:8px;border:1px solid rgba(214,178,74,.28);border-radius:8px;background:rgba(60,80,52,.35);text-align:center}
+.ev-fig img{width:100%;height:110px;object-fit:contain;display:block}
+.ev-fig figcaption{font-size:12.5px;margin-top:4px}
+.ev-figs:has(.ev-fig.small){grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}.ev-fig.small img{height:72px}
 /* Bestiary: families you open and close, compact rows */
 .mon-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0 10px}.mon-tools button{font-size:13px;padding:4px 10px}
 .mon-jump{display:flex;gap:8px;align-items:center;font-size:13px;white-space:nowrap}.mon-jump select{width:auto;min-width:0}

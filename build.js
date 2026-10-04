@@ -32,6 +32,8 @@ for (const f of VENDOR_FILES) fs.copyFileSync(path.join(SRC, f), path.join(OUT, 
 // binxonia.com, at the game dev's own request. Static once downloaded, so this is a plain recursive copy, not
 // something build-snapshot.js needs to touch.
 fs.cpSync(path.join(SRC, 'tiles'), path.join(OUT, 'tiles'), { recursive: true });
+// Pictures the guides use (img/events: the game's rifts, fallen giants and blooms, drawn by its own code).
+fs.cpSync(path.join(SRC, 'img'), path.join(OUT, 'img'), { recursive: true });
 
 // index.html is atlas.html itself, plus one injected line (window.BXC_PUBLIC=true, read once at the top of
 // atlas-live.js) and one changed data-loading detail: fetch('data/snapshot.json') instead of a live bridge -

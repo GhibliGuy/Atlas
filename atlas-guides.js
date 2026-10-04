@@ -197,12 +197,12 @@
     lede:'Mine rocks for iron, silver, gold and titanium ore, the metal behind every smithing skill. Mining is also where five of the nine gems are found.',
     toolLine:'A better pickaxe adds to that chance (see Quality & enchanting for tool bonuses).',
 tool:'pickaxe',unit:'ore',learn:'Learn it from a trainer for a skill point.',nodeLine:'A top-level miner gets 10 ore a swing from a starter rock, and over 13 with a full-gem titanium pickaxe.',
-    extra:()=>[['gems','Gems',`<p>Every successful swing has a small chance of a gem: <b>rubies, diamonds, emeralds, sapphires and onyx</b>.</p>`+gemOdds('mining')]],related:['smelting','weapon-smithing','armor-smithing','tool-smithing','gems']})});
+    extra:()=>[specialEventBlurb('mining'),['gems','Gems',`<p>Every successful swing has a small chance of a gem: <b>rubies, diamonds, emeralds, sapphires and onyx</b>.</p>`+gemOdds('mining')]],related:['smelting','weapon-smithing','armor-smithing','tool-smithing','gems']})});
   reg({slug:'lumberjack',group:'Gathering skills',title:'Lumberjack',blurb:'Wood tiers, success chance and the fastest route to 100.',build:gatheringGuide({skill:'lumberjack',action:'chop',node:'tree',
     lede:'Chop trees for pine, oak, black walnut and shagbark wood, used by bowyers and in tool handles. Trees can also give amber and iolite.',
     toolLine:'A better axe adds to that chance.',
 tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLine:'A tree gives a few logs and then falls to a stump that grows back; everyone chopping the same tree shares its logs.',
-    extra:()=>[['gems','Gems',`<p>Chopping can turn up <b>amber and iolite</b>.</p>`+gemOdds('lumberjack')]],related:['bowyer','tool-smithing','gems']})});
+    extra:()=>[specialEventBlurb('lumberjack'),['gems','Gems',`<p>Chopping can turn up <b>amber and iolite</b>.</p>`+gemOdds('lumberjack')]],related:['bowyer','tool-smithing','gems']})});
   reg({slug:'fishing',group:'Gathering skills',title:'Fishing',blurb:'Fish tiers, how fishing spots refill, and the fastest route to 100.',build:gatheringGuide({skill:'fishing',action:'cast',node:'fishing spot',
     lede:'Fish catfish, bass, trout and salmon from fishing spots, then cook them into food. Fishing is where pearls and topaz come from.',
     toolLine:'A better fishing rod adds to that chance.',
@@ -212,8 +212,47 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const gath=gatheringGuide({skill:'herblore',action:'pick',node:'plant',tool:'herbalist’s sickle',unit:'plant',learn:'Herblore costs no skill point: finishing the quest <a href="#/guide/quest-binxonia-scriptorium-apprentice">The Scriptorium Apprentice</a> (from <a href="#/npc/osric-blane">Osric Blane</a>) unlocks it.',lede:'',related:[]})();
     const craft=craftingGuide({skill:'Herblore',lede:'',chanceNote:'Pigments, powders and weapon poisons never fail. Poisoned arrows and bolts follow the usual crafting odds: 60% at their level, 95% from 14 levels above.'})();
     return {lede:'Pick plants for fibre, dyes and poison ingredients, then turn them into pigments, powders and weapon poisons. Herblore both gathers and crafts.',
-      sections:[...gath.sections.filter(s=>s[0]!=='uses').map(s=>[s[0],s[1],s[2]]),['recipes','What herblore makes',`<p>Plants are ground into pigments and powders at a <b>pestle and mortar</b> out in the world; grinding uses your Herblore level and never fails.</p>`+craft.sections.find(s=>s[0]==='recipes')[2]],['poison','Weapon poisons',`<p>Drag a poison onto a sword, dagger, mace or spear for <b>60 doses</b>. Every hit that lands uses one and adds a share of the hit as damage over about 2 seconds that <b>ignores armor</b>; a miss uses nothing. For bows and crossbows, one vial and 60 arrows or bolts make 60 poisoned shots.</p>`+table(['Poison','Level','Needs','Adds'],[['Weak weapon poison','30','2 Mandrake Root','10% of each hit'],['Weapon poison','50','2 Wolfsbane','15%'],['Potent weapon poison','70','2 Adderfern Fronds','20%']])],['plan2','Levelling by making things',craft.sections.find(s=>s[0]==='plan')[2]]],related:['tailoring','scribing','cooking']};
+      sections:[...gath.sections.filter(s=>s[0]!=='uses').map(s=>[s[0],s[1],s[2]]),specialEventBlurb('herblore'),['recipes','What herblore makes',`<p>Plants are ground into pigments and powders at a <b>pestle and mortar</b> out in the world; grinding uses your Herblore level and never fails.</p>`+craft.sections.find(s=>s[0]==='recipes')[2]],['poison','Weapon poisons',`<p>Drag a poison onto a sword, dagger, mace or spear for <b>60 doses</b>. Every hit that lands uses one and adds a share of the hit as damage over about 2 seconds that <b>ignores armor</b>; a miss uses nothing. For bows and crossbows, one vial and 60 arrows or bolts make 60 poisoned shots.</p>`+table(['Poison','Level','Needs','Adds'],[['Weak weapon poison','30','2 Mandrake Root','10% of each hit'],['Weapon poison','50','2 Wolfsbane','15%'],['Potent weapon poison','70','2 Adderfern Fronds','20%']])],['plan2','Levelling by making things',craft.sections.find(s=>s[0]==='plan')[2]]],related:['tailoring','scribing','cooking']};
   }});
+
+  // ---- Special events (the game's 3 Oct 2026 update) ----------------------------------------------------------------
+  // From the game's own rules (game-rules-*.js): every so often a rock becomes a rift, a tree a fallen giant and a herb a
+  // bloom, for a while. Each copies the node it replaces (skill, level, tool, XP per success, success chance and speed)
+  // with both ends of its yield doubled, a bigger footprint (6, 10 and 2 tiles across) and no rest after a gather; the
+  // game sends when each opens and closes. How often they come and how long they stay is the server's, not published.
+  // The pictures are drawn by the game's own code (img/events, made 3 Oct 2026).
+  const SPECIAL_EVENTS=[
+    {kind:'rifts',title:'Rifts',one:'rift',from:'rock',skill:'mining',unit:'ore',size:6,list:[['iron-rift','iron-ore'],['silver-rift','silver-ore'],['gold-rift','gold-ore'],['titanium-rift','titanium-ore']]},
+    {kind:'giants',title:'Fallen giants',one:'fallen giant',from:'tree',skill:'lumberjack',unit:'logs',size:10,list:[['fallen-pine','pine-wood'],['fallen-oak','oak-wood'],['fallen-black-walnut','black-walnut-wood'],['fallen-shagbark','shagbark-wood']]},
+    {kind:'blooms',title:'Blooms',one:'bloom',from:'herb',skill:'herblore',unit:'herbs',size:2,list:[['flax-bloom','flax-fiber'],['woad-bloom','woad-leaves'],['madder-bloom','madder-root'],['weld-bloom','weld-stalks'],['mandrake-bloom','mandrake-root'],['wolfsbane-bloom','wolfsbane'],['adderfern-bloom','adderfern-fronds']]}];
+  const eventRule=id=>(typeof GATHERABLES!=='undefined'?GATHERABLES:[]).find(g=>g.id===id)||null;
+  const eventFig=(id,cap,small)=>`<figure class="ev-fig${small?' small':''}"><img src="img/events/${esc(id)}.svg" alt="${esc(pretty(id))}" loading="lazy"><figcaption>${cap}</figcaption></figure>`;
+  const yieldTxt=(a,b)=>a===b?n(a):`${n(a)}–${n(b)}`;
+  function eventSection(ev){
+    const rows=ev.list.map(([id,yid])=>{const g=eventRule(yid);return [esc(pretty(id)),g?n(g.level):'—',item(yid),g?n(g.xp):'—',g?yieldTxt(g.minYield,g.maxYield):'—',g?`<b>${yieldTxt(g.minYield*2,g.maxYield*2)}</b>`:'—']});
+    return `<div class="ev-figs">${ev.list.map(([id,yid])=>{const g=eventRule(yid);return eventFig(id,`${esc(pretty(id))}${g?` <span class="muted">Lv ${n(g.level)}</span>`:''}`)}).join('')}</div>`
+      +`<p>A ${esc(ev.from)} that turns into a ${esc(ev.one)} covers <b>${ev.size} by ${ev.size} tiles</b> while it lasts. You gather it with ${esc(pretty(ev.skill))} at the same level as the ${esc(ev.from)} it replaced. See the <a href="#/guide/${esc(ev.skill)}">${esc(pretty(ev.skill))}</a> guide for the skill itself.</p>`
+      +table(['Event','Level','Gives','XP each','Normal yield','Event yield'],rows);
+  }
+  reg({slug:'special-events',group:'Gathering skills',title:'Special events',blurb:'Rifts, fallen giants and blooms: rocks, trees and herbs that give double for a while.',build:()=>({
+    lede:'Every so often an ordinary rock, tree or herb turns into a <b>special event</b> for a while: a <b>rift</b>, a <b>fallen giant</b> or a <b>bloom</b>. It gathers just like the node it replaced, but every success gives <b>twice as much</b>.',
+    sections:[
+      ['how','How they work',`<div class="ev-figs">${SPECIAL_EVENTS.map(ev=>eventFig(ev.list[ev.list.length-1][0],esc(ev.title))).join('')}</div>
+        <ul class="g-list"><li>A <b>rock</b> can become a <b>rift</b> (Mining), a <b>tree</b> a <b>fallen giant</b> (Lumberjack) and a <b>herb</b> a <b>bloom</b> (Herblore). Fishing spots have none.</li>
+        <li>It works exactly like the node it replaced: the <b>same skill, level, tool, XP per success, success chance and speed</b>.</li>
+        <li>Each success gives <b>double</b> the usual yield: the game doubles both the least and the most a gather can give.</li>
+        <li>The game's rules give it <b>no rest after a gather</b>, unlike an ordinary rock, tree or herb, so you can keep working it while it lasts.</li>
+        <li>It is <b>big and easy to spot</b>: a rift covers 6 by 6 tiles, a fallen giant 10 by 10 and a bloom 2 by 2. The game's map marks it as <i>Rift</i>, <i>Fallen giant</i> or <i>Bloom</i> in its own colour.</li>
+        <li>It only <b>stays open for a while</b>: the game knows when each one opened and when it closes. How often they turn up and how long they last are not published yet.</li></ul>`+note('From the game’s own rules (3 October 2026 update). The pictures are drawn by the game itself.')],
+      ...SPECIAL_EVENTS.map(ev=>[ev.kind,ev.title,eventSection(ev)])
+    ],
+    related:['mining','lumberjack','herblore']})});
+  // the short version for a skill's own page, linking to the full one
+  function specialEventBlurb(skill){
+    const ev=SPECIAL_EVENTS.find(e=>e.skill===skill);if(!ev)return null;
+    return ['events','Special event: '+ev.title.toLowerCase(),`<div class="ev-figs">${ev.list.map(([id])=>eventFig(id,esc(pretty(id)),true)).join('')}</div>
+      <p>Every so often a ${esc(ev.from)} turns into a <b>${esc(ev.one)}</b> for a while. You gather it like the ${esc(ev.from)} it replaced (same level, tool and XP each), but every success gives <b>double the ${esc(ev.unit)}</b>, and it doesn’t rest between gathers. More in <a href="#/guide/special-events">Special events</a>.</p>`];
+  }
 
   // ---- Crafting skills ----------------------------------------------------------------------------------------------
   const craft=(slugName,skill,title,blurb,lede,related,extra)=>reg({slug:slugName,group:'Crafting skills',title,blurb,build:craftingGuide({skill,lede,related,extra})});
