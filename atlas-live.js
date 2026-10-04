@@ -5542,7 +5542,7 @@ function newsHtml(){
   function qeTokens(el){let out='';for(const n of el.childNodes){
     if(n.nodeType===3){out+=n.nodeValue;continue}if(n.nodeType!==1)continue;
     const t=n.textContent.replace(/\s+/g,' ').trim(),clean=x=>String(x).replace(/[\[\]|]/g,'').trim();
-    if(n.matches('a[href^="#/"]')){out+=`[[${n.getAttribute('href')}|${clean(t)}]]`;continue}
+    if(n.matches('a[href^="#/"],a[href^="https://"]')){out+=`[[${n.getAttribute('href')}|${clean(t)}]]`;continue}
     if(n.matches('.show-on-map')&&n.dataset.mapKind){const k=n.dataset.mapKind,id=n.dataset.mapId||'',label=clean(t.replace(/^\u{1F4CD}\s*/u,''))||'Show on map';
       if(k==='spot'){const [x,y,l]=id.split('|');out+=`[[spot:${x},${y}|${clean(l||label)}]]`}else if(/^(npc|monster|item|resource|place|zone)$/.test(k))out+=`[[map:${k}:${id}|${label}]]`;else out+=t;continue}
     if(n.matches('.entity-chip[data-item]')){const l=n.querySelector('.entity-chip-label'),st=n.querySelector('.entity-chip-stat');out+=`[[#/item/${n.dataset.item}|${clean(l?l.textContent:t)}]]`+(st?' '+st.textContent.trim():'')+' ';continue}   // an item chip: a link
