@@ -241,9 +241,9 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
         <ul class="g-list"><li>A <b>rock</b> can become a <b>rift</b> (Mining), a <b>tree</b> a <b>fallen giant</b> (Lumberjack) and a <b>herb</b> a <b>bloom</b> (Herblore). Fishing spots have none.</li>
         <li>It works exactly like the node it replaced: the <b>same skill, level, tool, XP per success, success chance and speed</b>.</li>
         <li>Each success gives <b>double</b> the usual yield: the game doubles both the least and the most a gather can give.</li>
-        <li>The game's rules give it <b>no rest after a gather</b>, unlike an ordinary rock, tree or herb, so you can keep working it while it lasts.</li>
+        <li>The game's rules give it <b>no rest after a gather</b>, so you can keep working it without waiting. It does <b>run out</b>, though: the first fallen shagbark measured gave <b>68 wood over 32 chops</b> (2 or 3 a chop, where the tree gives 1 or 2) and then disappeared.</li>
         <li>It is <b>big and easy to spot</b>: a rift covers 6 by 6 tiles, a fallen giant 10 by 10 and a bloom 2 by 2. The game's map marks it as <i>Rift</i>, <i>Fallen giant</i> or <i>Bloom</i> in its own colour.</li>
-        <li>It only <b>stays open for a while</b>: the game knows when each one opened and when it closes. How often they turn up and how long they last are not published yet.</li></ul>`+note('From the game’s own rules (3 October 2026 update). The pictures are drawn by the game itself.')],
+        <li>It only <b>stays open for a while</b>: the first one measured closed <b>4 minutes</b> after it opened, if nobody used it up first. The game announces it in <b>system chat</b> (“Lightning fells an ancient shagbark nearby.”).</li><li>It seems to come from <b>gathering</b>: that fallen shagbark appeared where its chopper stood, a second after a chop at a shagbark tree. How often it happens is not published, and players are still measuring.</li></ul>`+note('Sizes, levels, XP and yields from the game’s own rules (3 October 2026 update); how long it lasted, how much it held and the chat line were measured by players. The pictures are drawn by the game itself.')],
       ...SPECIAL_EVENTS.map(ev=>[ev.kind,ev.title,eventSection(ev)])
     ],
     related:['mining','lumberjack','herblore']})});
@@ -251,7 +251,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   function specialEventBlurb(skill){
     const ev=SPECIAL_EVENTS.find(e=>e.skill===skill);if(!ev)return null;
     return ['events','Special event: '+ev.title.toLowerCase(),`<div class="ev-figs">${ev.list.map(([id])=>eventFig(id,esc(pretty(id)),true)).join('')}</div>
-      <p>Every so often a ${esc(ev.from)} turns into a <b>${esc(ev.one)}</b> for a while. You gather it like the ${esc(ev.from)} it replaced (same level, tool and XP each), but every success gives <b>double the ${esc(ev.unit)}</b>, and it doesn’t rest between gathers. More in <a href="#/guide/special-events">Special events</a>.</p>`];
+      <p>Every so often a ${esc(ev.from)} turns into a <b>${esc(ev.one)}</b> for a while. You gather it like the ${esc(ev.from)} it replaced (same level, tool and XP each), but every success gives <b>double the ${esc(ev.unit)}</b>, and it doesn’t rest between gathers, until it runs out or closes a few minutes later. More in <a href="#/guide/special-events">Special events</a>.</p>`];
   }
 
   // ---- Crafting skills ----------------------------------------------------------------------------------------------
