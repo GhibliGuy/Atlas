@@ -1135,7 +1135,9 @@ a.sp-spell:hover{background:rgba(255,213,74,.06)}
 .gx-txt span{font-size:12.5px;color:var(--muted);line-height:1.4}
 .gx-new{position:absolute;top:7px;right:8px;font:600 10px var(--sans,system-ui);letter-spacing:.06em;text-transform:uppercase;font-style:normal;color:#1b1406;background:var(--accent);padding:2px 7px;border-radius:999px}
 .gx-quests{margin-top:6px}
-.gx-quests .g-subhead{font:400 17px var(--serif);margin:16px 0 8px}
+.gx-qgroup{margin:0 0 18px}
+.gx-subhead{margin:18px 0 10px;padding-bottom:8px}.gx-subhead .gx-head-art{width:46px;height:46px}
+.gx-subhead h3{font:400 19px var(--serif);margin:0;padding:0;border:0}.gx-subhead h3 a{color:inherit;text-decoration:none}.gx-subhead h3 a:hover{text-decoration:underline}
 .gx .g-card{border-radius:8px;transition:transform .12s,border-color .12s}
 .gx .g-card:hover{transform:translateY(-2px)}
 .gx-none{padding:14px 2px;color:var(--muted)}

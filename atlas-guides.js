@@ -924,6 +924,9 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     smelting:['iron-bar','item'],'weapon-smithing':['iron-dagger','item'],'armor-smithing':['iron-shield','item'],'tool-smithing':['smithing-hammer','item'],bowyer:['carving-tool','item'],tailoring:['imp-torso','item'],leatherworking:['deerhide-torso','item'],cooking:['cooked-catfish','item'],scribing:['parchment','item'],carpentry:['saw','item'],housing:['oak-plank','item'],
     'quality-and-enchanting':['iron-ring-ruby','item'],gems:['gem-sapphire','item'],outfits:['deerhide-torso','item'],
     places:['ogre','monster'],trainers:['npc-binxonia-guard','monster'],travel:['feather','item'],economy:['gold-coin','item'],'playing-together':['bandit','monster'],quests:['parchment','item']};
+  const GX_QART={story:['npc-gerald-seabroden','monster'],unlock:['npc-stablemaster','monster'],skillunlock:['npc-hollis-tamber','monster'],combat:['iron-mace','item'],side:['gold-coin','item']};
+  function gxQuestGroups(){return Q_CATS.map(([k,t])=>{const qs=questList().filter(q=>questCat(q)===k);if(!qs.length)return '';const pg=QG_PAGES[k];
+    return `<div class="gx-qgroup"><header class="gx-head gx-subhead">${gxArt(GX_QART[k],'gx-head-art')}<div><h3>${pg?`<a href="#/guide/${pg[0]}">${esc(t)}</a>`:esc(t)} <span class="gx-count">${qs.length}</span></h3>${pg&&pg[2]?`<p>${esc(pg[2])}</p>`:''}</div></header><div class="g-cards">${questCards(qs)}</div></div>`}).join('')}
   const GX_NEW=new Set(['special-events']);   // recently added or rewritten: a small "New" tag
   // the fighting styles have one guide each, so on the all-guides page they share a band
   const GX_BANDS=[['Start here'],['Combat'],['Fighting styles',['Melee','Ranged','Magic']],['Gathering skills'],['Crafting skills'],['Gear, gems & enchanting'],['World'],['Quests']];
@@ -944,7 +947,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const meta=GX_GROUP[title]||{},isQuests=title==='Quests',nQ=isQuests?questList().length:0,count=isQuests?nQ+' quests':list.length+(list.length===1?' guide':' guides');
     const head=groups.length===1&&!only?`<a href="#/guides-${slug(title)}">${esc(title)}</a>`:esc(title);
     return `<section class="gx-band" id="gx-${slug(title)}"><header class="gx-head">${gxArt(meta.art,'gx-head-art')}<div><h2>${head} <span class="gx-count">${count}</span></h2>${meta.about?`<p>${esc(meta.about)}</p>`:''}</div></header>`
-      +`<div class="gx-grid">${list.map(gxCard).join('')}</div>${isQuests?`<div class="gx-quests">${questGroups()}</div>`:''}</section>`;
+      +(isQuests?`<div class="gx-quests">${gxQuestGroups()}</div>`:`<div class="gx-grid">${list.map(gxCard).join('')}</div>`)+`</section>`;
   }
   function indexHtml(only){
     setTimeout(()=>fillGuideArt(20),0);
@@ -965,7 +968,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   if(!globalThis.__gxWired){globalThis.__gxWired=true;
     document.addEventListener('input',e=>{if(e.target&&e.target.id!=='gxFind')return;const q=e.target.value.trim().toLowerCase(),root=e.target.closest('.gx');if(!root)return;let any=false;
       for(const band of root.querySelectorAll('.gx-band')){let n=0;for(const c of band.querySelectorAll('.gx-card,.g-card')){const t=(c.dataset.gxFind||c.textContent).toLowerCase();const hit=!q||q.split(/\s+/).every(w=>t.includes(w));c.hidden=!hit;if(hit)n++}
-        for(const h of band.querySelectorAll('.g-subhead'))h.hidden=!!q&&![...(h.nextElementSibling?h.nextElementSibling.children:[])].some(c=>!c.hidden);band.hidden=!n;if(n)any=true}
+        for(const g of band.querySelectorAll('.gx-qgroup'))g.hidden=![...g.querySelectorAll('.g-card')].some(c=>!c.hidden);band.hidden=!n;if(n)any=true}
       root.querySelector('.gx-none').hidden=any;root.querySelector('.gx-paths').hidden=!!q;});
     document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-gx-jump]');if(!a)return;const el=document.getElementById(a.dataset.gxJump);if(!el)return;e.preventDefault();el.scrollIntoView({behavior:'smooth',block:'start'})});
   }
