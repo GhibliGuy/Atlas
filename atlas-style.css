@@ -291,6 +291,7 @@ a.map-panel-open:hover{border-color:var(--accent);background:var(--panel2)}
 .qe-done{display:block;margin-top:8px}
 .qe-foot{display:flex;gap:8px;align-items:center;margin-top:12px}.qe-save{font-weight:600}
 .q-notes{padding:4px 0}
+.wp-req{margin:6px 0 10px;padding:6px 10px;border-left:3px solid var(--accent-soft,#d6b24a);background:rgba(214,178,74,.08);border-radius:3px}
 /* Special events: the game's own pictures */
 .ev-figs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:8px 0 12px}
 .ev-fig{margin:0;padding:8px;border:1px solid rgba(214,178,74,.28);border-radius:8px;background:rgba(60,80,52,.35);text-align:center}

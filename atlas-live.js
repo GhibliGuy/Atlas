@@ -4836,6 +4836,32 @@ function newsHtml(){
     if(G_TOOLS.has(rest)&&kind==='metal')return {type:'tool',mat,tier,kind};
     return null;
   }
+  // The game's equip requirement for a piece of gear, scraped from its rules (the Ai function with Ei/Ri/Tt): to wear
+  // or wield it you need a character level and an attribute. Both come from the material's tier, with three special
+  // tier-3 materials (thak, dunehide, wraithweave) overriding to Lvl 30 / 80. The attribute is STR for metal, INT/MAG
+  // for caster cloth (knick), DEX for everything else and for daggers; tier-0 and the plain "leather" material, and
+  // tools, need nothing. "Equipped gear that requires it is unequipped" if your attributes ever drop below it.
+  const G_EQ_LEVEL=[0,5,15,25,40], G_EQ_ATTR=[0,20,45,70,100], G_EQ_OVERRIDE={thak:[30,80],dunehide:[30,80],wraithweave:[30,80]};
+  // the gear this applies to: every weapon and armour piece the game has (its own weapon and slot tables), plus helms,
+  // shields and staves - but not tools or jewellery (gearOf skips helms, so this parses the item itself)
+  const G_REQ_TYPES=new Set([...Object.keys(G_WEAPON),...Object.keys(G_SLOT),'fullhelm','spikedhelm','shield','staff']);
+  function gearRequirement(id){
+    id=String(id||'');
+    const mat=Object.keys(G_MATERIAL).filter(m=>id.startsWith(m+'-')).sort((a,b)=>b.length-a.length)[0];
+    if(!mat)return null;
+    const type=id.slice(mat.length+1);
+    if(!G_REQ_TYPES.has(type))return null;
+    const [tier,kind]=G_MATERIAL[mat];
+    if(!tier||kind==='leather')return null;
+    const ov=G_EQ_OVERRIDE[mat];
+    const level=ov?ov[0]:(G_EQ_LEVEL[tier]||0), amount=ov?ov[1]:(G_EQ_ATTR[tier]||0);
+    const attr=type==='dagger'?'DEX':kind==='metal'?'STR':kind==='knick'?'INT/MAG':'DEX';
+    if(!level&&!amount)return null;
+    return {level,attr,amount};
+  }
+  function gearReqText(id){const q=gearRequirement(id);if(!q)return '';return (q.level?'Lvl '+fmt(q.level):'')+(q.level&&q.amount?' · ':'')+(q.amount?esc(q.attr)+' '+fmt(q.amount):'')}
+  function gearReqRow(id){const t=gearReqText(id);return t?infoRow('Requires',t):''}
+  globalThis.bxcGearReq=gearRequirement;
   // what one quality tier gives for this item
   globalThis.bxcGearStats=(id,t)=>{const g=gearOf(id);return g?{...gearStats(g,t),type:g.type}:null};
   // A weapon enchant is three gems; its carats (whole numbers, up to 3 a metal tier) add, per carat, 2/9 of the weapon's
@@ -5396,6 +5422,7 @@ function newsHtml(){
       ${(()=>{let t=r?itemSourcesText(r):'';const craft=recipe?`Crafted (${recipe.skill} Lv ${recipe.level})`:'';if(craft&&!/Crafted/.test(t))t=/not yet observed/i.test(t)||!t?craft:craft+' · '+t;if(scrollSpell(id)&&(!t||/not yet observed/i.test(t)))t=scrollDropText(scrollSpell(id))?'A spell scroll that drops from monsters.':'Not a monster drop.';return t?`<p class="wp-lede">${esc(t)}</p>`:'<p class="wp-lede muted">Not seen in the game yet.</p>'})()}
       ${PUBLIC_MODE?'':`<section class="mk-box" data-mk-slug="${esc(id)}" data-mk-name="${esc(name)}"><button type="button" class="mk-load">Market prices</button><div class="mk-out"></div></section>`}
       ${questItem(id)?`<p class="wp-quest"><b>Quest item.</b> Asked for by ${esc(questItem(id).quests.join(' / '))}.</p>`:''}
+      ${(()=>{const t=gearReqText(id);return t?`<p class="wp-req"><b>Requires</b> ${t} <span class="muted">to equip</span></p>`:''})()}
       <h2>How to get it</h2>
       ${scrollInfoHtml(id)}
       ${recipe?`<p><b>Crafted</b> with ${esc(recipe.skill)} at level ${esc(recipe.level)}${recipe.xp?` <span class="muted">(${esc(recipe.xp)} XP)</span>`:''} from ${ing(recipe)||'—'}.</p>`:''}
@@ -5411,6 +5438,7 @@ function newsHtml(){
     </div><aside class="wp-infobox"><div class="wp-pic ${gearOf(id)&&/^(weapon|staff)$/.test(gearOf(id).type)&&wEnchState(gearOf(id)).ench?'e-glow-'+wEnchState(gearOf(id)).ench+' ':''}${/^gem-/.test(id)?gemGlow(gemPick(pageNow&&pageNow.kind==='item'&&pageNow.id===id?pageNow.q:null)):typeof qualityGlow==='function'?qualityGlow(pageNow&&pageNow.kind==='item'&&pageNow.id===id?pageNow.q:null):''}"><img src="${esc(itemImgFor(id))}" alt="${esc(name)}">${hasEnchant(gearOf(id))?`<span id="gearEnchBadge" class="wp-badge">${gearEnchBadge(id)}</span>`:''}</div><h3>${esc(name)}${pageNow&&pageNow.kind==='item'&&pageNow.id===id&&pageNow.q&&pageNow.q!=='all'?(/^gem-/.test(id)?(gemPick(pageNow.q)!=null?` <span class="q-name q-${RARITY_Q[gemRar(gemPick(pageNow.q))]}">(${gemPick(pageNow.q)}c)</span>`:''):` <span class="q-name q-${esc(pageNow.q)}">(${esc(qLabel(pageNow.q))})</span>`):''}</h3><table>
       ${gearOf(id)&&gearOf(id).type==='shield'?(()=>{const g=gearOf(id),pq=pageNow&&pageNow.kind==='item'&&pageNow.id===id?pageNow.q:null,t=Q_TIERS.includes(pq)?pq:'ordinary';return `<tr><th>Defense</th><td>${esc(gearStats(g,t).main)} <span class="muted">(${esc(qLabel(t))})</span></td></tr>`})():''}
       ${hasEnchant(gearOf(id))?`<tr><th>${gearOf(id).type==='tool'?'Bonus':gearOf(id).type==='staff'?'Spells':isArmorish(gearOf(id))?'Stats':'Damage'}</th><td id="gearDmg">${gearDamageCell(id,pageNow&&pageNow.kind==='item'&&pageNow.id===id?pageNow.q:null)}</td></tr>`:''}
+      ${gearReqRow(id)}
       ${recipe?infoRow('Made with',esc(recipe.skill)+' '+esc(recipe.level)):''}
       ${r?infoRow('Dropped by',r.monsterSources.size?fmt(new Set([...r.monsterSources.values()].map(m=>m.typeId)).size)+' monster'+(r.monsterSources.size===1?'':'s'):'—'):''}
       ${res.length?infoRow('Gathered from',res.length+' resource'+(res.length===1?'':'s')):''}
