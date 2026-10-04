@@ -77,12 +77,19 @@
   const gemOdds=sk=>{const GT=typeof GATHERABLES!=='undefined'?GATHERABLES:[],ts=GT.filter(x=>x.skill===sk).sort((a,b)=>a.level-b.level);
     return table(['',{mining:'Ore',lumberjack:'Wood',fishing:'Fish'}[sk]||'Resource','Gem chance'],[.5,.6,.75,1].map((p,i)=>[`Tier ${i+1}`,ts[i]?item(slug(ts[i].item),ts[i].item):'—',`<b>${p}%</b>`]))+note('Chance of a gem on each successful gather.')};
   // ---- gathering skill guides ---------------------------------------------------------------------------------------
+  // How long a node lasts, from the game's rules (game-recipes.js: survive = its chance to stay after each success, then
+  // always used up; respawnMs = how long it takes to grow back). P(k gathers) for k = 1 .. survive.length + 1.
+  function lastsChances(sv){const out=[];let alive=1;for(let k=0;k<=sv.length;k++){const stay=k<sv.length?sv[k]:0;out.push(alive*(1-stay));alive*=stay}return out}
+  const regrowTxt=ms=>!ms?'—':ms<60000?`${Math.round(ms/1000)} s`:`${+(ms/60000).toFixed(1)} min`;
   function gatheringGuide(o){
     return ()=>{
       const tiers=gatherTiers(o.skill);
+      const surv=(tiers.find(t=>Array.isArray(t.survive)&&t.survive.length)||{}).survive||null,hasRegrow=tiers.some(t=>t.respawnMs);
+      const lasts=surv?lastsChances(surv):null,lastsAvg=lasts?lasts.reduce((a,p,k)=>a+p*(k+1),0):null;
       const rows=tiers.map(t=>{const spots=resourcesGiving(t.id).reduce((a,r)=>a+(r.count||0)+(r.manualCount||0),0);
         const cave=(globalThis.bxcCavesFor?globalThis.bxcCavesFor('item',t.id):[])[0];
         return [n(t.level),item(t.id,t.item),n(t.xp),t.minYield===t.maxYield?n(t.minYield):`${t.minYield}–${t.maxYield}`,spots?n(spots):'<span class="muted">none yet</span>',cave?`${esc(cave.name)} <span class="muted">(${n(cave.count)})</span> <button type="button" class="open-zone" data-zone="${esc(cave.z)}">Layout</button>`:'<span class="muted">—</span>',`<button type="button" class="show-on-map" data-map-kind="item" data-map-id="${esc(t.id)}">Map</button>`]});
+      if(hasRegrow)rows.forEach((r,i)=>r.splice(4,0,regrowTxt(tiers[i].respawnMs)));
       const chanceRows=tiers.map(t=>[item(t.id,t.item),...[0,3,6,9].map(k=>pct(gatherChance(t.level+k,t.level)))]);
       const plan=trainingPlan(tiers,(t,l)=>gatherChance(l,t.level),t=>item(t.id,t.item));
       const uses=[...new Map(tiers.flatMap(t=>usesOf(t.id)).map(r=>[r.id,r])).values()].sort((a,b)=>a.skill.localeCompare(b.skill)||a.level-b.level);
@@ -95,8 +102,11 @@
       return {
         lede:gemAlert+(o.lede||''),
         sections:[
-          ['how','How it works',`<ul class="g-list"><li>Equip the ${esc(o.tool||'tool')} (tools have their own slot, so a shield or quiver can stay on) and click the ${esc(o.node)}.${o.learn?' '+o.learn:''}</li><li>Each success gives <b>10% more</b> for every level past mastery (9 levels above the ${esc(o.node)}’s level, where you hit 95%). A tool that would push you past 95% adds the extra to your haul instead, and <b>Prospector</b> rings (amber) add 2% per carat. The <a href="#/calc-crafting">Crafting XP planner</a> shows your rates level by level.</li><li>Better tools raise your chance: silver <b>+3%</b>, gold <b>+7%</b>, titanium <b>+12%</b> (they need the skill at 15, 30 and 45), plus 5% per carat of an Artisan gem. See ${guide('tool-smithing')}.</li><li>Used-up ${esc(o.node)}s come back after a while; rarer ones take longer.${o.nodeLine?' '+o.nodeLine:''}</li></ul>`],
-          ['tiers','Tiers at a glance',table(['Level','Gives','XP each','Per success','Spots on the map','Most in',''],rows)+note('Spots are the ones players have recorded; the map fills in as more of the world is visited.')],
+          ['how','How it works',`<ul class="g-list"><li>Equip the ${esc(o.tool||'tool')} (tools have their own slot, so a shield or quiver can stay on) and click the ${esc(o.node)}.${o.learn?' '+o.learn:''}</li><li>Each success gives <b>10% more</b> for every level past mastery (9 levels above the ${esc(o.node)}’s level, where you hit 95%). A tool that would push you past 95% adds the extra to your haul instead, and <b>Prospector</b> rings (amber) add 2% per carat. The <a href="#/calc-crafting">Crafting XP planner</a> shows your rates level by level.</li><li>Better tools raise your chance: silver <b>+3%</b>, gold <b>+7%</b>, titanium <b>+12%</b> (they need the skill at 15, 30 and 45), plus 5% per carat of an Artisan gem. See ${guide('tool-smithing')}.</li>${surv?`<li>A ${esc(o.node)} isn’t used up by one ${esc(o.action)}: after each success it has a ${surv.map(p=>`<b>${pct(p)}</b>`).join(', ')} chance to stay, so it gives <b>up to ${surv.length+1}</b> and about <b>${lastsAvg.toFixed(1)}</b> on average (see How long a ${esc(o.node)} lasts). Then it grows back, the rarer ones more slowly.${o.nodeLine?' '+o.nodeLine:''}</li>`:hasRegrow?`<li>Each ${esc(o.node)} is used up by one ${esc(o.action)} and grows back after a while (see the tiers table); the rarer ones take longer.${o.nodeLine?' '+o.nodeLine:''}</li>`:`<li>Used-up ${esc(o.node)}s come back after a while; rarer ones take longer.${o.nodeLine?' '+o.nodeLine:''}</li>`}</ul>`],
+          ['tiers','Tiers at a glance',table(['Level','Gives','XP each','Per success',...(hasRegrow?['Grows back']:[]),'Spots on the map','Most in',''],rows)+note('Spots are the ones players have recorded; the map fills in as more of the world is visited.')],
+          ...(surv?[['lasts','How long a '+o.node+' lasts',`<p>After each successful ${esc(o.action)} the ${esc(o.node)} rolls to stay up: ${surv.map((p,k)=>`<b>${pct(p)}</b> after the ${['first','second','third','fourth','fifth','sixth'][k]||(k+1)+'th'}`).join(', ')}. After success number ${surv.length+1} it is always used up, and it grows back after the time in the tiers table. A failed ${esc(o.action)} doesn’t count.</p>`+
+            table(['Successes before it’s used up','Chance'],lasts.map((p,k)=>[n(k+1),+(p*100).toFixed(1)+'%']).concat([['<b>On average</b>',`<b>${lastsAvg.toFixed(1)}</b>`]]))+
+            note('From the game’s own rules. Before 3 October 2026 it was 75% and then 10%: at most 3, about 1.8 on average.')]]:[]),
           ['chance','Success chance',`<p>Each ${esc(o.action)} works at <b>50%</b> at the level the ${esc(o.node)} needs, <b>+5%</b> for every level above it, up to <b>95%</b> (reached 9 levels above). ${esc(o.toolLine||'')}</p>`+table(['Tier','At its level','+3','+6','+9 (max)'],chanceRows)+(globalThis.bxcGuideToolBox?`<h3>With your tool</h3>`+globalThis.bxcGuideToolBox('gather',pretty(o.skill)):'')],
           ['plan','Fastest way to level',globalThis.bxcGuidePath?globalThis.bxcGuidePath('gather',pretty(o.skill)):`<p>Always ${esc(o.action)} the highest tier you can: it gives the most XP per attempt even after misses. Actions below are successes needed and attempts including misses (no tool bonus).</p>`+table(['Levels','Gather','Successes','Attempts'],plan)],
           ...(o.extra?o.extra():[]),
@@ -201,7 +211,7 @@ tool:'pickaxe',unit:'ore',learn:'Learn it from a trainer for a skill point.',nod
   reg({slug:'lumberjack',group:'Gathering skills',title:'Lumberjack',blurb:'Wood tiers, success chance and the fastest route to 100.',build:gatheringGuide({skill:'lumberjack',action:'chop',node:'tree',
     lede:'Chop trees for pine, oak, black walnut and shagbark wood, used by bowyers and in tool handles. Trees can also give amber and iolite.',
     toolLine:'A better axe adds to that chance.',
-tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLine:'A tree gives a few logs and then falls to a stump that grows back; everyone chopping the same tree shares its logs.',
+tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLine:'Everyone chopping the same tree works the same tree, so in a busy forest keep another one in mind.',
     extra:()=>[specialEventBlurb('lumberjack'),['gems','Gems',`<p>Chopping can turn up <b>amber and iolite</b>.</p>`+gemOdds('lumberjack')]],related:['bowyer','tool-smithing','gems']})});
   reg({slug:'fishing',group:'Gathering skills',title:'Fishing',blurb:'Fish tiers, how fishing spots refill, and the fastest route to 100.',build:gatheringGuide({skill:'fishing',action:'cast',node:'fishing spot',
     lede:'Fish catfish, bass, trout and salmon from fishing spots, then cook them into food. Fishing is where pearls and topaz come from.',
