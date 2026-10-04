@@ -291,6 +291,9 @@ a.map-panel-open:hover{border-color:var(--accent);background:var(--panel2)}
 .qe-done{display:block;margin-top:8px}
 .qe-foot{display:flex;gap:8px;align-items:center;margin-top:12px}.qe-save{font-weight:600}
 .q-notes{padding:4px 0}
+/* Bestiary: grouped by family */
+.mon-fam{margin:18px 0 8px;padding-bottom:4px;border-bottom:1px solid rgba(128,128,128,.3);scroll-margin-top:12px}.mon-fam .muted{font-size:13px;font-weight:400}
+.mon-jump{display:flex;gap:8px;align-items:center;font-size:13px;margin:8px 0 4px;white-space:nowrap}.mon-jump select{width:auto;min-width:0}
 /* Items page: group chips, compact tiles */
 .it-head{margin-bottom:6px}.it-head>p{margin:0 0 8px}
 .it-chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}

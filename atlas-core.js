@@ -863,7 +863,17 @@ function render(){
  const needW=[...new Set([...weakPick,...tW])],needR=[...new Set([...resistPick,...tR])];
  let a=D.catalog.filter(m=>(!only||m.count)&&needW.every(w=>weakList(m.weakTo).includes(w))&&needR.every(w=>weakList(m.resists).includes(w))&&(!s||JSON.stringify([m.name,m.typeId,m.family,m.attackType,m.weakTo,m.resists,m.lootTableId]).toLowerCase().includes(s)));
  const want=[needW.length?'weak to '+needW.join(' + '):'',needR.length?'resist '+needR.join(' + '):''].filter(Boolean).join(' and ');
- content.innerHTML=weakFilterBar()+(want&&!a.length?'<div class="note">No monsters '+want+'.</div>':'')+a.map(m=>monsterCardHtml(m)).join('');
+ // grouped by family: the families with the lowest-level monsters first, and each family's monsters by level
+ const lvOf=m=>Number(m.baseLevel)||0,famName=new Map(D.families.map(f=>[f[0],f[1]])),fams=new Map();
+ for(const m of a){const k=m.family||'other';if(!fams.has(k))fams.set(k,[]);fams.get(k).push(m)}
+ const famLow=new Map();for(const m of D.catalog){const k=m.family||'other';famLow.set(k,Math.min(famLow.get(k)??Infinity,lvOf(m)))}
+ const famLabel=k=>famName.get(k)||String(k).replace(/[-_]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+ const order=[...fams.keys()].sort((x,y)=>famLow.get(x)-famLow.get(y)||famLabel(x).localeCompare(famLabel(y)));
+ for(const k of order)fams.get(k).sort((x,y)=>lvOf(x)-lvOf(y)||String(x.name).localeCompare(String(y.name)));
+ const famId=k=>'fam-'+String(k).replace(/[^\w-]/g,'');
+ const jump=order.length>1?`<label class="mon-jump">Jump to a family <select data-mon-jump><option value="">Choose…</option>${order.map(k=>`<option value="${famId(k)}">${escXml(famLabel(k))} (Lv ${lvOf(fams.get(k)[0])}+)</option>`).join('')}</select></label>`:'';
+ content.innerHTML=weakFilterBar()+(want&&!a.length?'<div class="note">No monsters '+want+'.</div>':'')+jump+order.map(k=>{const list=fams.get(k),lo=lvOf(list[0]),hi=lvOf(list[list.length-1]);
+   return `<h3 class="mon-fam" id="${famId(k)}">${escXml(famLabel(k))} <span class="muted">Lv ${lo}${hi>lo?'–'+hi:''} · ${list.length} ${list.length===1?'monster':'monsters'}</span></h3>`+list.map(m=>monsterCardHtml(m)).join('')}).join('');
  document.querySelectorAll('.card[data-t]').forEach(e=>e.onclick=ev=>{if(ev.target.closest('.dropicon-link'))return;if(document.getElementById('main')?.dataset.view!=='wide')focus(e.dataset.t)});}
  else if(tab==='families'){content.innerHTML=D.families.filter(f=>!s||JSON.stringify(f).toLowerCase().includes(s)).map(f=>`<div class="card"><div class="name">${f[1]}</div><div class="s">${f[0]} • ${f[2]} • attacks with ${f[3]}</div><div class="s">${tagChipsLine(f[5],f[4],f[0])}</div></div>`).join('')}
  else if(tab==='guides'){content.innerHTML=globalThis.bxcGuides?globalThis.bxcGuides.indexHtml(guideGroup):'';}

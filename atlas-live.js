@@ -866,6 +866,8 @@
     return head+ITEM_GROUPS.filter(([k])=>(g==='all'||g===k)&&grouped.get(k).length).map(([k,label])=>
       `<section class="it-group" id="it-${k}"><h3>${esc(label)} <span class="muted">${fmt(grouped.get(k).length)}${k==='other'?' · where these come from is not recorded yet':''}</span></h3>${k==='jewelry'?accessoryDropRules():''}<div class="it-grid">${grouped.get(k).map(tile).join('')}</div></section>`).join('');
   }
+  // the Bestiary's family list: jump to one
+  document.addEventListener('change',e=>{const sl=e.target.closest&&e.target.closest('[data-mon-jump]');if(!sl||!sl.value)return;document.getElementById(sl.value)?.scrollIntoView({block:'start'});sl.value=''});
   // the group chips and the order: redraw just the list
   document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-it-group]');if(!b)return;itemsView.group=b.dataset.itGroup;
     try{sessionStorage.setItem('bxcItemsView',JSON.stringify(itemsView))}catch{}augmentCurrentTab();document.getElementById('content')?.scrollIntoView({block:'start'})});
