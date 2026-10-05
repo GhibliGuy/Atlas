@@ -1,4 +1,7 @@
 [
+{"sessionId":"c5108b0c","time":1791230470527,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":2277},
+{"sessionId":"c5108b0c","time":1791230336430,"fromZ":null,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":2276},
+{"sessionId":"8a7c8e4b","time":1791227462494,"fromZ":null,"toZ":-160,"zoneName":"Titanium Mine","pvpMode":"lawless","atX":null,"atY":null,"key":2275},
 {"sessionId":"ec29ae29","time":1791223279362,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":2274},
 {"sessionId":"ec29ae29","time":1791223236994,"fromZ":null,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":2273},
 {"sessionId":"3062ca25","time":1791222280314,"fromZ":null,"toZ":-160,"zoneName":"Titanium Mine","pvpMode":"lawless","atX":2248.9,"atY":477.9,"key":2272},
