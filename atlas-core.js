@@ -665,7 +665,7 @@ function calcGather(){
  const singlePane=singlePanes[calcGroup];
  if(singlePane){document.querySelector('.calcsubtabs')?.remove();q(singlePane).style.display='block';for(const id of ['craftXpPane','enchantPane','gatherPane','combatPane']){if(id!==singlePane){const el=q(id);if(el)el.style.display='none'}}
    if(singlePane==='combatPane')calcCombat();
-   if(singlePane==='enchantPane'){renderEnchantPlanner();renderCraftQualityObserved(window.BINXONIA_COLLECTOR_SNAPSHOT)}
+   if(singlePane==='enchantPane'){renderEnchantPlanner();renderCraftQualityObserved(window.BINXONIA_COLLECTOR_SNAPSHOT);renderInfusePlanner()}
  }
  else document.querySelector('.calcsubtab')?.click();
  const intro=content.querySelector('.note');
@@ -677,6 +677,35 @@ function calcGather(){
  // The page title already says what this is; on the crafting planner a second heading and a data-source note is
  // just clutter, so it goes (and so does the box's own title, which repeats the page title again).
  if(intro){if(calcGroup==='quality'){intro.remove();q('enchantPane')?.querySelector(':scope>.name')?.remove();}else intro.innerHTML=introText[calcGroup]||introText.crafting;}
+}
+
+// ---- Infusing planner (Reforge, 5 Oct 2026) -------------------------------------------------------------------
+// From a carat to another: each step's chance, fee and smallest gem come from the game's rules (bxcReforge, set by
+// atlas-guides.js). A failure costs the reagent, the gem and the fee but never harms the piece, so the expected cost
+// of a step is (fee + reagent + gem) / chance, and on average 1 / chance reagents and gems go into it.
+function renderInfusePlanner(){
+ const R=globalThis.bxcReforge,pane=document.getElementById('enchantPane');if(!R||!pane||pane.querySelector('#infPlan'))return;
+ const opts=(a,b,sel)=>Array.from({length:b-a+1},(_,i)=>a+i).map(v=>`<option value="${v}"${v===sel?' selected':''}>${v}c</option>`).join('');
+ const box=document.createElement('div');box.id='infPlan';box.className='calcbox';
+ box.innerHTML=`<div class="name">Infusing cost (Reforge)</div>
+  <p class="muted" style="margin:4px 0 10px">Raise an enchant one carat at a time at the Reforge tab. A failed try uses the reagent, the gem and the fee but never harms the piece. Gear holds 3 carats per metal tier (12 for titanium), capes 7, rings and pendants 6.</p>
+  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
+   <label>From <select id="infFrom">${opts(1,11,1)}</select></label><label>to <select id="infTo">${opts(2,12,4)}</select></label>
+   <label>Reagent price <input id="infReag" type="number" min="0" step="100" value="0" style="width:110px"></label>
+   <label>Gem price <input id="infGem" type="number" min="0" step="100" value="0" style="width:110px"></label></div>
+  <div id="infOut" style="margin-top:10px"></div>`;
+ pane.appendChild(box);
+ const fmtN=v=>Math.round(v).toLocaleString('en-US');
+ const run=()=>{
+  let from=+box.querySelector('#infFrom').value,to=+box.querySelector('#infTo').value;const reag=Math.max(0,+box.querySelector('#infReag').value||0),gem=Math.max(0,+box.querySelector('#infGem').value||0);
+  const out=box.querySelector('#infOut');if(to<=from){out.innerHTML='<p class="muted">Pick a target above the starting carat.</p>';return}
+  let gold=0,tries=0,allFirst=1;const rows=[];
+  for(let c=from;c<to;c++){const ch=R.chance[c-1]||0;if(!ch)break;const t=1/ch,cost=(R.fee(c)+reag+gem)*t;gold+=cost;tries+=t;allFirst*=ch;
+   rows.push(`<tr><td>${c}c → ${c+1}c</td><td>${Math.round(ch*100)}%</td><td>${fmtN(R.fee(c))}</td><td>${R.gem(c)}c+</td><td>${t.toFixed(2)}</td><td>${fmtN(cost)}</td></tr>`)}
+  out.innerHTML=`<div style="overflow-x:auto"><table class="research-table"><thead><tr><th>Step</th><th>Chance</th><th>Fee</th><th>Gem</th><th>Tries (avg)</th><th>Cost (avg)</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
+   <p style="margin-top:8px"><b>${fmtN(gold)} gold</b> on average, using about <b>${tries.toFixed(1)} reagents</b> and <b>${tries.toFixed(1)} gems</b>. The chance every step works first time is ${(allFirst*100).toFixed(1)}%.</p>`;
+ };
+ box.addEventListener('input',run);box.addEventListener('change',run);run();
 }
 
 // ---- Gem combiner --------------------------------------------------------------------------------------------

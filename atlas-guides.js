@@ -200,7 +200,7 @@
     const chips=(a,c)=>(a||[]).map(x=>`<span class="tag-chip ${c}">${esc(x)}</span>`).join('')||'<span class="muted">—</span>';
     const rows=Object.entries(fams).sort((a,b)=>String(a[1].name).localeCompare(b[1].name)).map(([id,f])=>{const ms=cat.filter(m=>m.family===id).sort((a,b)=>a.baseLevel-b.baseLevel);
       return [esc(f.name||pretty(id)),esc(f.attackType||'—'),chips(f.weak,'weak'),chips(f.resist,'resist'),ms.map(m=>monster(m.typeId,m.name)).join(', ')||'<span class="muted">—</span>']});
-    return {lede:'Weaknesses and resistances belong to a monster’s family, so every member shares them.',sections:[['families','All families',table(['Family','Attacks with','Weak to','Resists','Members'],rows)+note('From the game’s rules file.')]],related:['combat','monsters-by-level']};
+    return {lede:'Weaknesses and resistances belong to a monster’s family, so every member shares them.',sections:[['families','All families',table(['Family','Attacks with','Weak to','Resists','Members'],rows)+note('From the game’s rules file.')],['reagents','Reagents by family',`<p>Since 5 October 2026 these families drop a rare <b>reagent</b> for reforging gear (small chance on any kill, far better from elites). See ${guide('quality-and-enchanting')}.</p>`+table(['Family','Reagent','Used to'],REAGENTS.flatMap(([id,kind,src])=>src.map(([f,cls])=>[famName(f)+(cls?' ('+cls+'s)':''),id,kind])).sort((x,y)=>x[0].localeCompare(y[0])).map(([f,id,kind])=>[esc(f),item(id),kind==='enchant'?'infuse an enchant':'reroll quality']))]],related:['combat','monsters-by-level']};
   }});
 
   // ---- Gathering skills -------------------------------------------------------------------------------------------
@@ -223,7 +223,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const gath=gatheringGuide({skill:'herblore',action:'pick',node:'plant',tool:'herbalist’s sickle',unit:'plant',learn:'Herblore costs no skill point: finishing the quest <a href="#/guide/quest-binxonia-scriptorium-apprentice">The Scriptorium Apprentice</a> (from <a href="#/npc/osric-blane">Osric Blane</a>) unlocks it.',lede:'',related:[]})();
     const craft=craftingGuide({skill:'Herblore',lede:'',chanceNote:'Pigments, powders and weapon poisons never fail. Poisoned arrows and bolts follow the usual crafting odds: 60% at their level, 95% from 14 levels above.'})();
     return {lede:'Pick plants for fibre, dyes and poison ingredients, then turn them into pigments, powders and weapon poisons. Herblore both gathers and crafts.',
-      sections:[...gath.sections.filter(s=>s[0]!=='uses').map(s=>[s[0],s[1],s[2]]),specialEventBlurb('herblore'),['recipes','What herblore makes',`<p>Plants are ground into pigments and powders at a <b>pestle and mortar</b> out in the world; grinding uses your Herblore level and never fails.</p>`+craft.sections.find(s=>s[0]==='recipes')[2]],['poison','Weapon poisons',`<p>Drag a poison onto a sword, dagger, mace or spear for <b>60 doses</b>. Every hit that lands uses one and adds a share of the hit as damage over about 2 seconds that <b>ignores armor</b>; a miss uses nothing. For bows and crossbows, one vial and 60 arrows or bolts make 60 poisoned shots.</p>`+table(['Poison','Level','Needs','Adds'],[['Weak weapon poison','30','2 Mandrake Root','10% of each hit'],['Weapon poison','50','2 Wolfsbane','15%'],['Potent weapon poison','70','2 Adderfern Fronds','20%']])],['plan2','Levelling by making things',craft.sections.find(s=>s[0]==='plan')[2]]],related:['tailoring','scribing','cooking']};
+      sections:[...gath.sections.filter(s=>s[0]!=='uses').map(s=>[s[0],s[1],s[2]]),specialEventBlurb('herblore'),['recipes','What herblore makes',`<p>Plants are ground into pigments and powders at a <b>pestle and mortar</b> out in the world; grinding uses your Herblore level and never fails.</p>`+craft.sections.find(s=>s[0]==='recipes')[2]],['poison','Weapon poisons',`<p>Drag a poison onto a sword, dagger, mace or spear for <b>60 doses</b>. Every hit that lands uses one and adds a share of the hit as damage over about 2 seconds that <b>ignores armor</b>; a miss uses nothing. For bows and crossbows, one vial and 60 arrows or bolts make 60 poisoned shots.</p>`+table(['Poison','Level','Needs','Adds'],[['Weak weapon poison','30','2 Mandrake Root <span class="muted">or 4 Venom Glands</span>','10% of each hit'],['Weapon poison','50','2 Wolfsbane <span class="muted">or 5 Scorpion Stingers</span>','15%'],['Potent weapon poison','70','2 Adderfern Fronds','20%']])+'<p class="g-note">Since 5 October 2026 venom glands and scorpion stingers can stand in for the plant in the two weaker poisons (the game’s own recipe alternatives).</p>'],['plan2','Levelling by making things',craft.sections.find(s=>s[0]==='plan')[2]]],related:['tailoring','scribing','cooking']};
   }});
 
   // ---- Special events (the game's 3 Oct 2026 update; shoal and prize ram 4 Oct) ----------------------------------------------------------------
@@ -275,6 +275,54 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       <p>Once in a while your work sets off a <b>${esc(ev.one)}</b> close by. You work it like a ${esc(ev.from)} (same level, tool and XP each), but every action succeeds and gives <b>double the ${esc(ev.unit)}</b>, until it runs dry or closes a few minutes later. More in <a href="#/guide/special-events">Special events</a>.</p>`];
   }
 
+
+  // ---- Reagents and the Reforge (game update of 5 Oct 2026), from the game's own rules (game-rules-BRM0CA2R):
+  // El (reagent -> the families that drop it), Oa (enchant -> reagent), Bb (enchant -> gem), Rl (ring/pendant stone ->
+  // reagent), va (gear line -> reroll reagent), Kb (infuse chance by the carat it has now), jb (infuse fee 1,500 + 500 a
+  // carat), zb (smallest gem: 2c, then 2.5c at 8c, 3c at 9c, 3.5c at 10c, 4c at 11c), carat caps (gear 3 a metal tier
+  // up to 12, capes 7, rings and pendants 6), tm (re-enchant fee 2,000 a resulting carat), rm (reroll fee by metal tier)
+  // and the levels: gear needs the trade's enchant level for that metal (xl: 16/31/46/61), capes/rings Ba(carat)
+  // (16 up to 3c, 31 up to 6c, 46 for 7c); a reroll needs the level to craft the piece (La: 1/16/31/46).
+  const REAGENTS=[
+    ['sirocco-core','enchant',[['dust-devil']]],['giants-knucklebone','enchant',[['hill-giant']]],['troll-heart','enchant',[['troll']]],['gilded-plume','enchant',[['harpy']]],
+    ['soul-shard','enchant',[['ghost']]],['moonwing-dust','enchant',[['moth']]],['fulgurite-shard','enchant',[['sand-elemental']]],['deathstalker-venom','enchant',[['scorpion']]],
+    ['ember-gland','enchant',[['dragon']]],['moonhart-antler','enchant',[['moonbeast']]],['vulture-eye','enchant',[['vulture']]],['lycan-claw','enchant',[['werewolf']]],
+    ['dune-whetstone','quality',[['raider']]],['cutthroats-hone','quality',[['bandit']]],['orcish-grip-wrap','quality',[['orc']]],['goblin-haft-binding','quality',[['goblin'],['lizper']]],
+    ['fae-bowstring','quality',[['fae']]],['pirates-windlass','quality',[['pirate'],['bandit','archer']]],['embalming-resin','quality',[['mummy']]],['grave-rivet','quality',[['skeleton']]],
+    ['wolf-sinew','quality',[['wolf'],['desert-wolf']]],['ogre-bone-needle','quality',[['ogre']]],['thak-shield-boss','quality',[['thak']]]];
+  const RF_ENCH={leopard:['sirocco-core','gem-pearl','of the Leopard (SPD)'],titan:['giants-knucklebone','gem-topaz','of the Titan (STR)'],camel:['troll-heart','gem-ruby','of the Camel (END)'],weasel:['gilded-plume','gem-emerald','of the Weasel (DEX)'],sage:['soul-shard','gem-sapphire','of the Sage (INT)'],mage:['moonwing-dust','gem-amber','of the Mage (MAG)'],
+    'of-flame':['ember-gland','gem-ruby','of the Flame'],'of-freezing':['moonhart-antler','gem-sapphire','of Freezing'],'of-storm':['fulgurite-shard','gem-pearl','of the Storm'],'of-corrosion':['deathstalker-venom','gem-emerald','of Corrosion'],'of-seeking':['vulture-eye','gem-diamond','of Seeking'],'of-destruction':['lycan-claw','gem-ruby','of Destruction'],
+    'staff-fire':['ember-gland','gem-ruby','staff of Fire'],'staff-ice':['moonhart-antler','gem-sapphire','staff of Frost'],'staff-shock':['fulgurite-shard','gem-topaz','staff of Lightning'],'staff-acid':['deathstalker-venom','gem-emerald','staff of Acid']};
+  const RF_STONE={onyx:'lycan-claw',emerald:'gilded-plume',sapphire:'soul-shard',diamond:'vulture-eye',ruby:'troll-heart',topaz:'giants-knucklebone',pearl:'sirocco-core',amber:'moonwing-dust',iolite:'ember-gland'};
+  const RF_LINE={sword:'dune-whetstone',dagger:'cutthroats-hone',mace:'orcish-grip-wrap',spear:'goblin-haft-binding',bow:'fae-bowstring',crossbow:'pirates-windlass',staff:'embalming-resin',plate:'grave-rivet',leather:'wolf-sinew',cloth:'ogre-bone-needle',shield:'thak-shield-boss'};
+  const RF_LINE_NAME={sword:'swords',dagger:'daggers',mace:'maces',spear:'spears',bow:'bows',crossbow:'crossbows',staff:'staves',plate:'plate armor',leather:'pelt armor',cloth:'knick armor',shield:'shields'};
+  const RF_CHANCE=[.9,.85,.78,.7,.62,.55,.47,.4,.33,.26,.2],RF_GEM=c=>c>=11?4:c>=10?3.5:c>=9?3:c>=8?2.5:2,RF_FEE=c=>1500+500*c,RF_REROLL_FEE=[1000,1500,2000,3000];
+  globalThis.bxcReforge={chance:RF_CHANCE,fee:RF_FEE,gem:RF_GEM};   // for the Quality calculator's infusing planner
+  const famName=f=>{const r=globalThis.BXC_FAMILY_RULES?.families?.[f];return r&&r.name?r.name:pretty(f)};
+  const reagentSrc=srcs=>srcs.map(([f,cls])=>esc(famName(f))+(cls?' ('+esc(cls)+'s)':'')).join(', ');
+  // for the Bestiary: the reagent(s) a monster of this family (and class) can drop
+  globalThis.bxcReagentsFor=(family,npcClass)=>REAGENTS.filter(([,,src])=>src.some(([f,cls])=>f===family&&(!cls||cls===npcClass))).map(([id,kind])=>({id,kind}));
+  globalThis.bxcReagentsByFamily=family=>REAGENTS.filter(([,,src])=>src.some(([f])=>f===family)).map(([id,kind,src])=>({id,kind,onlyClass:(src.find(([f])=>f===family)||[])[1]||null}));
+  function reforgeHtml(){
+    const rows=RF_CHANCE.map((ch,i)=>{const c=i+1;return [c+'c → '+(c+1)+'c',Math.round(ch*100)+'%',n(RF_FEE(c)),RF_GEM(c)+'c or more',n(Math.round(RF_FEE(c)/ch))]});
+    return `<p>Since 5 October 2026 the <b>anvil, tailor’s bench, tanning rack and bowyer table</b> each have a <b>Reforge</b> tab. Work a piece at the station of the trade that makes it, with that trade’s tool equipped and the piece in your bag. It takes weapons, shields, and plate, knick and pelt armor of iron or better, plus capes, rings and pendants; basic gear and clothing can’t be reforged. A successful infuse or re-enchant pays trade XP.</p>
+      <h3>Infuse: +1 carat</h3><p>Raises an enchant by one carat for the enchant’s <b>reagent</b> (see below), <b>a gem of the same kind</b> and a gold fee. A failure uses up the reagent, the gem and the gold but <b>never harms the piece</b>. Rings and pendants use their stone’s reagent and a gem of that stone.</p>`
+      +table(['Step','Chance','Fee (gold)','Gem','Gold per success'],rows)
+      +`<ul class="g-list"><li><b>Most carats:</b> weapons and armor 3 per metal tier (iron 3, silver 6, gold 9, titanium 12); capes 7; rings and pendants 6.</li>
+        <li><b>Level needed:</b> the trade level for enchanting that metal (16 iron, 31 silver, 46 gold, 61 titanium). Capes, rings and pendants: 16 up to 3c, 31 up to 6c, 46 for 7c.</li>
+        <li>“Gold per success” is the fee divided by the chance, the average gold spent per carat gained; each failed try also costs a reagent and a gem.</li></ul>
+      <h3>Re-enchant</h3><p>Puts <b>three new gems</b> on a piece under the same rules as enchanting something new, for <b>2,000 gold per carat it ends up with</b>. No reagent is needed, and it can’t leave the piece at a lower carat than it has. The piece must already carry an enchant, and you need that trade’s enchanting level. Capes, rings and pendants can’t be re-enchanted.</p>
+      <h3>Reroll quality</h3><p>Uses the <b>gear line’s reagent</b> to roll the piece’s quality again, the way it would come out if you crafted it now. It goes <b>up</b> a tier if a fresh craft would land higher, <b>drops</b> a tier only if a fresh craft would come out two or more tiers lower, and otherwise stays. A better crafter moves pieces up more often; the panel shows the odds first. You need the level to craft the piece. Superior and flawless pieces, and capes, can’t be rerolled.</p>`
+      +table(['Metal','Reroll fee (gold)'],[['Iron','1,000'],['Silver','1,500'],['Gold','2,000'],['Titanium','3,000']]);
+  }
+  function reagentsHtml(){
+    const ench=REAGENTS.filter(r=>r[1]==='enchant').map(([id,,src])=>{const what=Object.entries(RF_ENCH).filter(([,v])=>v[0]===id).map(([,v])=>esc(v[2])+' <span class="muted">+ '+esc(pretty(v[1].replace('gem-','')))+'</span>');const stones=Object.entries(RF_STONE).filter(([,r])=>r===id).map(([st])=>esc(pretty(st)));if(stones.length)what.push(stones.join(', ')+' rings and pendants');return [item(id),what.join('<br>'),reagentSrc(src)]});
+    const qual=REAGENTS.filter(r=>r[1]==='quality').map(([id,,src])=>[item(id),esc(Object.entries(RF_LINE).filter(([,r])=>r===id).map(([l])=>RF_LINE_NAME[l]).join(', ')),reagentSrc(src)]);
+    return `<p>Every monster kind that feeds a reagent has a <b>small chance</b> to drop it on any kill, and <b>elites far more often</b>; an elite boss drops every reagent its kind carries. Reagents <b>don’t stack</b>: each takes its own bag slot and trades on the Exchange one at a time.</p>
+      <h3>For infusing (enchant reagents)</h3>`+table(['Reagent','Infuses <span class="muted">+ gem</span>','Dropped by'],ench)
+      +`<h3>For rerolling quality (gear-line reagents)</h3>`+table(['Reagent','Rerolls','Dropped by'],qual)
+      +note('Which reagent does what, and who drops it, are from the game’s own rules (5 October 2026). Drop chances aren’t published.');
+  }
   // ---- Crafting skills ----------------------------------------------------------------------------------------------
   const craft=(slugName,skill,title,blurb,lede,related,extra)=>reg({slug:slugName,group:'Crafting skills',title,blurb,build:craftingGuide({skill,lede,related,extra})});
   reg({slug:'smelting',group:'Crafting skills',title:'Smelting',blurb:'Turning ore into bars.',build:craftingGuide({skill:'Smelting',station:'furnace',noTomes:true,lede:'Smelt ore into metal bars at a furnace, the first step of every smithing skill. Higher metals take some iron as well.',how:`<li>Smelting pays a little XP; most of a smith’s XP comes from forging (see ${guide('weapon-smithing')}).</li><li>The recipes below come from the game’s data. (The official guide’s pages disagree with each other on how much iron the higher bars take.)</li>`,related:['mining','weapon-smithing','armor-smithing','tool-smithing']})});
@@ -333,7 +381,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
         <li><b>Furniture and stations</b>: place them with <b>Edit home</b> (drag, mirror, pick up). A cottage holds 30 pieces, an estate 90.</li></ul>`],
       ['guests','Guests',`<p>The door setting is Owner only, Friends, Guild members or Everyone. Guests can walk around and look; the chest, beds, stations, mine rocks and garden stay yours. Anyone a new setting keeps out is put on the doorstep.</p>`],
       ['yard','The yard and the mine',`<ul class="g-list"><li>Move the house, flip its door and set out garden pieces with <b>Edit home</b> outdoors.</li>
-        <li><b>Saplings and seeds</b> planted in the yard grow while you’re offline into the same trees and herbs as in the wild, and only your account can gather them. Every chop or pick in the wild has a <b>1 in 1,000</b> chance to turn one up; produce vendors sell pine saplings, flax seeds and woad seeds. Wild mandrake can also drop <b>wolfsbane</b> and <b>adderfern</b> seeds, and a yard is the only place either grows.</li>
+        <li><b>Saplings and seeds</b> planted in the yard grow while you’re offline into the same trees and herbs as in the wild, and only your account can gather them. Every chop or pick in the wild has a <b>1 in 1,000</b> chance to turn one up; produce vendors sell pine saplings, flax seeds and woad seeds. Wild mandrake can also drop <b>wolfsbane</b> and <b>adderfern</b> seeds, and a yard is the only place either grows. Since 5 October 2026 the trees and herbs <b>in your own yard</b> can turn up saplings and seeds too, so a yard can grow its own stock.</li>
         <li><b>Your own mine</b>: the owner opens a hatch, and anyone with Mining and a pickaxe helps dig it out, 240 actions at 75 Mining XP each. The first cave has 3 iron rocks; each upgrade lets it go a stage deeper, up to <b>18 rocks: 6 iron, 5 silver, 4 gold and 3 titanium</b>. Only your account can mine them.</li></ul>`],
       ['tax','Taxes',`<p>A finished home pays a tax every 30 days, from the house’s window, up to six months ahead. The first month is paid when the cottage is finished.</p>`
         +table(['Home','Tax every 30 days'],[['Pine Cottage','3,000 gold'],['Oak House','8,000 gold'],['Walnut Manor','15,000 gold'],['Shagbark Estate','25,000 gold']])
@@ -355,7 +403,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   function enchEffectAt(g,c){const one=String(g&&g.effect&&g.effect[1]||'');if(!one)return '';
     if(g.element||(!g.school&&!g.attribute&&/base damage/.test(one)))return one.replace(/\d+(\.\d+)?/,String(Math.round(c*100/4.5)));
     return one.replace(/\d+(\.\d+)?/,m=>String(+m*c))}
-  reg({slug:'quality-and-enchanting',group:'Gear, gems & enchanting',title:'Quality & enchanting',blurb:'Quality tiers and their odds, mastery, carat caps and every enchantment.',build:()=>{
+  reg({slug:'quality-and-enchanting',group:'Gear, gems & enchanting',title:'Quality & enchanting',blurb:'Quality tiers and their odds, mastery, carat caps, every enchantment, and reforging with reagents.',build:()=>{
     const qm=typeof QUALITY_MULT!=='undefined'?QUALITY_MULT:{},qt=typeof QUALITY_TIERS!=='undefined'?QUALITY_TIERS:[];
     // What quality does (the game's rules: gear stats and sell price x (1 + q), a tool's success bonus + q/10; official
     // guide: weapon damage, armour defence, staff spell power, tool craft chance - never your attributes or a set gem)
@@ -405,7 +453,9 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       ['carats','Carats',`<p>Gear enchantments use <b>three gems</b> (tools and rings one). Which gems decides the effect; their carats added up and rounded down decide the strength. An item holds <b>3 carats per material tier</b> (tier 4: 12) and anything above that is lost. Wearing enchanted gear takes <b>5 INT per carat</b>. Shields take armour enchants like any other piece; ammunition can’t be enchanted.</p>`],
       ['rings','Rings and tools',`<p><b>Rings</b> are forged at an anvil, bare or with one gem of 1c or more (up to 1/2/3/4c for iron/silver/gold/titanium). You wear two, and two of the same kind stack. 5c and 6c titanium rings only drop, from monsters level 25+. <b>Pendants</b> are never crafted; they drop at 1c up to <b>6c</b>. <b>Capes</b> only drop too, and carry an armour enchant of up to 3c. <b>Tools</b> take one gem while being forged (of the Artisan, +5% per carat). See ${guide('gems')} and ${guide('tool-smithing')}.</p>`],
       ['list','Every enchantment',enchCards],
-    ],related:['gems','combat','weapon-smithing','armor-smithing']};
+      ['reforge','Reforging: infuse, re-enchant, reroll',reforgeHtml()],
+      ['reagents','Reagents',reagentsHtml()],
+    ],related:['gems','combat','weapon-smithing','armor-smithing','monster-families']};
   }});
   reg({slug:'gems',group:'Gear, gems & enchanting',title:'Gems',blurb:'The nine gems, where they are found, and what their rings do.',build:()=>{
     const EG=typeof ENCHANT_GEMS!=='undefined'?ENCHANT_GEMS:{};
