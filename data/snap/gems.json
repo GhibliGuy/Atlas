@@ -1,4 +1,9 @@
 [
+{"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"npcName":"Dune Skirmisher","time":1791289787086,"sessionId":"a4fc1cc1","key":329},
+{"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"npcName":"Dune Skirmisher","time":1791289441536,"sessionId":"3d0a220f","key":328},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"npcName":"Dune Skirmisher","time":1791289188936,"sessionId":"3d0a220f","key":327},
+{"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"npcName":"Dune Skirmisher","time":1791289173282,"sessionId":"3d0a220f","key":326},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"npcName":"Dune Skirmisher","time":1791288511315,"sessionId":"3d0a220f","key":325},
 {"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"npcName":"Dune Skirmisher","time":1791258112627,"sessionId":"8ba1b01c","key":324},
 {"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"npcName":"Dune Skirmisher","time":1791257603066,"sessionId":"8ba1b01c","key":323},
 {"type":"gem.found","typeId":"gem-pearl","carat":1,"dropped":false,"npcName":"Dune Marauder","time":1791251817968,"sessionId":"6374cf8b","key":322},
