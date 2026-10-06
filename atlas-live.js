@@ -1,3 +1,7 @@
+// The website's data files (snapshot, map, lists, zones, pictures list, page and panel docs) are re-checked with the
+// server on every load (cache: no-cache - a 304 when unchanged): GitHub Pages lets browsers reuse a file for 10 minutes,
+// so without this a page opened just after a publish still showed the old data (e.g. the "?" pictures, 6 Oct 2026).
+function dataFetch(u){return fetch(u,{cache:'no-cache'})}
 (() => {
   // The public, shared build (index.html sets window.BXC_PUBLIC=true before this file loads, see atlas-public/)
   // is the exact same code as the private one running inside the collector app - just with nowhere to write to
@@ -4026,7 +4030,7 @@ function newsHtml(){
   let zonesLoad=null,zonesIn=false;
   function ensureZones(){
     if(isFull()||zonesIn)return Promise.resolve();
-    return zonesLoad||(zonesLoad=fetch('data/zones.json').then(r=>{if(!r.ok)throw new Error('no zones file');return r.json()}).then(d=>{
+    return zonesLoad||(zonesLoad=dataFetch('data/zones.json').then(r=>{if(!r.ok)throw new Error('no zones file');return r.json()}).then(d=>{
       if(isFull())return;
       const outdoors=a=>(a||[]).filter(r=>!(r&&r.position&&r.position.z));   // the lite rows inside caves are replaced by the full ones
       rawSnapshot=snapshot={...snapshot,terrain:d.terrain||[],worldObjects:[...outdoors(snapshot.worldObjects),...(d.worldObjects||[])],npcs:[...outdoors(snapshot.npcs),...(d.npcs||[])],npcObservations:d.npcObservations||[],zoneTransitions:d.zoneTransitions||[]};
@@ -4044,7 +4048,7 @@ function newsHtml(){
   let listsLoad=null,listsIn=false;
   function ensureLists(){
     if(isFull()||listsIn)return Promise.resolve();
-    return listsLoad||(listsLoad=Promise.all([fetch('data/lists.json').then(r=>{if(!r.ok)throw new Error('no lists file');return r.text()}),ensureZones()]).then(([text])=>{
+    return listsLoad||(listsLoad=Promise.all([dataFetch('data/lists.json').then(r=>{if(!r.ok)throw new Error('no lists file');return r.text()}),ensureZones()]).then(([text])=>{
       if(isFull())return;
       const d=JSON.parse(text,listReviver);
       if(Array.isArray(d.catalog)&&Array.isArray(D.catalog)){D.catalog.length=0;D.catalog.push(...d.catalog)}   // in place: other code holds this list
@@ -4657,7 +4661,7 @@ function newsHtml(){
   }
   const PANEL_DOC_KINDS=new Set(['monster','resource','item','npc','zone','place']);
   const panelDocCache=new Map();
-  function loadPanelDoc(kind,id){const u='data/panels/'+kind+'/'+pageFileId(id)+'.json';if(!panelDocCache.has(u))panelDocCache.set(u,fetch(u).then(r=>r.ok?r.json():null).catch(()=>null));return panelDocCache.get(u)}
+  function loadPanelDoc(kind,id){const u='data/panels/'+kind+'/'+pageFileId(id)+'.json';if(!panelDocCache.has(u))panelDocCache.set(u,dataFetch(u).then(r=>r.ok?r.json():null).catch(()=>null));return panelDocCache.get(u)}
   function closeMapPanel(clearSelection){
     if(!mapPanelEl)return;
     if(clearSelection&&tab==='map')setRoute('#/map');
@@ -4765,7 +4769,7 @@ function newsHtml(){
   // the drawn-ahead page for what is open (the publish draws every page: see bxcExportPages), or null
   const pageDocCache=new Map();
   function pageDocPath(p){const v=p.kind==='monster'&&p.lv!=null?'~lv'+p.lv:p.kind==='item'&&p.q?'~q'+pageFileId(p.q):'';return 'data/pages/'+p.kind+'/'+pageFileId(p.id)+v+'.json'}
-  function loadPageDoc(p){const u=pageDocPath(p);if(!pageDocCache.has(u))pageDocCache.set(u,fetch(u).then(r=>r.ok?r.json():null).catch(()=>null));return pageDocCache.get(u)}
+  function loadPageDoc(p){const u=pageDocPath(p);if(!pageDocCache.has(u))pageDocCache.set(u,dataFetch(u).then(r=>r.ok?r.json():null).catch(()=>null));return pageDocCache.get(u)}
   const hasPageDoc=p=>PUBLIC_MODE&&(['monster','npc','item','resource'].includes(p.kind)||(p.kind==='guide'&&/^quest-/.test(p.id)));
   function renderPage(){
     if(!isFull()&&pageNow&&hasPageDoc(pageNow)){
@@ -5974,14 +5978,14 @@ function newsHtml(){
     const partRows=p=>Array.isArray(p)?p:p&&Array.isArray(p.cols)&&Array.isArray(p.rows)?p.rows.map(r=>{const o={};for(let i=0;i<p.cols.length;i++)o[p.cols[i]]=r[i];return o}):[];
     // the whole database: every store; once, shared by everything that asks for it
     let fullLoad=null;
-    const loadFull=()=>fullLoad||(fullLoad=fetch('data/snapshot.json').then(r=>r.json()).then(async s=>{
-      if(Array.isArray(s.parts))await Promise.all(s.parts.map(async k=>{const p=s[k]&&s[k].part;s[k]=p?partRows(await fetch('data/'+p).then(r=>r.json())):[]}));
+    const loadFull=()=>fullLoad||(fullLoad=dataFetch('data/snapshot.json').then(r=>r.json()).then(async s=>{
+      if(Array.isArray(s.parts))await Promise.all(s.parts.map(async k=>{const p=s[k]&&s[k].part;s[k]=p?partRows(await dataFetch('data/'+p).then(r=>r.json())):[]}));
       return s}).then(s=>{applySnapshot(s);globalThis.bxcDataReady=true}).catch(err=>{fullLoad=null;setCollectorStatus('Could not load data: '+err.message);throw err}));
     globalThis.bxcEnsureFull=()=>isFull()?Promise.resolve():loadFull();
     // lite: the base file, the pictures list, the map's slim data and the search list
-    const loadLite=()=>Promise.all([fetch('data/snapshot.json').then(r=>r.json()),fetch('data/map.json').then(r=>{if(!r.ok)throw new Error('no map data yet');return r.json()}),fetch('data/search.json').then(r=>r.ok?r.json():[]).catch(()=>[])])
+    const loadLite=()=>Promise.all([dataFetch('data/snapshot.json').then(r=>r.json()),dataFetch('data/map.json').then(r=>{if(!r.ok)throw new Error('no map data yet');return r.json()}),dataFetch('data/search.json').then(r=>r.ok?r.json():[]).catch(()=>[])])
       .then(async([s,m,found])=>{
-        s.assets=s.assets&&s.assets.part?partRows(await fetch('data/'+s.assets.part).then(r=>r.json())):Array.isArray(s.assets)?s.assets:[];
+        s.assets=s.assets&&s.assets.part?partRows(await dataFetch('data/'+s.assets.part).then(r=>r.json())):Array.isArray(s.assets)?s.assets:[];
         liteSearch=(found||[]).map(([kind,name,detail,href,img])=>({kind,name,detail,href,lite:true,image:img?()=>img:null}));
         applyLite(s,m);
       }).catch(err=>{console.warn('[atlas] lite start failed - loading everything',err);return loadFull()});
