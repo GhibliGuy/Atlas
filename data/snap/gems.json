@@ -1,4 +1,6 @@
 [
+{"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"npcName":"Dune Skirmisher","time":1791258112627,"sessionId":"8ba1b01c","key":324},
+{"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"npcName":"Dune Skirmisher","time":1791257603066,"sessionId":"8ba1b01c","key":323},
 {"type":"gem.found","typeId":"gem-pearl","carat":1,"dropped":false,"npcName":"Dune Marauder","time":1791251817968,"sessionId":"6374cf8b","key":322},
 {"type":"gem.found","typeId":"gem-emerald","carat":1,"dropped":false,"time":1791245875429,"sessionId":"23c4b070","key":321},
 {"type":"gem.found","typeId":"gem-ruby","carat":1,"dropped":false,"time":1791244953655,"sessionId":"23c4b070","key":320},
