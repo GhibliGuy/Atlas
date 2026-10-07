@@ -5338,7 +5338,7 @@ function newsHtml(){
       <p class="s muted">A weakness adds 30% damage and a resistance takes 30% off (the game's own rule).</p>
       ${m?.eliteObserved?`<p class="s good">⭐ Seen as an elite ${esc(m.eliteObserved)} times (${(m.eliteRate*100).toFixed(1)}% of sightings). Elites have 3× HP, hit 1.4× harder, give 3× XP and 2.5× loot.</p>`:''}
       ${m?.mechanics?`<p class="s">Special: ${m.mechanics}</p>`:''}
-      ${(()=>{const rs=m&&globalThis.bxcReagentsByFamily?globalThis.bxcReagentsByFamily(m.family):[];if(!rs.length)return '';return `<p class="s"><b>Reagent:</b> ${rs.map(r=>`<a href="${pageHref('item',r.id)}">${esc(prettyId(r.id))}</a> <span class="muted">(${r.onlyClass?esc(r.onlyClass)+'s only; ':''}${r.kind==='enchant'?'infuses an enchant':'rerolls quality'})</span>`).join(', ')}. A small chance on any kill, far better from elites. <a href="#/guide/quality-and-enchanting">Reforging</a></p>`})()}
+      ${(()=>{const rs=m&&globalThis.bxcReagentsByFamily?globalThis.bxcReagentsByFamily(m.family):[];if(!rs.length)return '';return `<p class="s"><b>Reagent:</b> ${rs.map(r=>`<a href="${pageHref('item',r.id)}">${esc(prettyId(r.id))}</a> <span class="muted">(${r.onlyClass?esc(r.onlyClass)+'s only; ':''}${r.kind==='enchant'?'infuses an enchant':'rerolls quality'})</span>`).join(', ')}. A small chance on any kill, far better from elites. <a href="#/guide/reforging">Reforging</a></p>`})()}
       ${monsterLevelsHtml(id,pageNow&&pageNow.kind==='monster'&&pageNow.id===id?pageNow.lv:null)}
       ${looksHtml(id,pl)}
       <h2>Drops</h2>${(typeof monsterDropsHtml==='function'&&monsterDropsHtml(id))||'<p class="muted">No drops recorded yet.</p>'}
