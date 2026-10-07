@@ -320,6 +320,85 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     return `<h3>Enchant reagents (for infusing)</h3>`+table(['Reagent','Infuses <span class="muted">+ gem</span>','Dropped by'],ench)
       +`<h3>Gear-line reagents (for rerolling quality)</h3>`+table(['Reagent','Rerolls','Dropped by'],qual);
   }
+  // ---- the Reforging guide's calculators (one per section; same rule numbers as the tables). Each is a .rf-calc box
+  // with data-calc=kind; one delegated listener recomputes the box that changed (wired once), and every box on the page
+  // is filled in right after it is drawn.
+  const RF_METALS=[['iron','Iron',1],['silver','Silver',2],['gold','Gold',3],['titanium','Titanium',4]];
+  const RF_PIECES=[...RF_METALS.map(([k,l,t])=>[k,l+' weapon or armor',t*3,t]),['cape','Cape',7,null],['ring','Ring or pendant',6,null]];
+  const rfOpt=(v,l,sel)=>`<option value="${esc(v)}"${sel?' selected':''}>${esc(l)}</option>`;
+  const rfNum=(id,label,val,min,max,step)=>`<label class="rf-f"><span>${esc(label)}</span><input type="number" data-k="${id}" value="${val}" min="${min}" max="${max}" step="${step||1}"></label>`;
+  const rfSel=(id,label,opts)=>`<label class="rf-f"><span>${esc(label)}</span><select data-k="${id}">${opts}</select></label>`;
+  function rfCalcHtml(kind){
+    let f='';
+    if(kind==='need'){
+      const ench=Object.entries(RF_ENCH).map(([k,v])=>rfOpt('e:'+k,'Enchant: '+v[2])).join('');
+      const stones=Object.keys(RF_STONE).map(st=>rfOpt('s:'+st,'Ring or pendant: '+pretty(st))).join('');
+      const lines=Object.keys(RF_LINE).map(l=>rfOpt('l:'+l,'Reroll: '+RF_LINE_NAME[l])).join('');
+      f=rfSel('what','I want to…',`<optgroup label="Infuse an enchant">${ench}</optgroup><optgroup label="Infuse a ring or pendant">${stones}</optgroup><optgroup label="Reroll the quality of">${lines}</optgroup>`);
+    }else if(kind==='infuse'){
+      f=rfSel('piece','Piece',RF_PIECES.map(([k,l],i)=>rfOpt(k,l,i===2)).join(''))+rfNum('from','From carats',6,1,11)+rfNum('to','To carats',9,2,12)+rfNum('reag','Reagent price',0,0,1e9,100)+rfNum('gem','Gem price',0,0,1e9,100);
+    }else if(kind==='reenchant'){
+      const g=(id,def)=>rfSel(id,'Gem '+id.slice(1),[.5,1,1.5,2,2.5,3,3.5,4].map(c=>rfOpt(c,c+'c',c===def)).join(''));
+      f=rfSel('metal','Metal',RF_METALS.map(([k,l],i)=>rfOpt(k,l,i===2)).join(''))+rfNum('now','Carats it has now',6,1,12)+g('g1',3)+g('g2',3)+g('g3',3)+rfNum('gemp','Price of the 3 gems',0,0,1e9,100);
+    }else if(kind==='reroll'){
+      f=rfSel('metal','Metal',RF_METALS.map(([k,l],i)=>rfOpt(k,l,i===2)).join(''))+rfNum('lvl','Your trade level',50,1,100)
+        +rfSel('q','Current quality',RR_Q.slice(0,6).map((q,i)=>rfOpt(q,pretty(q),i===3)).join(''))
+        +rfSel('t','Target quality',RR_Q.slice(1,7).map((q,i)=>rfOpt(q,pretty(q),q==='excellent')).join(''))+rfNum('reag','Reagent price',0,0,1e9,100);
+    }
+    return `<div class="rf-calc calcbox" data-calc="${kind}"><div class="rf-calc-h">Calculator</div><div class="rf-fields">${f}</div><div class="rf-out"></div></div>`;
+  }
+  const rfVal=(box,k)=>{const el=box.querySelector(`[data-k="${k}"]`);return el?el.value:''};
+  const rfNumV=(box,k,lo,hi)=>Math.max(lo,Math.min(hi,Number(rfVal(box,k))||0));
+  // average tries to climb from quality i to target t, with this many levels over the recipe: E[t]=0 and
+  // E[i] = (1 + up*E[i+1] + down*E[i-1]) / (up+down) - solved by walking E as a line in E[0] (inferior can't drop)
+  function rerollTries(over,i,t){
+    if(i>=t)return 0;const N=t;const A=[],B=[];   // E[k] = A[k] + B[k]*E[0]
+    A[0]=0;B[0]=1;
+    for(let k=0;k<N;k++){const r=rerollOdds(over,RR_Q[k]);if(r.up<=0)return Infinity;const prevA=k?A[k-1]:0,prevB=k?B[k-1]:0;
+      // up*E[k+1] = (up+down)*E[k] - 1 - down*E[k-1]
+      A[k+1]=((r.up+r.down)*A[k]-1-r.down*prevA)/r.up;B[k+1]=((r.up+r.down)*B[k]-r.down*prevB)/r.up}
+    const e0=-A[N]/B[N];return Math.max(0,A[i]+B[i]*e0);
+  }
+  function rfRun(box){
+    const out=box.querySelector('.rf-out');if(!out)return;const kind=box.dataset.calc;
+    try{
+      if(kind==='need'){
+        const [t,k]=String(rfVal(box,'what')).split(':');let rid,gem,uses;
+        if(t==='e'){rid=RF_ENCH[k][0];gem=RF_ENCH[k][1];uses='infuse '+RF_ENCH[k][2]}
+        else if(t==='s'){rid=RF_STONE[k];gem='gem-'+k;uses='infuse '+pretty(k)+' rings and pendants'}
+        else{rid=RF_LINE[k];gem=null;uses='reroll the quality of '+RF_LINE_NAME[k]}
+        const r=REAGENTS.find(x=>x[0]===rid);
+        out.innerHTML=`<p>To ${esc(uses)} you need <b>${item(rid)}</b>${gem?` and a ${item(gem,pretty(gem.replace('gem-','')))} of the right size (see Infuse)`:''}, plus the gold fee.</p><p>It drops from <b>${reagentSrc(r?r[2]:[])}</b>, rarely on any kill and far more often from elites. Their monster pages in the Bestiary show where they live.</p>`;
+      }else if(kind==='infuse'){
+        const p=RF_PIECES.find(x=>x[0]===rfVal(box,'piece'))||RF_PIECES[0],cap=p[2];
+        const from=rfNumV(box,'from',1,cap-1),to=rfNumV(box,'to',from+1,cap),reag=rfNumV(box,'reag',0,1e9),gp=rfNumV(box,'gem',0,1e9);
+        let gold=0,tries=0,first=1;const rows=[];
+        for(let c=from;c<to;c++){const ch=RF_CHANCE[c-1],t=1/ch,cost=(RF_FEE(c)+reag+gp)*t;gold+=cost;tries+=t;first*=ch;rows.push([c+'c → '+(c+1)+'c',Math.round(ch*100)+'%',RF_GEM(c)+'c+',t.toFixed(2),n(Math.round(cost))])}
+        const lvl=p[3]?[16,31,46,61][p[3]-1]:(to<=3?16:to<=6?31:46);
+        out.innerHTML=`${table(['Step','Chance','Gem','Tries (avg)','Cost (avg)'],rows)}<p><b>${n(Math.round(gold))} gold</b> on average${reag||gp?' (fees, reagents and gems)':' in fees (add your reagent and gem prices above)'}, using about <b>${tries.toFixed(1)} reagents</b> and <b>${tries.toFixed(1)} gems</b>. Every step working first time: ${first<.01?'under 1%':Math.round(first*100)+'%'}. Needs trade level <b>${lvl}</b>. The cap for this piece is <b>${cap}c</b>.</p>`;
+      }else if(kind==='reenchant'){
+        const m=RF_METALS.find(x=>x[0]===rfVal(box,'metal'))||RF_METALS[0],tier=m[2],cap=tier*3,now=rfNumV(box,'now',1,cap);
+        const gems=['g1','g2','g3'].map(k=>Number(rfVal(box,k))||0),big=gems.filter(c=>c>tier),sum=gems.reduce((a,b)=>a+b,0),res=Math.min(cap,Math.floor(sum)),gp=rfNumV(box,'gemp',0,1e9);
+        let msg;
+        if(big.length)msg=`<p class="bad">A ${esc(m[1].toLowerCase())} piece takes gems of at most <b>${tier}c</b> each.</p>`;
+        else if(res<now)msg=`<p class="bad">Not allowed: these gems make <b>${res}c</b>, below the <b>${now}c</b> it has now. Re-enchanting can’t lower a piece.</p>`;
+        else msg=`<p>The gems add up to ${sum}c, so it ends at <b>${res}c</b>${sum>cap?` (the ${esc(m[1].toLowerCase())} cap)`:''}. Fee <b>${n(2000*res)} gold</b>${gp?`, <b>${n(2000*res+gp)}</b> with the gems`:''}. Needs the enchanting level for ${esc(m[1].toLowerCase())}: <b>${[16,31,46,61][tier-1]}</b>.</p>`;
+        out.innerHTML=msg;
+      }else if(kind==='reroll'){
+        const m=RF_METALS.find(x=>x[0]===rfVal(box,'metal'))||RF_METALS[0],rec=[1,16,31,46][m[2]-1],lvl=rfNumV(box,'lvl',1,100),over=Math.max(0,lvl-rec);
+        const q=rfVal(box,'q'),t=rfVal(box,'t'),qi=RR_Q.indexOf(q),ti=RR_Q.indexOf(t),reag=rfNumV(box,'reag',0,1e9),fee=RF_REROLL_FEE[m[2]-1];
+        if(lvl<rec){out.innerHTML=`<p class="bad">Rerolling ${esc(m[1].toLowerCase())} gear takes trade level <b>${rec}</b>.</p>`;return}
+        const r=rerollOdds(over,q);
+        let tail='';
+        if(ti<=qi)tail=`<p>Pick a target above ${esc(pretty(q))}.</p>`;
+        else{const e=rerollTries(over,qi,ti);tail=isFinite(e)?`<p>Reaching <b>${esc(pretty(t))}</b> takes about <b>${e.toFixed(1)} rerolls</b> on average (drops included), about <b>${n(Math.round(e*(fee+reag)))} gold</b>${reag?'':' in fees'}.</p>`:`<p class="bad">${esc(pretty(t))} can’t be reached at this level.</p>`}
+        out.innerHTML=`<p>You are <b>${over}</b> levels over the recipe (${rec})${over>30?', past the +30 cap':''}. Each reroll of ${/^[aeiou]/i.test(q)?'an':'a'} ${esc(q)} piece: <b>${Math.round(r.up*100)}%</b> up, ${Math.round(r.same*100)}% stays, <b>${Math.round(r.down*100)}%</b> down. Fee <b>${n(fee)} gold</b> + a reagent.</p>`+tail;
+      }
+    }catch(e){out.innerHTML='<p class="muted">Couldn’t work this out.</p>'}
+  }
+  const rfRunAll=()=>document.querySelectorAll('.rf-calc').forEach(rfRun);
+  if(!globalThis.__rfWired){globalThis.__rfWired=true;const on=e=>{const b=e.target&&e.target.closest&&e.target.closest('.rf-calc');if(b)rfRun(b)};document.addEventListener('input',on);document.addEventListener('change',on)}
+  const RF_CALC={reagents:'need',infuse:'infuse',reenchant:'reenchant',reroll:'reroll'};
   reg({slug:'reforging',group:'Gear, gems & enchanting',title:'Reforging & reagents',blurb:'Infuse, re-enchant and reroll gear with monster reagents: every chance, cost and level.',build:()=>{
     const ROLL_Q=['inferior','crude','shoddy','ordinary','good','excellent'],OVER=[0,5,10,15,20,25,30];
     const pc=v=>Math.round(v*100)+'%';
@@ -328,7 +407,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const ranges=[[1,3,'Iron: 1c to its cap'],[3,6,'Silver: 3c to its cap'],[6,9,'Gold: 6c to its cap'],[9,12,'Titanium: 9c to its cap'],[1,12,'Titanium: all the way, 1c to 12c']];
     const rangeRows=ranges.map(([a,b,label])=>{const r=infuseRange(a,b);return [esc(label),a+'c → '+b+'c',n(Math.round(r.gold)),r.tries.toFixed(1),r.tries.toFixed(1),r.first<.01?"under 1%":pc(r.first)]});
     const ex=infuseRange(6,9);
-    return {lede:'Since 5 October 2026 a finished piece of gear isn’t final: rare <b>reagents</b> from monsters let you <b>infuse</b> its enchant one carat higher, <b>re-enchant</b> it with new gems, or <b>reroll</b> its quality. This page has every chance, cost and level, straight from the game’s rules.',sections:[
+    const RF_PAGE={lede:'Since 5 October 2026 a finished piece of gear isn’t final: rare <b>reagents</b> from monsters let you <b>infuse</b> its enchant one carat higher, <b>re-enchant</b> it with new gems, or <b>reroll</b> its quality. This page has every chance, cost and level, straight from the game’s rules.',sections:[
       ['what','What reforging is',`<p>The <b>anvil, tailor’s bench, tanning rack and bowyer table</b> each have a <b>Reforge</b> tab with three actions: <b>Infuse</b> (+1 carat to the enchant), <b>Re-enchant</b> (three new gems) and <b>Reroll</b> (a new quality roll). You work a piece at the station of the trade that makes it, with that trade’s <b>tool equipped</b> and the piece <b>in your bag</b>.</p>`
         +table(['Gear','Trade','Station','Tool'],RF_STATIONS.map(r=>r.map(esc)))
         +`<ul class="g-list"><li><b>Can be reforged:</b> weapons, shields, and plate, knick and pelt armor of <b>iron or better</b>, plus capes, rings and pendants.</li><li><b>Can’t:</b> basic (tier 0) gear and clothing.</li><li>A successful infuse or re-enchant pays trade XP.</li></ul>`],
@@ -354,7 +433,10 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
         +table(['Metal','Reroll fee (gold)','Level needed'],[['Iron','1,000','1'],['Silver','1,500','16'],['Gold','2,000','31'],['Titanium','3,000','46']])
         +`<ul class="g-list"><li><b>Inferior, crude and shoddy</b> go up almost every time at any level.</li><li><b>Ordinary → good</b> is safe and worth it from about +15 (46% up, no risk).</li><li><b>Excellent</b> is a gamble even at the cap: 16% to reach superior against 26% to fall to good. Don’t reroll an excellent piece you like.</li><li><b>Superior and flawless</b> can’t be rerolled, and neither can capes.</li></ul>`],
       ['plan','Planning',`<ul class="g-list"><li>Infusing high carats is where the gold goes: the last three titanium carats (9c → 12c) cost more in fees than the first nine together (about 78,000 against 53,000 gold on average).</li><li>Farm <b>elites</b> of the right family for reagents, or buy them on the Exchange; they trade one at a time.</li><li>Quality and carats are <b>separate</b>: a reroll never touches the enchant and an infuse never changes the quality, so do them in any order.</li><li>The <a href="#/calc-quality">Quality calculator</a> has an infusing planner with your own reagent and gem prices.</li></ul>`+note('Chances, fees, gem sizes, caps, levels and the reroll formula are from the game’s own rules (5 October 2026 update). Reagent drop chances and XP amounts aren’t published.')]
-    ],related:['quality-and-enchanting','gems','monster-families']}}});
+    ],related:['quality-and-enchanting','gems','monster-families']};
+    for(const sec of RF_PAGE.sections)if(RF_CALC[sec[0]])sec[2]+=rfCalcHtml(RF_CALC[sec[0]]);
+    setTimeout(rfRunAll,0);
+    return RF_PAGE}});
   // ---- Crafting skills ----------------------------------------------------------------------------------------------
   const craft=(slugName,skill,title,blurb,lede,related,extra)=>reg({slug:slugName,group:'Crafting skills',title,blurb,build:craftingGuide({skill,lede,related,extra})});
   reg({slug:'smelting',group:'Crafting skills',title:'Smelting',blurb:'Turning ore into bars.',build:craftingGuide({skill:'Smelting',station:'furnace',noTomes:true,lede:'Smelt ore into metal bars at a furnace, the first step of every smithing skill. Higher metals take some iron as well.',how:`<li>Smelting pays a little XP; most of a smith’s XP comes from forging (see ${guide('weapon-smithing')}).</li><li>The recipes below come from the game’s data. (The official guide’s pages disagree with each other on how much iron the higher bars take.)</li>`,related:['mining','weapon-smithing','armor-smithing','tool-smithing']})});

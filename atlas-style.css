@@ -1143,3 +1143,11 @@ a.sp-spell:hover{background:rgba(255,213,74,.06)}
 .gx-none{padding:14px 2px;color:var(--muted)}
 @media (max-width:900px){.gx-hero{grid-template-columns:1fr}.gx-paths{grid-template-columns:repeat(5,minmax(0,1fr))}}
 @media (max-width:640px){.gx-hero{padding:14px;gap:12px}.gx-paths{gap:6px}.gx-path{padding:8px 2px 6px}.gx-path-art{width:40px;height:40px}.gx-path b{font-size:13px;margin-top:2px}.gx-grid{grid-template-columns:1fr}.gx-path>span:last-child{display:none}}
+/* ---- Reforging guide calculators (2026-10-07) ---- */
+.rf-calc{margin:14px 0 6px;padding:12px 14px;border-radius:8px}
+.rf-calc-h{font:400 16px var(--serif);margin:0 0 8px;color:var(--accent)}
+.rf-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px 12px;margin-bottom:8px}
+.rf-f{display:flex;flex-direction:column;gap:3px;font-size:12.5px;color:var(--muted)}
+.rf-f select,.rf-f input{width:100%;box-sizing:border-box;padding:6px 8px;font-size:14px;color:var(--ink)}
+.rf-calc[data-calc="need"] .rf-fields{grid-template-columns:minmax(0,1fr)}
+.rf-out p{margin:6px 0}.rf-out .bad{color:#e07a6a}
