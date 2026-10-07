@@ -1,4 +1,5 @@
 [
+{"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"time":1791413217860,"sessionId":"2f91b4d9","key":354},
 {"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"time":1791401425294,"sessionId":"91ef2e34","key":353},
 {"type":"gem.found","typeId":"gem-topaz","carat":1,"dropped":false,"time":1791401251196,"sessionId":"91ef2e34","key":352},
 {"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"npcName":"Ogre Elder","time":1791398871125,"sessionId":"52596312","key":351},
