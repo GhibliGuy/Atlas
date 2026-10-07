@@ -1,4 +1,7 @@
 [
+{"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"npcName":"Ogre Elder","time":1791398871125,"sessionId":"52596312","key":351},
+{"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"npcName":"Ogre Charger","time":1791396796302,"sessionId":"3b7845b8","key":350},
+{"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"time":1791396731347,"sessionId":"7a83830c","key":349},
 {"type":"gem.found","typeId":"gem-topaz","carat":3,"dropped":false,"time":1791395373182,"sessionId":"80830ec3","key":348},
 {"type":"gem.found","typeId":"gem-topaz","carat":2,"dropped":false,"time":1791391630634,"sessionId":"e0196083","key":347},
 {"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"time":1791387676331,"sessionId":"97019a28","key":346},
