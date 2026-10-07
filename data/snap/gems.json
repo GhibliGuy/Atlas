@@ -1,4 +1,8 @@
 [
+{"type":"gem.found","typeId":"gem-topaz","carat":1,"dropped":false,"time":1791375812282,"sessionId":"963a325a","key":345},
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"npcName":"Skeleton Knight","time":1791375042990,"sessionId":"e4a873af","key":344},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"npcName":"Grave Knight","time":1791374847800,"sessionId":"e4a873af","key":343},
+{"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"time":1791374176025,"sessionId":"963a325a","key":342},
 {"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"time":1791304633512,"sessionId":"f0d81d92","key":341},
 {"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"time":1791302165141,"sessionId":"f0d81d92","key":340},
 {"type":"gem.found","typeId":"gem-sapphire","carat":1.5,"dropped":false,"time":1791301346457,"sessionId":"f0d81d92","key":339},
