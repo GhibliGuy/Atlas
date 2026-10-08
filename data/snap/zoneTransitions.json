@@ -1,4 +1,9 @@
 [
+{"sessionId":"10331c33","time":1791427682143,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":2954},
+{"sessionId":"10331c33","time":1791427089225,"fromZ":-240,"toZ":0,"kind":"outdoors","outX":1830,"outY":354,"key":2953},
+{"sessionId":"10331c33","time":1791427083966,"fromZ":0,"toZ":-240,"zoneName":"The Ashen Citadel","pvpMode":"lawless","atX":1831,"atY":353,"key":2952},
+{"sessionId":"10331c33","time":1791427081587,"fromZ":-240,"toZ":0,"kind":"outdoors","outX":1830,"outY":354,"key":2951},
+{"sessionId":"10331c33","time":1791427078137,"fromZ":null,"toZ":-240,"zoneName":"The Ashen Citadel","pvpMode":"lawless","atX":1831,"atY":353,"key":2950},
 {"sessionId":"c4a2ca08","time":1791414543777,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":2949},
 {"sessionId":"1d19aef6","time":1791414457567,"fromZ":0,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":2948},
 {"sessionId":"1d19aef6","time":1791414453495,"fromZ":11001,"toZ":0,"kind":"outdoors","outX":124,"outY":-86,"key":2947},
