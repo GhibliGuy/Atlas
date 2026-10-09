@@ -1,4 +1,5 @@
 [
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"npcName":"Virikh Templar","time":1791569261222,"sessionId":"5e65046d","key":373},
 {"type":"gem.found","typeId":"gem-topaz","carat":1.5,"dropped":false,"time":1791551676760,"sessionId":"5c589a73","key":372},
 {"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"time":1791502496607,"sessionId":"4fc6295d","key":371},
 {"type":"gem.found","typeId":"gem-topaz","carat":3.5,"dropped":false,"time":1791485085422,"sessionId":"204eb093","key":370},
