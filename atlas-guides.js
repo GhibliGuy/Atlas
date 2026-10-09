@@ -398,6 +398,90 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   }
   const rfRunAll=()=>document.querySelectorAll('.rf-calc').forEach(rfRun);
   if(!globalThis.__rfWired){globalThis.__rfWired=true;const on=e=>{const b=e.target&&e.target.closest&&e.target.closest('.rf-calc');if(b)rfRun(b)};document.addEventListener('input',on);document.addEventListener('change',on)}
+  // ---- "Try it" (9 Oct 2026): a working copy of the game's Reforge tab (StationViewTabs in the client: Infuse /
+  // Re-enchant / Reroll, the same wording and buttons, and its overlay - the piece lit from the top by a bright edge,
+  // then a coloured outcome). Rolls with the rule numbers above and keeps the result on your piece, with a tally.
+  const RF_SIM_ART={iron:'iron-longsword',silver:'silver-longsword',gold:'gold-longsword',titanium:'titanium-longsword',cape:'cape',ring:'gold-ring'};
+  function rfSimHtml(){
+    return `<div class="rf-sim" data-tab="infuse">
+      <div class="rf-sim-setup">
+        <label class="rf-f"><span>Piece</span><select data-s="piece">${RF_PIECES.map(([k,l],i)=>rfOpt(k,l,i===2)).join('')}</select></label>
+        <label class="rf-f"><span>Carats now</span><input type="number" data-s="c" value="6" min="1" max="12"></label>
+        <label class="rf-f"><span>Quality now</span><select data-s="q">${RR_Q.map((q,i)=>rfOpt(q,pretty(q),i===3)).join('')}</select></label>
+        <label class="rf-f"><span>Your trade level</span><input type="number" data-s="lvl" value="50" min="1" max="100"></label>
+      </div>
+      <div class="rf-sim-win">
+        <div class="rf-sim-tabs"><span class="rf-sim-t">Craft</span><span class="rf-sim-t on">Reforge</span></div>
+        <div class="rf-sim-sub">${[['infuse','Infuse'],['reenchant','Re-enchant'],['reroll','Reroll']].map(([k,l])=>`<button type="button" data-tab="${k}"${k==='infuse'?' class="on"':''}>${l}</button>`).join('')}</div>
+        <div class="rf-sim-card"><img class="rf-sim-ico" alt=""><div><div class="rf-sim-name"></div><div class="rf-sim-meta"></div></div></div>
+        <div class="rf-sim-det"></div>
+        <div class="rf-sim-ov" hidden><div class="rf-sim-big"><img class="rf-sim-base" alt=""><div class="rf-sim-lit"><img alt=""></div><div class="rf-sim-edge"></div></div><p class="rf-sim-ovname"></p><p class="rf-sim-cap"></p></div>
+      </div>
+      <div class="rf-sim-tally"></div>
+    </div>`;
+  }
+  const rfSimState=new WeakMap();
+  function rfSimPiece(box){
+    const p=RF_PIECES.find(x=>x[0]===box.querySelector('[data-s="piece"]').value)||RF_PIECES[0];
+    const cap=p[2],c=Math.max(1,Math.min(cap,Number(box.querySelector('[data-s="c"]').value)||1));
+    return {key:p[0],label:p[1],cap,tier:p[3],c,q:box.querySelector('[data-s="q"]').value,lvl:Math.max(1,Math.min(100,Number(box.querySelector('[data-s="lvl"]').value)||1))};
+  }
+  function rfSimDraw(box){
+    const st=rfSimState.get(box)||{tries:0,gold:0,reag:0,gems:0,log:[]};rfSimState.set(box,st);
+    const P=rfSimPiece(box),tab=box.dataset.tab,art=itemImgSafe(RF_SIM_ART[P.key]);
+    box.querySelectorAll('.rf-sim-sub button').forEach(b=>b.classList.toggle('on',b.dataset.tab===tab));
+    box.querySelectorAll('.rf-sim-ico,.rf-sim-base,.rf-sim-lit img').forEach(i=>{i.src=art});
+    box.querySelector('.rf-sim-name').textContent=P.label;
+    box.querySelector('.rf-sim-meta').innerHTML=`<span class="q-name q-${esc(P.q)}">${esc(pretty(P.q))}</span> · ${P.c}c · cap ${P.cap}c`;
+    const needLvl=P.tier?[16,31,46,61][P.tier-1]:(P.c<3?16:P.c<6?31:46);
+    let html='',act=null;
+    if(tab==='infuse'){
+      if(P.c>=P.cap)html=`<p class="rf-sim-msg">This piece is at its cap (${P.cap}c).</p>`;
+      else{const ch=RF_CHANCE[P.c-1],fee=RF_FEE(P.c),gem=RF_GEM(P.c);
+        html=`<p class="rf-sim-msg">Choose a gem of ${gem} carats or more.</p><p class="rf-sim-odds">${Math.round(ch*100)}% to reach ${P.c+1}c · ${n(fee)} gold</p>`+(P.lvl<needLvl?`<p class="rf-sim-warn">Needs level ${needLvl}</p>`:'');
+        act={label:`Infuse for ${n(fee)} gold`,fee,reag:1,gems:1,roll:()=>Math.random()<ch?'up':'fail'}}
+    }else if(tab==='reenchant'){
+      if(P.key==='cape'||P.key==='ring')html=`<p class="rf-sim-msg">Capes, rings and pendants can’t be re-enchanted. Infuse them instead.</p>`;
+      else{const fee=2000*P.c;html=`<p class="rf-sim-msg">Three new gems that add up to at least ${P.c}c (each at most ${P.tier}c) change the enchant and keep the carats.</p><p class="rf-sim-odds">New enchant at ${P.c}c · ${n(fee)} gold</p>`;
+        act={label:`Re-enchant for ${n(fee)} gold`,fee,reag:0,gems:3,roll:()=>'same',sameText:'Enchant changed'}}
+    }else{
+      const rec=P.tier?[1,16,31,46][P.tier-1]:null,qi=RR_Q.indexOf(P.q);
+      if(!P.tier)html=`<p class="rf-sim-msg">Capes, rings and pendants can’t be rerolled.</p>`;
+      else if(qi>=6)html=`<p class="rf-sim-msg">${esc(pretty(P.q))} pieces can’t be rerolled.</p>`;
+      else if(P.lvl<rec)html=`<p class="rf-sim-warn">Rerolling ${esc(P.key)} gear needs level ${rec}.</p>`;
+      else{const r=rerollOdds(P.lvl-rec,P.q),fee=RF_REROLL_FEE[P.tier-1];
+        html=`<p class="rf-sim-odds">Up ${Math.round(r.up*100)}% · Same ${Math.round(r.same*100)}% · Down ${Math.round(r.down*100)}%</p>`;
+        act={label:`Reroll for ${n(fee)} gold`,fee,reag:1,gems:0,roll:()=>{const x=Math.random();return x<r.up?'up':x<r.up+r.down?'down':'same'}}}
+    }
+    box.querySelector('.rf-sim-det').innerHTML=html+(act?`<button type="button" class="rf-sim-go">${esc(act.label)}</button>`:'');
+    box._rfAct=act;
+    box.querySelector('.rf-sim-tally').innerHTML=st.tries?`<span><b>${st.tries}</b> ${st.tries===1?'try':'tries'}</span><span><b>${n(st.gold)}</b> gold</span><span><b>${st.reag}</b> reagent${st.reag===1?'':'s'}</span><span><b>${st.gems}</b> gem${st.gems===1?'':'s'}</span><span class="rf-sim-log">${st.log.slice(-6).map(esc).join(' · ')}</span><button type="button" class="rf-sim-reset">Reset</button>`:'<span class="muted">Press the gold button to try it. Each try uses the game’s own chances.</span>';
+  }
+  const itemImgSafe=id=>{try{return typeof itemImg==='function'?itemImg({id,typeId:id,item:pretty(id)}):''}catch{return ''}};
+  function rfSimGo(box){
+    const act=box._rfAct;if(!act||box.dataset.busy)return;
+    const st=rfSimState.get(box),P=rfSimPiece(box),out=act.roll();
+    st.tries++;st.gold+=act.fee;st.reag+=act.reag;st.gems+=act.gems;
+    const ov=box.querySelector('.rf-sim-ov'),cap=box.querySelector('.rf-sim-cap');
+    box.querySelector('.rf-sim-ovname').textContent=P.label;
+    let text,kind;
+    if(box.dataset.tab==='infuse'){if(out==='up'){kind='success';text=`Infused to ${P.c+1}c`;box.querySelector('[data-s="c"]').value=P.c+1}else{kind='fail';text='The infusion failed. The piece is unharmed.'}}
+    else if(box.dataset.tab==='reenchant'){kind='success';text=act.sameText}
+    else{const i=RR_Q.indexOf(P.q);if(out==='up'){kind='success';text='Now '+pretty(RR_Q[i+1]);box.querySelector('[data-s="q"]').value=RR_Q[i+1]}else if(out==='down'){kind='fail';text='Dropped to '+pretty(RR_Q[i-1]);box.querySelector('[data-s="q"]').value=RR_Q[i-1]}else{kind='neutral';text='Quality unchanged'}}
+    st.log.push(text.replace(/\. The piece is unharmed\./,''));
+    const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    box.dataset.busy='1';ov.hidden=false;ov.className='rf-sim-ov running';cap.textContent='';
+    setTimeout(()=>{ov.className='rf-sim-ov '+kind;cap.textContent=text;
+      setTimeout(()=>{ov.hidden=true;delete box.dataset.busy;rfSimDraw(box)},reduce?900:1700)},reduce?150:1500);
+  }
+  const rfSimAll=()=>document.querySelectorAll('.rf-sim').forEach(rfSimDraw);
+  if(!globalThis.__rfSimWired){globalThis.__rfSimWired=true;
+    document.addEventListener('click',e=>{const box=e.target.closest&&e.target.closest('.rf-sim');if(!box)return;
+      const t=e.target.closest('[data-tab]');if(t&&t.tagName==='BUTTON'){box.dataset.tab=t.dataset.tab;rfSimDraw(box);return}
+      if(e.target.closest('.rf-sim-go')){rfSimGo(box);return}
+      if(e.target.closest('.rf-sim-reset')){rfSimState.delete(box);rfSimDraw(box)}});
+    const ch=e=>{const box=e.target.closest&&e.target.closest('.rf-sim');if(box&&!box.dataset.busy)rfSimDraw(box)};
+    document.addEventListener('input',ch);document.addEventListener('change',ch)}
   const RF_CALC={reagents:'need',infuse:'infuse',reenchant:'reenchant',reroll:'reroll'};
   reg({slug:'reforging',group:'Gear, gems & enchanting',title:'Reforging & reagents',blurb:'Infuse, re-enchant and reroll gear with monster reagents: every chance, cost and level.',build:()=>{
     const ROLL_Q=['inferior','crude','shoddy','ordinary','good','excellent'],OVER=[0,5,10,15,20,25,30];
@@ -411,6 +495,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       ['what','What reforging is',`<p>The <b>anvil, tailor’s bench, tanning rack and bowyer table</b> each have a <b>Reforge</b> tab with three actions: <b>Infuse</b> (+1 carat to the enchant), <b>Re-enchant</b> (three new gems) and <b>Reroll</b> (a new quality roll). You work a piece at the station of the trade that makes it, with that trade’s <b>tool equipped</b> and the piece <b>in your bag</b>.</p>`
         +table(['Gear','Trade','Station','Tool'],RF_STATIONS.map(r=>r.map(esc)))
         +`<ul class="g-list"><li><b>Can be reforged:</b> weapons, shields, and plate, knick and pelt armor of <b>iron or better</b>, plus capes, rings and pendants.</li><li><b>Can’t:</b> basic (tier 0) gear and clothing.</li><li>A successful infuse or re-enchant pays trade XP.</li></ul>`],
+      ['station','Try it at the station',`<p>A working copy of the game’s <b>Reforge</b> tab. Set up a piece, pick <b>Infuse</b>, <b>Re-enchant</b> or <b>Reroll</b>, and press the gold button: it rolls with the game’s own chances, keeps the result on your piece and adds up what it cost. Nothing here touches your real gear.</p>`+rfSimHtml()],
       ['reagents','Reagents',`<p>Every monster kind that feeds a reagent has a <b>small chance</b> to drop it on any kill. <b>Elites drop them far more often</b>, and an <b>elite boss drops every reagent its kind carries</b>. Reagents <b>don’t stack</b>: each takes its own bag slot and trades on the Exchange one at a time, so you can buy the one you need. Hover one in the game to see what it is for. Drop chances aren’t published.</p><p>There are two kinds: an <b>enchant reagent</b> belongs to an enchantment (and to the ring and pendant stones), a <b>gear-line reagent</b> to a kind of gear. Each monster page in the Bestiary says which reagent it drops.</p>`+reagentsHtml()],
       ['infuse','Infuse: +1 carat',`<p>Infusing raises a piece’s enchant by <b>one carat</b>. It takes three things: the enchant’s <b>reagent</b>, <b>one gem of the same kind</b> (a ruby for Flame, a topaz for Titan, and so on, see the table above) at least the size shown below, and a <b>gold fee</b>. The higher the carat, the lower the chance.</p>
         <p>A <b>failure</b> uses up the reagent, the gem and the gold, but <b>never harms the piece</b>: it keeps its carats and quality, and you simply try again.</p>`
@@ -435,7 +520,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       ['plan','Planning',`<ul class="g-list"><li>Infusing high carats is where the gold goes: the last three titanium carats (9c → 12c) cost more in fees than the first nine together (about 78,000 against 53,000 gold on average).</li><li>Farm <b>elites</b> of the right family for reagents, or buy them on the Exchange; they trade one at a time.</li><li>Quality and carats are <b>separate</b>: a reroll never touches the enchant and an infuse never changes the quality, so do them in any order.</li><li>The <a href="#/calc-quality">Quality calculator</a> has an infusing planner with your own reagent and gem prices.</li></ul>`+note('Chances, fees, gem sizes, caps, levels and the reroll formula are from the game’s own rules (5 October 2026 update). Reagent drop chances and XP amounts aren’t published.')]
     ],related:['quality-and-enchanting','gems','monster-families']};
     for(const sec of RF_PAGE.sections)if(RF_CALC[sec[0]])sec[2]+=rfCalcHtml(RF_CALC[sec[0]]);
-    setTimeout(rfRunAll,0);
+    setTimeout(()=>{rfRunAll();rfSimAll()},0);
     return RF_PAGE}});
   // ---- Crafting skills ----------------------------------------------------------------------------------------------
   const craft=(slugName,skill,title,blurb,lede,related,extra)=>reg({slug:slugName,group:'Crafting skills',title,blurb,build:craftingGuide({skill,lede,related,extra})});
