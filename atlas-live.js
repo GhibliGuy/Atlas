@@ -2915,7 +2915,7 @@ function newsHtml(){
     const key=cls+'|'+fam+'|'+(elite?1:0)+'|'+count;
     let icon=monsterAreaIconCache.get(key);
     if(!icon){
-      icon=L.divIcon({className:'bxc-mi-wrap',html:`<div class="bxc-mi ${cls}${elite?' elite':''}" style="border-color:${familyColor(fam)}">${elite?'<b>⭐</b>':''}${count>1?'<i class="bxc-mi-n">'+count+'</i>':''}</div>`,iconSize:[26,26],iconAnchor:[13,13]});
+      icon=L.divIcon({className:'bxc-mi-wrap',html:`<div class="bxc-mi ${cls}${elite?' elite':''}" style="border-color:${familyColor(fam)}">${elite?'<b>⭐</b>':''}${(typeof count==='string'||count>1)?'<i class="bxc-mi-n">'+esc(String(count))+'</i>':''}</div>`,iconSize:[26,26],iconAnchor:[13,13]});
       monsterAreaIconCache.set(key,icon);
     }
     return icon;
@@ -3029,6 +3029,12 @@ function newsHtml(){
   // need to guess area boundaries from point density. Each region is labelled with whichever monster kind is
   // actually most common among the sightings that landed inside its polygon(s).
   const REGION_STATS_MIN=10;
+  // the most of these sightings alive at the same time: each is alive from its first to its last sighting
+  function peakAlive(pts){
+    const ev=[];for(const p of pts)if(p.fs){ev.push([p.fs,1]);ev.push([Math.max(p.ls,p.fs)+1,-1])}
+    ev.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);let cur=0,max=0;for(const [,d] of ev){cur+=d;if(cur>max)max=cur}
+    return max;
+  }
   let regionStatsLayer=null;
   function drawRegionStats(){
     if(typeof L==='undefined'||typeof map==='undefined'||typeof latlng!=='function')return;
@@ -3040,7 +3046,7 @@ function newsHtml(){
       const p=n.position;
       if(!p||p.z||num(p.x)===null||num(p.y)===null)continue;
       if(staleReworkPoint(p.x,p.y,n.lastSeen))continue;
-      pts.push({x:p.x,y:p.y,typeId:n.typeId,name:n.name,level:Number.isFinite(n.level)?n.level:null,elite:!!n.elite});
+      pts.push({x:p.x,y:p.y,typeId:n.typeId,name:n.name,level:Number.isFinite(n.level)?n.level:null,elite:!!n.elite,fs:Number(n.firstSeen)||0,ls:Number(n.lastSeen)||Number(n.firstSeen)||0});
     }
     const regs=(snapshot?.regions||[]).filter(r=>!r.z&&Array.isArray(r.polygons)&&r.polygons.some(p=>Array.isArray(p)&&p.length>=3));
     // A game-defined area is often huge, and can easily hold more than one real hotspot - two separated
@@ -3087,14 +3093,19 @@ function newsHtml(){
       // A real monster icon (the same art used elsewhere on the map) rather than an invisible anchor, so this
       // reads at a glance as "this is the monster you'll find here" instead of just a floating label.
       const fam=familyOf(bestType);
-      const areaIcon=monsterAreaIcon(bestType,label,fam,eliteSeen,bestN);
+      // The badge (9 Oct 2026): the most of it seen alive at once here - at least that many spawn in this spot (the
+      // game doesn't say how many: every respawn gets a new id and areas carry no spawn counts). Each one is alive from
+      // when it was first to when it was last seen. With 10 or fewer seen in all, too few to tell, so the count of
+      // sightings stays.
+      const peak=peakAlive(sameType);
+      const areaIcon=monsterAreaIcon(bestType,label,fam,eliteSeen,bestN>10&&peak?peak+'+':bestN);
       const anchor=areaIcon?L.marker(latlng({x:winner.x,y:winner.y},true),{icon:areaIcon}):L.circleMarker(latlng({x:winner.x,y:winner.y},true),{radius:7,weight:2,color:'#0d1a10',fillColor:familyColor(fam),fillOpacity:1});
       const extra=[weak?`Weak: ${esc(weak)}`:'',resist?`Resists: ${esc(resist)}`:''].filter(Boolean).join(' · ');
       // Name + level always visible, permanent - that's the one thing worth reading at a glance while deciding
       // whether a zone is worth fighting in. Weak/resist and the region name/seen-count are more supplementary,
       // so they still only appear on hover rather than making every label a wall of text.
       const briefHtml=`<div class="bxc-region-label"><b>${esc(label)}</b>${lvl?` <span class="bxc-region-label-lvl">Lv ${esc(lvl)}</span>`:''}</div>`;
-      const fullHtml=`<div class="bxc-region-label"><b>${esc(label)}</b>${lvl?` <span class="bxc-region-label-lvl">Lv ${esc(lvl)}</span>`:''}${extra?`<div class="bxc-region-label-sub">${extra}</div>`:''}<div class="bxc-region-label-area">${esc(r.name||'this area')} · ${inside.length} seen</div></div>`;
+      const fullHtml=`<div class="bxc-region-label"><b>${esc(label)}</b>${lvl?` <span class="bxc-region-label-lvl">Lv ${esc(lvl)}</span>`:''}${extra?`<div class="bxc-region-label-sub">${extra}</div>`:''}<div class="bxc-region-label-area">${esc(r.name||'this area')} · ${inside.length} seen${peak?' · up to '+peak+' '+esc(label)+' alive at once':''}</div></div>`;
       anchor.bindTooltip(briefHtml,{permanent:true,direction:'top',offset:[0,-2],className:'bxc-region-label-tip'});
       anchor.on('mouseover',()=>anchor.setTooltipContent(fullHtml));
       anchor.on('mouseout',()=>anchor.setTooltipContent(briefHtml));
@@ -3997,8 +4008,8 @@ function newsHtml(){
   // what the map needs is derived; the whole database replaces it when something needs it (bxcEnsureFull).
   function applyLite(base,m){
     const types=m.npcTypes||[];
-    const npcs=(m.npcs||[]).map((r,i)=>{const [ti,id,level,elite,ls,px,py,pz,ox,oy,oz,cls]=r,t=types[ti]||[];
-      const n={id:id||('lite-'+i),typeId:t[0],name:t[1],level,elite:!!elite,lastSeen:ls*1000,position:{x:px,y:py,z:pz},originPosition:ox!=null?{x:ox,y:oy,z:oz||0}:null};if(cls)n.npcClass=cls;return n});
+    const npcs=(m.npcs||[]).map((r,i)=>{const [ti,id,level,elite,ls,px,py,pz,ox,oy,oz,cls,span]=r,t=types[ti]||[];
+      const n={id:id||('lite-'+i),typeId:t[0],name:t[1],level,elite:!!elite,lastSeen:ls*1000,position:{x:px,y:py,z:pz},originPosition:ox!=null?{x:ox,y:oy,z:oz||0}:null};if(cls)n.npcClass=cls;if(span!=null&&ls)n.firstSeen=(ls-span)*1000;return n});
     const worldObjects=(m.objects||[]).map((r,i)=>{const [typeId,name,x,y,status,fish,z,ls,fs]=r,o={id:'lite-o'+i,typeId,name,position:{x,y,z:z||0},status};if(ls)o.lastSeen=ls*1000;if(fs)o.firstSeen=fs*1000;if(fish)o.data={fishTypes:fish};return o});
     rawSnapshot={...base,npcs,worldObjects,npcObservations:[],drops:[],terrain:[],zoneTransitions:[],bxcLite:true,bxcHomeCounts:m.home||null};
     snapshot=rawSnapshot;window.BINXONIA_COLLECTOR_SNAPSHOT=snapshot;
@@ -5937,7 +5948,7 @@ function newsHtml(){
     for(const n of snapshot.npcs||[]){const p=n.position;if(!p||!Number.isFinite(p.x))continue;const o=n.originPosition;
       if(p.z&&!o)continue;   // only seen inside a cave or building, with no spawn point: the world map never shows it
       const nm=String(n.name||'').trim(),named=nm&&nm.toLowerCase()!==(typeName.get(n.typeId)||String(n.typeId).replace(/-/g,' '));
-      npcs.push([tIx(n.typeId,n.name),named?n.id:0,Number.isFinite(n.level)?n.level:null,n.elite?1:0,Math.round((n.lastSeen||0)/1000),r1(p.x),r1(p.y),p.z||0,o?r1(o.x):null,o?r1(o.y):null,o?o.z||0:null,named&&n.npcClass?n.npcClass:0]);
+      npcs.push([tIx(n.typeId,n.name),named?n.id:0,Number.isFinite(n.level)?n.level:null,n.elite?1:0,Math.round((n.lastSeen||0)/1000),r1(p.x),r1(p.y),p.z||0,o?r1(o.x):null,o?r1(o.y):null,o?o.z||0:null,named&&n.npcClass?n.npcClass:0,n.firstSeen&&n.lastSeen?Math.max(0,Math.round((n.lastSeen-n.firstSeen)/1000)):null]);   // (last: seconds from first to last seen, for the area badges' most-alive-at-once)
     }
     const objects=[];
     for(const o of snapshot.worldObjects||[]){const p=o.position;if(!p||!Number.isFinite(p.x)||!state.objectSkillByType?.get(o.typeId))continue;   // (inside caves too: the resource list and legend count them)
