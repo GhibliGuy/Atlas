@@ -9,7 +9,7 @@ const SRC = path.join(__dirname, '..', 'binxonia-research-collector');
 const OUT = __dirname;
 
 const CODE_FILES = ['page-edits.js', 'official-pois.js', 'game-data.js', 'game-recipes.js', 'atlas-core.js', 'atlas-live.js', 'atlas-layout.js', 'atlas-combo.js', 'atlas-menu.js', 'xp-curve.js', 'family-rules.js', 'atlas-community.js', 'atlas-splash.js', 'atlas-mobile.js', 'atlas-guides.js', 'atlas-tools.js', 'atlas-style.css'];
-const VENDOR_FILES = ['vendor/leaflet.js', 'vendor/leaflet.css'];
+const VENDOR_FILES = ['vendor/leaflet.js', 'vendor/leaflet.css', 'vendor/fonts/fonts.css', 'vendor/fonts/gloock-400.woff2', 'vendor/fonts/atkinson-400.woff2', 'vendor/fonts/atkinson-400-italic.woff2', 'vendor/fonts/atkinson-700.woff2'];
 
 // Some app-only features are never published. Their pieces sit between /*<private>*/ and /*</private>*/ in the
 // source and are cut out here; then every public file is checked against the patterns in the source folder's
@@ -26,7 +26,7 @@ for (const f of CODE_FILES) {
   built[f] = text;
 }
 for (const f of CODE_FILES) fs.writeFileSync(path.join(OUT, f), built[f]);
-for (const f of VENDOR_FILES) fs.copyFileSync(path.join(SRC, f), path.join(OUT, f));
+for (const f of VENDOR_FILES) { fs.mkdirSync(path.dirname(path.join(OUT, f)), { recursive: true }); fs.copyFileSync(path.join(SRC, f), path.join(OUT, f)); }
 
 // The world map tile pyramid: self-hosted (see ../tools/download-map-tiles.js) instead of hotlinked from
 // binxonia.com, at the game dev's own request. Static once downloaded, so this is a plain recursive copy, not

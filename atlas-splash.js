@@ -113,6 +113,36 @@
       <button type="button" class="splash-feature-go" data-monster="${esc(m.typeId)}">See where it lives</button></div></section>`;
   }
   // the numbers under the search box (what the Atlas knows right now)
+  // "Where to fight at your level" (wiki redesign, Oct 2026): every monster players have seen, drawn as a bar over the
+  // levels it was seen at (the catalog's observed min/max level). Sliding to your level lights up those within three
+  // levels and lists them nearest first. Only the bars' classes and the short list change while sliding.
+  const FIGHT_KEY='bxcFightLevel',FIGHT_NEAR=3;
+  function fightList(){
+    return (typeof D!=='undefined'&&D.catalog||[]).filter(m=>m&&m.name&&!m.passive&&m.family!=='human'&&m.maxHp&&(m.count||m.collectorCount)&&(m.obsMinLevel??m.baseLevel))
+      .map(m=>{const lo=m.obsMinLevel??m.baseLevel,hi=Math.max(lo,m.obsMaxLevel??lo);return {id:m.typeId,name:m.name,lo,hi}}).sort((a,b)=>a.lo-b.lo||a.hi-b.hi);
+  }
+  function fightHtml(){
+    const L=fightList();if(L.length<3)return '';
+    const top=Math.max(60,...L.map(x=>x.hi)),pct=v=>((v-1)/(top-1))*100,rows=[];
+    const bars=L.map(x=>{const a=pct(x.lo),b=pct(x.hi);let r=0;while(rows[r]!=null&&rows[r]>a-0.6)r++;rows[r]=b+0.6;
+      return `<span class="fight-bar" data-lo="${x.lo}" data-hi="${x.hi}" style="left:${a.toFixed(2)}%;width:max(4px,${(b-a).toFixed(2)}%);top:${r*7}px" title="${esc(x.name)} · level ${x.lo===x.hi?x.lo:x.lo+'–'+x.hi}"></span>`}).join('');
+    const v=Math.min(top,Math.max(1,+get(FIGHT_KEY)||10)),marks=[1,...Array.from({length:Math.floor(top/10)},(_,i)=>(i+1)*10)];
+    return `<section class="splash-fight" data-n="${L.length}" aria-labelledby="fightH"><h2 id="fightH">Where to fight at your level</h2>
+      <p class="fight-sub">Slide to your level. Monsters players have seen within ${FIGHT_NEAR} levels of it light up.</p>
+      <div class="fight-box"><div class="fight-you"><output id="fightOut" for="fightLv">${v}</output><label for="fightLv">Your level</label><input type="range" id="fightLv" min="1" max="${top}" value="${v}"></div>
+      <div class="fight-ruler" aria-hidden="true" style="height:${rows.length*7+2}px">${bars}<span class="fight-mark" style="left:${pct(v)}%"></span></div>
+      <div class="fight-scale" aria-hidden="true">${marks.map(m=>`<span style="left:${pct(m)}%">${m}</span>`).join('')}</div>
+      <div class="fight-picks" aria-live="polite"></div></div></section>`;
+  }
+  function fightUpdate(){
+    const box=el&&el.querySelector('.splash-fight');if(!box)return;
+    const inp=box.querySelector('#fightLv'),v=+inp.value,top=+inp.max,pct=x=>((x-1)/(top-1))*100;
+    box.querySelector('#fightOut').value=v;box.querySelector('.fight-mark').style.left=pct(v)+'%';
+    for(const b of box.querySelectorAll('.fight-bar'))b.classList.toggle('on',v>=+b.dataset.lo-FIGHT_NEAR&&v<=+b.dataset.hi+FIGHT_NEAR);
+    const near=fightList().filter(x=>v>=x.lo-FIGHT_NEAR&&v<=x.hi+FIGHT_NEAR).map(x=>({...x,d:v<x.lo?x.lo-v:v>x.hi?v-x.hi:0})).sort((a,b)=>a.d-b.d||b.lo-a.lo).slice(0,12);
+    const img=id=>typeof globalThis.bxcAssetImg==='function'&&globalThis.bxcAssetImg(id,'monster')||'';
+    box.querySelector('.fight-picks').innerHTML=near.length?near.map(x=>`<button type="button" class="fight-pick" data-monster="${esc(x.id)}">${img(x.id)?`<img src="${esc(img(x.id))}" alt="">`:''}<span><b>${esc(x.name)}</b><small>Level ${x.lo===x.hi?x.lo:x.lo+'–'+x.hi}</small></span></button>`).join(''):'<p class="fight-none">No monsters seen within three levels of this yet.</p>';
+  }
   function statsHtml(){
     const d=typeof D!=='undefined'?D:{},S=globalThis.BINXONIA_COLLECTOR_SNAPSHOT||{};
     // (the website's lite start does not load the item and gem lists: the publish counted them - S.bxcHomeCounts)
@@ -141,6 +171,7 @@
       <div class="splash-stats">${statsHtml()}</div>
       <div class="splash-new">${lead}${starters}</div>
       ${featuredHtml()}
+      ${fightHtml()}
       ${tiles}
       <footer class="splash-foot"><button type="button" class="splash-enter">Open the map</button><label><input type="checkbox" id="splashSkip"> Go straight to the map next time</label></footer>
     </div>`;
@@ -149,13 +180,14 @@
     el.querySelector('#splashSkip').addEventListener('change',e=>put(SKIP_KEY,e.target.checked?'1':null));
     el.querySelector('.splash-search').addEventListener('submit',e=>{e.preventDefault();search(el.querySelector('#splashQ').value)});
     el.querySelector('.splash-enter').addEventListener('click',()=>go('map'));
+    el.addEventListener('input',e=>{if(e.target.id==='fightLv'){put(FIGHT_KEY,e.target.value);fightUpdate()}});fightUpdate();
     el.addEventListener('click',e=>{const b=e.target.closest('.splash-tile');if(b){go(TILES[+b.dataset.i][0]);return}
-      const f=e.target.closest('.splash-feature-go');if(f){close();(globalThis.bxcGo||(h=>{location.hash=h}))('#/monster/'+encodeURIComponent(f.dataset.monster));return}
+      const f=e.target.closest('.splash-feature-go,.fight-pick');if(f){close();(globalThis.bxcGo||(h=>{location.hash=h}))('#/monster/'+encodeURIComponent(f.dataset.monster));return}
       if(e.target.closest('.splash-new a'))close()});
     el.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close()}});
   }
   // counts grow once the shared data has loaded (it adds creatures), so refresh them on open and a few times after load
-  function refreshCounts(reroll){if(!el)return;fillIcons(reroll);const fe=el.querySelector('.splash-feature');if(!fe&&featured()){const h=featuredHtml(),t=document.createElement('div');t.innerHTML=h;const at=el.querySelector('.splash-group');if(at&&t.firstElementChild)at.before(t.firstElementChild)}const st=el.querySelector('.splash-stats');if(st)st.innerHTML=statsHtml();el.querySelectorAll('.splash-tile').forEach(b=>{const t=TILES[+b.dataset.i];if(typeof t[2]==='function')b.querySelector('.splash-tile-text').textContent=t[2](typeof D!=='undefined'?D:{})})}
+  function refreshCounts(reroll){if(!el)return;fillIcons(reroll);const fe=el.querySelector('.splash-feature');if(!fe&&featured()){const h=featuredHtml(),t=document.createElement('div');t.innerHTML=h;const at=el.querySelector('.splash-group');if(at&&t.firstElementChild)at.before(t.firstElementChild)}const st=el.querySelector('.splash-stats');if(st)st.innerHTML=statsHtml();{const fb=el.querySelector('.splash-fight');if(!fb||(+fb.dataset.n!==fightList().length&&!fb.contains(document.activeElement))){const t=document.createElement('div');t.innerHTML=fightHtml();const nf=t.firstElementChild;if(nf){if(fb)fb.replaceWith(nf);else{const at=el.querySelector('.splash-group');if(at)at.before(nf)}fightUpdate()}}}el.querySelectorAll('.splash-tile').forEach(b=>{const t=TILES[+b.dataset.i];if(typeof t[2]==='function')b.querySelector('.splash-tile-text').textContent=t[2](typeof D!=='undefined'?D:{})})}
   let openedFromPage=false;   // Home was clicked from a page: Back closes it again
   function open(fromPage){
     openedFromPage=fromPage===true;pickedThisOpen=false;savedNext=false;
