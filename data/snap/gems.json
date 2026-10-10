@@ -1,4 +1,7 @@
 [
+{"type":"gem.found","typeId":"gem-diamond","carat":1.5,"dropped":false,"time":1791600762108,"sessionId":"8fb8813d","key":377},
+{"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"time":1791599468020,"sessionId":"8fb8813d","key":376},
+{"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"time":1791595551222,"sessionId":"54e5a76b","key":375},
 {"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"npcName":"Dune Sandlord","time":1791585164032,"sessionId":"ab762572","key":374},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"npcName":"Virikh Templar","time":1791569261222,"sessionId":"5e65046d","key":373},
 {"type":"gem.found","typeId":"gem-topaz","carat":1.5,"dropped":false,"time":1791551676760,"sessionId":"5c589a73","key":372},
