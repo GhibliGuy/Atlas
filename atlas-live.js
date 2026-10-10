@@ -474,7 +474,7 @@ function dataFetch(u){return fetch(u,{cache:'no-cache'})}
     if(resourceIconCache.size>500)resourceIconCache.clear();
     const icon=L.divIcon({
       className:'bxc-resource-icon',
-      html:`<div style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:rgba(20,15,10,.55);border-radius:50%;box-shadow:0 0 3px rgba(0,0,0,.8)"><img src="${url}" style="width:18px;height:18px;object-fit:contain"></div>`,
+      html:`<div style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:rgba(20,15,10,.55);border-radius:50%;box-shadow:0 0 3px rgba(0,0,0,.8)"><img alt="" src="${url}" style="width:18px;height:18px;object-fit:contain"></div>`,
       iconSize:[22,22],
       iconAnchor:[11,11]
     });
@@ -493,7 +493,7 @@ function dataFetch(u){return fetch(u,{cache:'no-cache'})}
     if(!url)return null;
     return L.divIcon({
       className:'bxc-resource-icon',
-      html:`<div style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:rgba(20,15,10,.55);border-radius:50%;box-shadow:0 0 3px rgba(0,0,0,.8)"><img src="${url}" style="width:18px;height:18px;object-fit:contain"></div>`,
+      html:`<div style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;background:rgba(20,15,10,.55);border-radius:50%;box-shadow:0 0 3px rgba(0,0,0,.8)"><img alt="" src="${url}" style="width:18px;height:18px;object-fit:contain"></div>`,
       iconSize:[22,22],
       iconAnchor:[11,11]
     });
@@ -2833,8 +2833,12 @@ function newsHtml(){
     }
     state.monster=groups;
     for(const m of D.catalog||[]){const r=groups.get(m.typeId);const base=staticCatalogBase.get(m.typeId)||{};m.count=r?r.combinedCount:(base.count||0);m.obsMinLevel=r?.minLevel??base.min??m.obsMinLevel;m.obsMaxLevel=r?.maxLevel??base.max??m.obsMaxLevel;m.collectorCount=r?.liveCount||0;m.collectorLastSeen=r?.lastSeen||null;m.eliteObserved=r?.eliteObserved||0;m.eliteRate=r?.eliteRate??null;}
+    // (10 Oct 2026) the game's NPC list also carries objects - anvils, stalls, benches, wells, signs, home pieces - which
+    // landed in the Bestiary as 118 'Unclassified Lv 0 monsters'. They come with level 0 (or none):
+    // a kind never seen above level 0 is not a monster - every monster and person is level 1 or more.
+    const notMonster=(t,r)=>!(Math.max(0,...r.levels.map(Number).filter(Number.isFinite))>0);   // never above level 0: monsters and people are 1 or more
     for(const [t,r] of groups){
-      if(knownCatalogIds.has(t))continue;knownCatalogIds.add(t);D.catalog.push({typeId:t,name:r.name||prettyId(t),baseLevel:r.minLevel||'—',family:r.npcClass||'unclassified',archetype:'collector-only',attackType:'unknown',resists:'',weakTo:'',maxHp:null,attackDamage:null,xp:null,attackStyle:'unknown',castSchool:null,attackRange:null,cooldownMs:null,aggroRange:null,scale:null,locomotion:null,wanderRange:null,lootTableId:null,humanoidRig:false,classCapable:false,dropsGems:false,passive:false,mechanics:'Captured live by the research collector; no matching static client definition was in the bundled database.',count:r.combinedCount,obsMinLevel:r.minLevel,obsMaxLevel:r.maxLevel,collectorOnly:true,collectorCount:r.liveCount,collectorLastSeen:r.lastSeen,eliteObserved:r.eliteObserved||0,eliteRate:r.eliteRate??null});
+      if(knownCatalogIds.has(t)||notMonster(t,r))continue;knownCatalogIds.add(t);D.catalog.push({typeId:t,name:r.name||prettyId(t),baseLevel:r.minLevel||'—',family:r.npcClass||'unclassified',archetype:'collector-only',attackType:'unknown',resists:'',weakTo:'',maxHp:null,attackDamage:null,xp:null,attackStyle:'unknown',castSchool:null,attackRange:null,cooldownMs:null,aggroRange:null,scale:null,locomotion:null,wanderRange:null,lootTableId:null,humanoidRig:false,classCapable:false,dropsGems:false,passive:false,mechanics:'Captured live by the research collector; no matching static client definition was in the bundled database.',count:r.combinedCount,obsMinLevel:r.minLevel,obsMaxLevel:r.maxLevel,collectorOnly:true,collectorCount:r.liveCount,collectorLastSeen:r.lastSeen,eliteObserved:r.eliteObserved||0,eliteRate:r.eliteRate??null});
     }
   }
 

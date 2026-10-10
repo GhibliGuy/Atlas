@@ -545,7 +545,7 @@ button:hover{background-color:#34363c}
 .wp-pic .wp-badge .tag-chip{background:rgba(16,17,20,.88)}
 .g-table tr:hover td{background:#26272b}
 #themeToggle{align-self:center;padding:6px 10px;font-size:13px;min-width:38px}
-html[data-theme="light"]{--bg:#f4f3f0;--ink:#24252a;--muted:#62656d;--panel:#ffffff;--panel2:#eceae5;--edge:#cfcdc6;--accent:#9a6f1e;--accent-soft:#c9a45c;color-scheme:light}
+html[data-theme="light"]{--bg:#f4f3f0;--ink:#24252a;--muted:#62656d;--panel:#ffffff;--panel2:#eceae5;--edge:#cfcdc6;--accent:#845f17;--accent-soft:#c9a45c;color-scheme:light}
 html[data-theme="light"] button:hover{background-color:#e2dfd7}
 html[data-theme="light"] .wp-pic{background-color:#2a2b30}
 html[data-theme="light"] .g-table tr:hover td{background:#f0eee9}
@@ -1196,3 +1196,24 @@ a.sp-spell:hover{background:rgba(255,213,74,.06)}
 @keyframes rf-bounce{0%{transform:scale(1)}40%{transform:scale(1.14)}100%{transform:scale(1)}}
 @keyframes rf-shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
 @media (prefers-reduced-motion:reduce){.rf-sim-ov,.rf-sim-cap,.rf-sim-ov.success .rf-sim-big,.rf-sim-ov.fail .rf-sim-big,.rf-sim-ov.running .rf-sim-lit,.rf-sim-ov.running .rf-sim-edge{animation:none}.rf-sim-ov.running .rf-sim-lit{clip-path:inset(0)}.rf-sim-edge{display:none}}
+
+/* ---- Design polish (2026-10-10, Web Interface Guidelines + WCAG review) ----
+   Light-theme gold darkened above (#9a6f1e was 3.7-4.1:1 on page and panels, under the 4.5:1 small text needs; #845f17 is
+   4.8-5.8:1). The rest: one keyboard focus ring everywhere, no text under 11px, comfortable tap targets, balanced headings,
+   steady number columns, and motion that stops for people who ask their system for less. */
+a:focus-visible,[tabindex]:focus-visible,.show-on-map:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+h1,h2,h3,.g-index h2,.gx-head h2{text-wrap:balance}
+p,li{text-wrap:pretty}
+td,.xptable,.qualitytable,.g-table td,.research-table td{font-variant-numeric:tabular-nums}
+button,a,summary,select{touch-action:manipulation}
+.mon-tag,.mon-tags .show-on-map{font-size:12px}
+.mon-tags .show-on-map{padding:3px 10px;min-height:24px}
+.qg-n{font-size:11px}
+.gx-new{font-size:11px}
+@media (pointer:coarse){
+  .show-on-map,.mon-tags .show-on-map{min-height:36px;padding-top:6px;padding-bottom:6px}
+  .gx-chip,.bxc-chip-menu-h{min-height:36px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
