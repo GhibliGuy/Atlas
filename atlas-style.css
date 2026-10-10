@@ -1285,3 +1285,22 @@ html[data-theme="light"] .wp-infobox .wp-pic{background:radial-gradient(closest-
 .splash-stats{box-sizing:border-box}
 html[data-theme="light"] #content a:not(.page-link),html[data-theme="light"] #mapPanel a:not(.map-panel-open){color:var(--accent)} /* the dark-theme gold is too pale on paper */
 html[data-theme="light"] #content a.uq-name:not(.page-link){color:#a8510a}
+/* Wiki style, stage 2: the left index on wide reading pages (desktop only; hidden beside the map and on phones). */
+#wikiIndex{display:none}
+@media (min-width:1180px){
+  html:not(.bxm) #main[data-view=wide] #side{display:grid;grid-template-columns:minmax(16px,1fr) 208px minmax(0,1040px) minmax(16px,1fr);grid-template-rows:auto minmax(0,1fr);column-gap:36px}
+  html:not(.bxm) #main[data-view=wide] #side>*{max-width:none;margin:0;width:auto}
+  html:not(.bxm) #main[data-view=wide] #side>.section-intro{grid-column:3;grid-row:1}
+  html:not(.bxm) #main[data-view=wide] #side>#content{grid-column:3;grid-row:2}
+  html:not(.bxm) #main[data-view=wide] #wikiIndex{display:block;grid-column:2;grid-row:1/3;overflow:auto;padding:18px 4px 24px 0;scrollbar-width:thin}
+  html:not(.bxm) #main[data-view=wide] .wp{grid-template-columns:minmax(0,1fr) 300px;gap:32px}
+}
+#wikiIndex details{margin:0 0 6px}
+#wikiIndex summary{cursor:pointer;list-style:none;font:400 17px/1.3 var(--serif);color:var(--ink);padding:6px 0 4px;border-bottom:1px solid var(--edge)}
+#wikiIndex summary::-webkit-details-marker{display:none}
+#wikiIndex summary::after{content:"+";float:right;color:var(--muted);font-family:var(--sans)}
+#wikiIndex details[open]>summary::after{content:"−"}
+#wikiIndex ul{list-style:none;margin:6px 0 10px;padding:0}
+#wikiIndex .wi-link{display:block;width:100%;text-align:left;background:none;border:0;border-radius:6px;padding:5px 10px;margin:0;color:var(--muted);font-size:14.5px;line-height:1.3}
+#wikiIndex .wi-link:hover{color:var(--ink);background:var(--panel)}
+#wikiIndex .wi-link[aria-current]{color:var(--ink);background:var(--panel);box-shadow:inset 3px 0 0 var(--moon)}

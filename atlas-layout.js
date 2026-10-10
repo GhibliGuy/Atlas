@@ -155,3 +155,50 @@
   new MutationObserver(muts => { if (muts.some(m => !(m.target.closest && m.target.closest('.leaflet-pane')))) queue(); }).observe(document.body, { childList: true, subtree: true });
   queue();
 })();
+
+/* Wiki index (Oct 2026, wiki redesign stage 2): on wide screens the reading pages get a left-hand contents column, like
+   a wiki or a field guide's index. It is built from the menu's own section buttons (which stay in the page, hidden)
+   and every link just clicks its button, so routing, the map and live updates work exactly as before. One group is
+   open at a time by default - the one holding the current page - and it follows the page as you move around. */
+(() => {
+  'use strict';
+  const side = document.getElementById('side'), nav = document.querySelector('nav.tabs');
+  if (!side || !nav || document.getElementById('wikiIndex')) return;
+  const groups = [...nav.querySelectorAll('.nav-group')].map(g => ({
+    label: (g.querySelector('.nav-label')?.textContent || '').trim(),
+    tabs: [...g.querySelectorAll('.tab')]
+  })).filter(g => g.label && g.tabs.length);
+  if (!groups.length) return;
+  const idx = document.createElement('nav');
+  idx.id = 'wikiIndex'; idx.setAttribute('aria-label', 'Atlas contents');
+  const links = [];
+  for (const g of groups) {
+    const d = document.createElement('details'), s = document.createElement('summary'), ul = document.createElement('ul');
+    s.textContent = g.label; d.append(s, ul);
+    for (const t of g.tabs) {
+      const li = document.createElement('li'), b = document.createElement('button');
+      b.type = 'button'; b.className = 'wi-link'; b.textContent = t.textContent.trim();
+      b.addEventListener('click', () => t.click());
+      li.append(b); ul.append(li); links.push([b, t, d]);
+    }
+    idx.append(d);
+  }
+  side.prepend(idx);
+  let lastOpen = null;
+  function mark() {
+    for (const [b] of links) b.removeAttribute('aria-current');
+    // a guide page marks only the generic Guides button, so the guide (or guide group) is matched from the address
+    const where = decodeURIComponent(location.hash + ' ' + location.pathname), gp = where.match(/guide\/([\w-]+)/), gg = where.match(/guides-([\w-]+)/);
+    const hit = (gp && links.find(([, t]) => t.dataset.gpage === gp[1])) || (gg && links.find(([, t]) => t.dataset.ggroup === gg[1])) || links.find(([, t]) => t.getAttribute('aria-current') === 'page') || links.find(([, t]) => t.classList.contains('on'));
+    const cur = hit && [hit[0], hit[2]];
+    if (!cur) return;
+    cur[0].setAttribute('aria-current', 'page');
+    if (lastOpen !== cur[1]) { if (lastOpen) lastOpen.open = false; cur[1].open = true; lastOpen = cur[1]; }
+  }
+  new MutationObserver(mark).observe(nav, { subtree: true, attributes: true, attributeFilter: ['aria-current', 'class'] });
+  addEventListener('hashchange', mark); addEventListener('popstate', mark);
+  // pages change the address with pushState (no event), but every page sets the document title: follow that
+  const title = document.querySelector('title'); if (title) new MutationObserver(() => setTimeout(mark, 0)).observe(title, { childList: true, characterData: true, subtree: true });
+  mark();
+  if (!links.some(([, , d]) => d.open)) idx.querySelector('details').open = true;
+})();
