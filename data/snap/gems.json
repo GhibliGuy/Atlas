@@ -1,4 +1,9 @@
 [
+{"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"npcName":"Dune Sandlord","time":1791612305934,"sessionId":"8d14e3af","key":384},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1791609968212,"sessionId":"48707085","key":383},
+{"type":"gem.found","typeId":"gem-amber","carat":2,"dropped":false,"time":1791609802951,"sessionId":"48707085","key":382},
+{"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"npcName":"Dune Captain","time":1791609592719,"sessionId":"8d14e3af","key":381},
+{"type":"gem.found","typeId":"gem-sapphire","carat":1,"dropped":false,"npcName":"Dune Captain","time":1791608180198,"sessionId":"8d14e3af","key":380},
 {"type":"gem.found","typeId":"gem-onyx","carat":1,"dropped":false,"time":1791606007088,"sessionId":"6e609a66","key":379},
 {"type":"gem.found","typeId":"gem-ruby","carat":1,"dropped":false,"time":1791605927125,"sessionId":"6e609a66","key":378},
 {"type":"gem.found","typeId":"gem-diamond","carat":1.5,"dropped":false,"time":1791600762108,"sessionId":"8fb8813d","key":377},
