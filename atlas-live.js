@@ -5431,6 +5431,16 @@ function newsHtml(){
           ${QUEST?`<li>Also a reward choice from ${QUEST}.</li>`:''}</ul>`
         :`<p>Level-1 spells don’t drop from monsters: a mage starts with the first spell of their school, and the other schools’ first spells come with learning them (a level-10 quest, the Dark Witch or the Priest).</p>`);
   }
+  // Unique items (11 Oct 2026): the boss, drop chance and the game's effect text, from game-data.js `uniques`.
+  const uniqueOf=id=>(globalThis.BXC_GAME_DATA?.uniques||[]).find(u=>u.typeId===id)||null;
+  function uniqueInfoHtml(id){
+    const u=uniqueOf(id);if(!u)return '';
+    const pct=v=>v==null?'?':(Math.round(v*1000)/10)+'%',bp=globalThis.bxcNpcByName&&(globalThis.bxcNpcByName(u.bossName)||globalThis.bxcNpcByName(String(u.bossName||'').replace(/^the /i,'')));
+    const boss=bp?`<a href="${esc(bp.href)}">${esc(u.bossName)}</a>`:esc(u.bossName);
+    return `<p><b class="uq-tag">Unique.</b> Dropped by ${boss} on <b>${pct(u.chance)}</b> of kills (<b>${pct(u.eliteChance)}</b> from an elite). Built on <a href="${pageHref('item',u.basePiece)}">${esc(prettyId(u.basePiece))}</a>${u.bound?'; bound, so it can’t be traded':''}. Unique items can’t be reforged.</p>`
+      +(u.effects&&u.effects.length?`<ul class="wp-list">${u.effects.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:'')
+      +`<p class="muted">See <a href="#/guide/unique-items">Unique items</a> for all of them.</p>`;
+  }
   function itemPageHtml(id){
     const r=state.items?.get(id),name=prettyId(id);
     const recipe=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);
@@ -5439,11 +5449,12 @@ function newsHtml(){
     const hasSources=!!(r&&r.monsterSources.size)||res.length>0;
     const ing=rec=>(rec.ingredients||[]).map(i=>`${esc(i.quantity)}× <a href="${pageHref('item',i.id)}">${esc(prettyId(i.id))}</a>`).join(', ');
     return `<article class="wp"><div class="wp-main">
-      ${(()=>{let t=r?itemSourcesText(r):'';const craft=recipe?`Crafted (${recipe.skill} Lv ${recipe.level})`:'';if(craft&&!/Crafted/.test(t))t=/not yet observed/i.test(t)||!t?craft:craft+' · '+t;if(scrollSpell(id)&&(!t||/not yet observed/i.test(t)))t=scrollDropText(scrollSpell(id))?'A spell scroll that drops from monsters.':'Not a monster drop.';return t?`<p class="wp-lede">${esc(t)}</p>`:'<p class="wp-lede muted">Not seen in the game yet.</p>'})()}
+      ${(()=>{let t=r?itemSourcesText(r):'';const craft=recipe?`Crafted (${recipe.skill} Lv ${recipe.level})`:'';if(craft&&!/Crafted/.test(t))t=/not yet observed/i.test(t)||!t?craft:craft+' · '+t;if(scrollSpell(id)&&(!t||/not yet observed/i.test(t)))t=scrollDropText(scrollSpell(id))?'A spell scroll that drops from monsters.':'Not a monster drop.';if(!t&&uniqueOf(id))t='A unique item dropped by '+uniqueOf(id).bossName+'.';return t?`<p class="wp-lede">${esc(t)}</p>`:'<p class="wp-lede muted">Not seen in the game yet.</p>'})()}
       ${PUBLIC_MODE?'':`<section class="mk-box" data-mk-slug="${esc(id)}" data-mk-name="${esc(name)}"><button type="button" class="mk-load">Market prices</button><div class="mk-out"></div></section>`}
       ${questItem(id)?`<p class="wp-quest"><b>Quest item.</b> Asked for by ${esc(questItem(id).quests.join(' / '))}.</p>`:''}
       ${(()=>{const t=gearReqText(id);return t?`<p class="wp-req"><b>Requires</b> ${t} <span class="muted">to equip</span></p>`:''})()}
       <h2>How to get it</h2>
+      ${uniqueInfoHtml(id)}
       ${scrollInfoHtml(id)}
       ${recipe?`<p><b>Crafted</b> with ${esc(recipe.skill)} at level ${esc(recipe.level)}${recipe.xp?` <span class="muted">(${esc(recipe.xp)} XP)</span>`:''} from ${ing(recipe)||'—'}.</p>`:''}
       ${res.length?`<p><b>Gathered</b> from ${res.map(x=>`<a href="${pageHref('resource',x.key)}">${esc(resourceDisplayName(x))}</a>`).join(', ')}.</p>`:(r&&r.gatherSkill?`<p><b>Gathered</b> with ${esc(prettyId(r.gatherSkill))}.</p>`:'')}

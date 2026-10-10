@@ -522,6 +522,38 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     for(const sec of RF_PAGE.sections)if(RF_CALC[sec[0]])sec[2]+=rfCalcHtml(RF_CALC[sec[0]]);
     setTimeout(()=>{rfRunAll();rfSimAll()},0);
     return RF_PAGE}});
+  // ---- Unique items (11 Oct 2026): every named boss drop, straight from the game's rules (game-data.js `uniques`, built by
+  // data-from-rules.js): the boss, the base piece, the game's own effect wording, the drop chance and the elite chance.
+  // The pictures are the item renders the collector has saved (data/img), like every other item on the Atlas.
+  const UQ_SLOT=[['mainHand','Weapons and staves'],['offHand','Shields and quivers'],['head','Helms and hoods'],['torso','Body armor and robes'],['arms','Arms'],['legs','Legs'],['feet','Feet']];
+  const uqPct=v=>v==null?'—':(v*100<1?(v*100).toFixed(1):String(Math.round(v*1000)/10))+'%';
+  const uqOneIn=v=>v?'1 in '+n(Math.round(1/v)):'';
+  const uqBoss=name=>{const plain=String(name||'').replace(/^the /i,'');const p=globalThis.bxcNpcByName&&(globalThis.bxcNpcByName(name)||globalThis.bxcNpcByName(plain));return p?`<a href="${esc(p.href)}">${esc(name)}</a>`:esc(name)};
+  reg({slug:'unique-items',group:'Gear, gems & enchanting',title:'Unique items',blurb:'Every named boss drop: what it does, who drops it, and how often.',build:()=>{
+    const GD=globalThis.BXC_GAME_DATA||{},list=Array.isArray(GD.uniques)?GD.uniques:[],R=GD.uniqueDropRates||{};
+    if(!list.length)return {lede:'The list of unique items comes from the game’s rules and hasn’t loaded yet.',sections:[]};
+    const elite=R.eliteMultiplier||5;
+    const row=u=>[
+      `<span class="uq-item">${icon(u.typeId)}<a class="uq-name" href="#/item/${enc(u.typeId)}">${esc(u.name)}</a></span>`,
+      uqBoss(u.bossName),
+      item(u.basePiece),
+      (u.effects&&u.effects.length?u.effects.map(esc).join('<br>'):'<span class="muted">—</span>'),
+      `<b>${uqPct(u.chance)}</b><br><span class="muted">elite ${uqPct(u.eliteChance)}</span>`,
+      u.bound?'Bound':'<span class="muted">Tradeable</span>'];
+    const bySlot=UQ_SLOT.map(([slot,label])=>[label,list.filter(u=>u.slot===slot)]).filter(([,a])=>a.length);
+    const other=list.filter(u=>!UQ_SLOT.some(([s])=>s===u.slot));if(other.length)bySlot.push(['Other',other]);
+    const head=['Item','Dropped by','Built on','Effect','Chance per kill','Trade'];
+    const bound=list.filter(u=>u.bound).length;
+    return {lede:`There are <b>${list.length}</b> unique items in Binxonia, each dropped by one named boss. Each is a normal piece of gear with an effect nothing else has, and its name shows in orange in the game.`,sections:[
+      ['drops','How they drop',`<ul class="g-list"><li>A boss drops its own unique on <b>${uqPct(R.standard)}</b> of kills (${uqOneIn(R.standard)}). Some are <b>rare</b> at ${uqPct(R.rare)} (${uqOneIn(R.rare)}), and one is <b>frequent</b> at ${uqPct(R.frequent)} (${uqOneIn(R.frequent)}).</li>
+        <li>Killing the <b>elite</b> version of the boss makes it <b>${n(elite)}×</b> as likely.</li>
+        <li><b>${bound}</b> are <b>bound</b>: they can’t be traded, so the one you get is yours. The other ${list.length-bound} can be traded.</li>
+        <li>Unique items <b>can’t be reforged</b>. See ${guide('reforging')}.</li>
+        <li>Some effects are weaker against other players; the effect text says so where it applies.</li></ul>`],
+      ...bySlot.map(([label,a])=>[label.toLowerCase().replace(/[^a-z]+/g,'-'),label,table(head,a.map(row),'uq-table')]),
+      ['source','Where this comes from',note('From the game’s own rules: the list of unique items, the effect wording the game shows in its tooltips, and its drop-chance function. It updates whenever the game does.')]
+    ],related:['reforging','quality-and-enchanting','combat']};
+  }});
   // ---- Crafting skills ----------------------------------------------------------------------------------------------
   const craft=(slugName,skill,title,blurb,lede,related,extra)=>reg({slug:slugName,group:'Crafting skills',title,blurb,build:craftingGuide({skill,lede,related,extra})});
   reg({slug:'smelting',group:'Crafting skills',title:'Smelting',blurb:'Turning ore into bars.',build:craftingGuide({skill:'Smelting',station:'furnace',noTomes:true,lede:'Smelt ore into metal bars at a furnace, the first step of every smithing skill. Higher metals take some iron as well.',how:`<li>Smelting pays a little XP; most of a smith’s XP comes from forging (see ${guide('weapon-smithing')}).</li><li>The recipes below come from the game’s data. (The official guide’s pages disagree with each other on how much iron the higher bars take.)</li>`,related:['mining','weapon-smithing','armor-smithing','tool-smithing']})});

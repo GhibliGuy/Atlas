@@ -1217,3 +1217,11 @@ button,a,summary,select{touch-action:manipulation}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
+/* Unique items guide: the game shows unique names in orange (#ff9a3c); a darker orange keeps contrast on the light theme. */
+.uq-item{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.uq-item .g-ico{width:32px;height:32px}
+#content a.uq-name{color:#ff9a3c;font-weight:600}
+html[data-theme="light"] #content a.uq-name{color:#a8510a}
+.uq-table td:nth-child(4){min-width:220px}
+.wp.g-page>.wp-main{min-width:0} /* a wide table scrolls inside its box instead of widening the page */
+#content .uq-tag{color:#ff9a3c}html[data-theme="light"] #content .uq-tag{color:#a8510a}
