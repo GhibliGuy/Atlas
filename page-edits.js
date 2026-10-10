@@ -92,6 +92,55 @@ globalThis.BXC_PAGE_EDITS = {
    "notes": "",
    "done": true,
    "updatedAt": 1791074181217
+  },
+  "quest:wastelands-outriders": {
+   "first": "",
+   "steps": [
+    "Kill **15** [[#/monster/dune-outrider|Dune Outriders]] at their camp across the road from the Ancient Battlefield ([[map:monster:dune-outrider|show on map]]). They also drop [[#/item/raider-war-token|Raider War Tokens]]: keep **3**.",
+    "Kill **Dust-Rider Talin** and take [[#/item/talins-pay-chit|Talin’s Pay Chit]] from him. [[spot:436,500|Dust-Rider Talin]]",
+    "Show **Fred Skentz** the pay chit and the **3** Raider War Tokens. [[spot:569,681|Fred Skentz]]",
+    "Report to the **Bloomguard Quartermaster** at the post by Fred’s gate to finish the quest. [[spot:572,649|Bloomguard Quartermaster]]"
+   ],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1791670160269
+  },
+  "quest:wastelands-down-the-sinkhole": {
+   "first": "",
+   "steps": [
+    "Go down the sinkhole into the [[map:zone:-180|Antlion Hive]] and kill **12** [[#/monster/antlion-pitling|Antlion Pitlings]] or [[#/monster/antlion|Antlions]] on the upper floors. A pitling drops [[#/item/partners-lamp|Bram’s lamp]].",
+    "Bring the lamp to **Abel Munt**. [[spot:577,670|Abel Munt]]",
+    "Go deeper and kill **8** [[#/monster/antlion-warrior|Antlion Warriors]] on the lower floors.",
+    "At the very bottom, kill the [[#/monster/antlion-queen|Antlion Queen]] ([[map:zone:-184|the hive’s lowest floor]]). She drops [[#/item/partners-pick|Bram’s pick]].",
+    "Bring the pick to **Abel Munt** to finish the quest. [[spot:577,670|Abel Munt]]"
+   ],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1791670160269
+  },
+  "quest:wastelands-jerky-weather": {
+   "first": "",
+   "steps": [
+    "Kill **20** [[#/monster/sand-jackal|Sand Jackals]] ([[map:monster:sand-jackal|show on map]]) and collect **8** [[#/item/jackal-pelt|Jackal Pelts]] from them.",
+    "Bring the pelts to **Nell Parrish**. [[spot:582,680|Nell Parrish]]",
+    "Talk to **Marta Quill** at the well. [[spot:575,676|Marta Quill]]",
+    "Kill **Old Scrag**, a big gray jackal with a torn ear, at his den south of the scrapyard, and take [[#/item/scrags-torn-ear|Scrag’s Torn Ear]]. [[spot:562,758|Old Scrag]]",
+    "Bring the ear to **Nell Parrish** to finish the quest. [[spot:582,680|Nell Parrish]]"
+   ],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1791670160269
+  },
+  "quest:ogre-isle-unbearable": {
+   "first": "",
+   "steps": [
+    "Kill **15** ogres on Ogre Isle, and bring **Grumbo** **3** [[#/item/cooked-bear-meat|Cooked Bear Meat]] (bears drop bear meat; cook it at a fire). [[spot:301,-135|Grumbo]]",
+    "Ask [[#/npc/gerald-seabroden|Gerald Seabroden]] about bears. [[map:npc:gerald-seabroden|Show on map]]",
+    "Tell **Grumbo** the news to finish the quest. [[spot:301,-135|Grumbo]]"
+   ],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1791670160269
   }
  }
 };

@@ -1010,7 +1010,15 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   const objText=o=>{const t=String(o.text||''),nm=o.npc||null,p=nm&&globalThis.bxcNpcByName?globalThis.bxcNpcByName(nm):null;
     if(!p||!t.includes(nm))return esc(t);const i=t.indexOf(nm);return esc(t.slice(0,i))+`<a href="${esc(p.href)}">${esc(nm)}</a>`+esc(t.slice(i+nm.length))};
   function questSteps(q){
-    const st=(q.stages||[]).filter(s=>s.objectives&&s.objectives.length);
+    // (10 Oct 2026) the game reports a new stage number on every kill while the objectives stay the same, so a kill step
+    // was listed once per kill (Kill 15 Dune Outriders, fifteen times): stages in a row with the same objectives are one
+    // step, keeping a map waypoint any copy of them has
+    const st=[];
+    for(const s0 of (q.stages||[]).filter(s=>s.objectives&&s.objectives.length)){
+      const sig=s0.objectives.map(o=>o.id||o.text).join('|'),last=st[st.length-1];
+      if(last&&last._sig===sig){last.objectives=last.objectives.map((o,i)=>o.waypoints&&o.waypoints.length||!s0.objectives[i]?o:{...o,waypoints:s0.objectives[i].waypoints});continue}
+      st.push({...s0,_sig:sig,objectives:s0.objectives.slice()});
+    }
     const placeOf=w=>(globalThis.bxcPlaceAt&&globalThis.bxcPlaceAt(w.z,w.x,w.y))||questZone(w.z);   // the building or dungeon it is in, not just its zone number
     // a named place links to it on the map: the game's own marker (Imp Tree), else the building's or cave's entrance
     const placeLink=w=>{const n=placeOf(w);if(!n)return '';const poi=(typeof D!=='undefined'&&D.pois||[]).find(p=>p.name===n);return `<a href="#" class="show-on-map" data-map-kind="${poi?'place':'zone'}" data-map-id="${esc(poi?poi.name:String(w.z))}">${esc(n)}</a>`};
@@ -1028,7 +1036,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     if(ed&&String(ed.first||'').trim())steps[0]=`<li value="1">${editText(ed.first)}</li>`;   // your own step 1 (taking the quest)
     if(ed&&Array.isArray(ed.steps)&&ed.steps.some(x=>String(x||'').trim())){ed.steps.filter(x=>String(x||'').trim()).forEach((t,k)=>steps.push(`<li value="${k+2}">${editText(t)}</li>`));return '<ol class="q-steps">'+steps.join('')+'</ol>'}
     if(st.length){
-      for(const s of st)steps.push(`<li value="${(s.n||0)+2}">${s.text&&!s.objectives.some(o=>o.text===s.text)?`<b>${esc(s.text)}</b><br>`:''}${s.objectives.map(o=>`${objText(o)}${o.required>1?` <span class="muted">(${qn(o.required)})</span>`:''}${o.itemTypeId?' - '+item(o.itemTypeId):''}${where((o.waypoints||[])[0],o.text)}${o.afterHtml||o.after?` <span class="muted">- ${o.afterHtml||esc(o.after)}</span>`:''}`).join('<br>')}</li>`);
+      st.forEach((s,k)=>steps.push(`<li value="${k+2}">${s.text&&!s.objectives.some(o=>o.text===s.text)?`<b>${esc(s.text)}</b><br>`:''}${s.objectives.map(o=>`${objText(o)}${o.required>1?` <span class="muted">(${qn(o.required)})</span>`:''}${o.itemTypeId?' - '+item(o.itemTypeId):''}${where((o.waypoints||[])[0],o.text)}${o.afterHtml||o.after?` <span class="muted">- ${o.afterHtml||esc(o.after)}</span>`:''}`).join('<br>')}</li>`));
       return '<ol class="q-steps">'+steps.join('')+'</ol>'+((st[0].n||0)>0?note('Some steps in between were not recorded.'):'');
     }
     return '<ol class="q-steps">'+steps.join('')+'</ol>'+note('The rest of the steps are still missing: the data for this quest is incomplete.');
