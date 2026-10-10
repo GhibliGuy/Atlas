@@ -172,6 +172,7 @@
       <div class="splash-new">${lead}${starters}</div>
       ${featuredHtml()}
       ${fightHtml()}
+      ${IN_APP?'<section class="splash-news" hidden aria-labelledby="newsH"><h2 id="newsH">What’s new in Binxonia</h2><div class="splash-news-list"></div></section>':''}
       ${tiles}
       <footer class="splash-foot"><button type="button" class="splash-enter">Open the map</button><label><input type="checkbox" id="splashSkip"> Go straight to the map next time</label></footer>
     </div>`;
@@ -180,6 +181,10 @@
     el.querySelector('#splashSkip').addEventListener('change',e=>put(SKIP_KEY,e.target.checked?'1':null));
     el.querySelector('.splash-search').addEventListener('submit',e=>{e.preventDefault();search(el.querySelector('#splashQ').value)});
     el.querySelector('.splash-enter').addEventListener('click',()=>go('map'));
+    // the latest game news (in the app): filled once when it arrives, never redrawn after
+    const tryNews=n=>globalThis.bxcNews().then(list=>{const sec=el&&el.querySelector('.splash-news');if(!sec)return;if(!list||!list.length){if(n>0)setTimeout(()=>tryNews(n-1),4000);return}
+      sec.querySelector('.splash-news-list').innerHTML=list.map(p=>`<article class="splash-news-item"><p class="splash-news-date">${esc(p.date||'')}</p><h3>${p.url?`<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>`:esc(p.title)}</h3><p>${esc(String(p.excerpt||'').slice(0,220))}${String(p.excerpt||'').length>220?'…':''}</p></article>`).join('');sec.hidden=false}).catch(()=>{if(n>0)setTimeout(()=>tryNews(n-1),4000)});
+    if(IN_APP&&typeof globalThis.bxcNews==='function')tryNews(3);   // the app's bridge may not answer yet right at start
     el.addEventListener('input',e=>{if(e.target.id==='fightLv'){put(FIGHT_KEY,e.target.value);fightUpdate()}});fightUpdate();
     el.addEventListener('click',e=>{const b=e.target.closest('.splash-tile');if(b){go(TILES[+b.dataset.i][0]);return}
       const f=e.target.closest('.splash-feature-go,.fight-pick');if(f){close();(globalThis.bxcGo||(h=>{location.hash=h}))('#/monster/'+encodeURIComponent(f.dataset.monster));return}
