@@ -534,15 +534,13 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     if(!list.length)return {lede:'The list of unique items comes from the game’s rules and hasn’t loaded yet.',sections:[]};
     const elite=R.eliteMultiplier||5;
     const row=u=>[
-      `<span class="uq-item">${icon(u.typeId)}<a class="uq-name" href="#/item/${enc(u.typeId)}">${esc(u.name)}</a></span>`,
+      `<span class="uq-item">${icon(u.typeId)}<span><a class="uq-name" href="#/item/${enc(u.typeId)}">${esc(u.name)}</a><small class="uq-meta">on ${item(u.basePiece)}${u.bound?' · bound':''}</small></span></span>`,
       uqBoss(u.bossName),
-      item(u.basePiece),
       (u.effects&&u.effects.length?u.effects.map(esc).join('<br>'):'<span class="muted">—</span>'),
-      `<b>${uqPct(u.chance)}</b><br><span class="muted">elite ${uqPct(u.eliteChance)}</span>`,
-      u.bound?'Bound':'<span class="muted">Tradeable</span>'];
+      `<b>${uqPct(u.chance)}</b><br><span class="muted">elite ${uqPct(u.eliteChance)}</span>`];
     const bySlot=UQ_SLOT.map(([slot,label])=>[label,list.filter(u=>u.slot===slot)]).filter(([,a])=>a.length);
     const other=list.filter(u=>!UQ_SLOT.some(([s])=>s===u.slot));if(other.length)bySlot.push(['Other',other]);
-    const head=['Item','Dropped by','Built on','Effect','Chance per kill','Trade'];
+    const head=['Item','Dropped by','Effect','Chance'];
     const bound=list.filter(u=>u.bound).length;
     return {lede:`There are <b>${list.length}</b> unique items in Binxonia, each dropped by one named boss. Each is a normal piece of gear with an effect nothing else has, and its name shows in orange in the game.`,sections:[
       ['drops','How they drop',`<ul class="g-list"><li>A boss drops its own unique on <b>${uqPct(R.standard)}</b> of kills (${uqOneIn(R.standard)}). Some are <b>rare</b> at ${uqPct(R.rare)} (${uqOneIn(R.rare)}), and one is <b>frequent</b> at ${uqPct(R.frequent)} (${uqOneIn(R.frequent)}).</li>

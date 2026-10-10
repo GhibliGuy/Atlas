@@ -1218,11 +1218,12 @@ button,a,summary,select{touch-action:manipulation}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
 }
 /* Unique items guide: the game shows unique names in orange (#ff9a3c); a darker orange keeps contrast on the light theme. */
-.uq-item{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.uq-item{display:flex;align-items:flex-start;gap:8px;min-width:150px}
+.uq-meta{display:block;color:var(--muted);font-size:12.5px;line-height:1.35;margin-top:2px}.uq-meta .g-ico{width:16px;height:16px;vertical-align:-3px}
 .uq-item .g-ico{width:32px;height:32px}
 #content a.uq-name{color:#ff9a3c;font-weight:600}
 html[data-theme="light"] #content a.uq-name{color:#a8510a}
-.uq-table td:nth-child(4){min-width:220px}
+.uq-table td:nth-child(3){min-width:160px}.uq-table td:nth-child(4){white-space:nowrap}
 .wp.g-page>.wp-main{min-width:0} /* a wide table scrolls inside its box instead of widening the page */
 #content .uq-tag{color:#ff9a3c}html[data-theme="light"] #content .uq-tag{color:#a8510a}
 
@@ -1329,3 +1330,4 @@ html[data-theme="light"] #content a.uq-name:not(.page-link){color:#a8510a}
 .splash-news-item p{margin:0;font-size:13.5px;color:var(--muted)}
 .splash-news-date{font-size:12.5px}
 .splash-news-item{overflow-wrap:anywhere;min-width:0}.splash-news-item h3 a{color:var(--accent)}.splash-news-item h3 a:hover{color:var(--ink)}
+.uq-table .uq-meta img.g-ico{width:16px;height:16px;margin:0 3px 0 0;vertical-align:-3px}.uq-meta a{white-space:nowrap}
