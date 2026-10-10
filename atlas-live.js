@@ -4214,7 +4214,8 @@ function newsHtml(){
       const rows=delta[k];
       if(Array.isArray(rows)&&rows.length){
         // new rows go to the place they happened in (splitPlaces), and are kept as sent for the next full split
-        const cap=DELTA_KEY_LIMITS[k],add=(list,r)=>{const m=[...r,...(list||[])];return cap&&m.length>cap?m.slice(0,cap):m};
+        // drops keep every monster row (the snapshot sends all of them, see background.js snapPart): only the rest is capped
+        const cap=DELTA_KEY_LIMITS[k],add=(list,r)=>{const m=[...r,...(list||[])];if(!cap||m.length<=cap)return m;if(k!=='drops')return m.slice(0,cap);let n=0;return m.filter(d=>++n<=cap||(d&&d.monsterTypeId))};
         const placed=k==='zoneTransitions'?placeTransitions(rows,snapshot[k]||[]):k==='npcObservations'?rows.map(placeRow):rows;
         if(rawSnapshot&&rawSnapshot!==snapshot)rawSnapshot[k]=add(rawSnapshot[k],rows);
         snapshot[k]=add(snapshot[k],placed);
