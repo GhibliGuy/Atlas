@@ -1331,3 +1331,11 @@ html[data-theme="light"] #content a.uq-name:not(.page-link){color:#a8510a}
 .splash-news-date{font-size:12.5px}
 .splash-news-item{overflow-wrap:anywhere;min-width:0}.splash-news-item h3 a{color:var(--accent)}.splash-news-item h3 a:hover{color:var(--ink)}
 .uq-table .uq-meta img.g-ico{width:16px;height:16px;margin:0 3px 0 0;vertical-align:-3px}.uq-meta a{white-space:nowrap}
+/* Pendants guide: one card per pendant, its bonus at every carat in the game's words. */
+.pd-cards{grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+.pd-card .gg-card-head{align-items:center}.pd-card .gg-card-head .g-ico{width:26px;height:26px}
+.pd-name{font:700 13px/1.2 var(--sans);color:var(--accent);text-align:right}
+.pd-table{width:100%;border-collapse:collapse;font-size:13px;margin:4px 0 6px}
+.pd-table th{width:2.6em;text-align:left;font-weight:700;color:var(--muted);padding:3px 6px 3px 0;vertical-align:top;font-variant-numeric:tabular-nums}
+.pd-table td{padding:3px 0;border-bottom:1px solid var(--edge);line-height:1.4}
+.pd-table tr:last-child td{border-bottom:0}

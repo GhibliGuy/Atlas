@@ -552,6 +552,23 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       ['source','Where this comes from',note('From the game’s own rules: the list of unique items, the effect wording the game shows in its tooltips, and its drop-chance function. It updates whenever the game does.')]
     ],related:['reforging','quality-and-enchanting','combat']};
   }});
+  // ---- Pendants (11 Oct 2026): the nine pendants and what each does at every carat, in the game's own words (game-data.js
+  // `pendants`, built by data-from-rules.js from the rules' pendant text function, 1 to 6 carats - the rules' cap).
+  reg({slug:'pendants',group:'Gear, gems & enchanting',title:'Pendants',blurb:'The nine pendants and what each does at every carat.',build:()=>{
+    const P=(globalThis.BXC_GAME_DATA||{}).pendants||[];
+    if(!P.length)return {lede:'The pendant list comes from the game’s rules and hasn’t loaded yet.',sections:[]};
+    const body=t=>String(t||'').split(': ').slice(1).join(': ')||String(t||'');
+    const card=p=>{const t=p.text||{},cs=Object.keys(t).map(Number).filter(c=>t[c]).sort((a,b)=>a-b),name=String(t[cs[0]]||'').split(': ')[0];
+      return `<div class="gg-card pd-card"><div class="gg-card-head"><span>${icon(p.item)}<a href="#/item/${enc(p.item)}">${esc(pretty(p.gem))} pendant</a></span><b class="pd-name">${esc(name)}</b></div>`
+        +`<table class="pd-table"><tbody>${cs.map(c=>`<tr><th>${c}c</th><td>${esc(body(t[c]))}</td></tr>`).join('')}</tbody></table></div>`};
+    return {lede:`There are <b>${P.length}</b> pendants, one for each gem. Each gives one lasting protection, and it grows with the pendant’s carats, up to <b>6c</b>.`,sections:[
+      ['all','Every pendant',`<div class="gg-cards pd-cards">${P.map(card).join('')}</div>`],
+      ['get','Getting and improving one',`<ul class="g-list"><li>Pendants <b>drop from monsters</b>. Elites have double the odds at a cape, pendant, ring, kill gem or crafting tome (see ${guide('combat')}). Open a pendant above to see which monsters players have seen drop it.</li>
+        <li>Raise a pendant’s carats by <b>infusing</b> it at the reforging station with its stone’s reagent and a gem of that stone: trade level <b>16</b> up to 3c and <b>31</b> up to 6c. See ${guide('reforging')}.</li>
+        <li>Pendants can’t be re-enchanted or rerolled.</li></ul>`],
+      ['source','Where this comes from',note('From the game’s own rules: the pendant list, which gem each carries, and the wording the game uses for each bonus at every carat. It updates whenever the game does.')]
+    ],related:['gems','reforging','combat']};
+  }});
   // ---- Crafting skills ----------------------------------------------------------------------------------------------
   const craft=(slugName,skill,title,blurb,lede,related,extra)=>reg({slug:slugName,group:'Crafting skills',title,blurb,build:craftingGuide({skill,lede,related,extra})});
   reg({slug:'smelting',group:'Crafting skills',title:'Smelting',blurb:'Turning ore into bars.',build:craftingGuide({skill:'Smelting',station:'furnace',noTomes:true,lede:'Smelt ore into metal bars at a furnace, the first step of every smithing skill. Higher metals take some iron as well.',how:`<li>Smelting pays a little XP; most of a smith’s XP comes from forging (see ${guide('weapon-smithing')}).</li><li>The recipes below come from the game’s data. (The official guide’s pages disagree with each other on how much iron the higher bars take.)</li>`,related:['mining','weapon-smithing','armor-smithing','tool-smithing']})});
