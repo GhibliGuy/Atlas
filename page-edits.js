@@ -149,8 +149,8 @@ globalThis.BXC_PAGE_EDITS = {
     "Bring them to [[#/npc/ada-fen|Ada Fen]] in Binxonia to finish the quest. [[spot:7,-22|Ada Fen]]"
    ],
    "notes": "",
-   "done": false,
-   "updatedAt": 1791775950176
+   "done": true,
+   "updatedAt": 1791777799204
   },
   "quest:binxonia-a-jar-for-later": {
    "first": "",
@@ -159,8 +159,8 @@ globalThis.BXC_PAGE_EDITS = {
     "Bring them to [[#/npc/ada-fen|Ada Fen]] to finish the quest. [[spot:7,-22|Ada Fen]]"
    ],
    "notes": "",
-   "done": false,
-   "updatedAt": 1791775950176
+   "done": true,
+   "updatedAt": 1791777799204
   },
   "quest:binxonia-boar-on-the-menu": {
    "first": "",
@@ -169,8 +169,8 @@ globalThis.BXC_PAGE_EDITS = {
     "Bring **4** Boar Meat to [[#/npc/ada-fen|Ada Fen]] to finish the quest. [[spot:7,-22|Ada Fen]]"
    ],
    "notes": "",
-   "done": false,
-   "updatedAt": 1791775950176
+   "done": true,
+   "updatedAt": 1791777799204
   },
   "quest:binxonia-before-the-rounds": {
    "first": "",
@@ -180,8 +180,8 @@ globalThis.BXC_PAGE_EDITS = {
     "Report the workshop orders to [[#/npc/ellis-pike|Ellis Pike]] to finish the quest. [[spot:54,13|Ellis Pike]]"
    ],
    "notes": "",
-   "done": false,
-   "updatedAt": 1791775950176
+   "done": true,
+   "updatedAt": 1791777799204
   },
   "quest:binxonia-quills-for-the-rounds": {
    "first": "",
@@ -190,8 +190,8 @@ globalThis.BXC_PAGE_EDITS = {
     "Bring them to [[#/npc/ellis-pike|Ellis Pike]] to finish the quest. [[spot:54,13|Ellis Pike]]"
    ],
    "notes": "",
-   "done": false,
-   "updatedAt": 1791775950176
+   "done": true,
+   "updatedAt": 1791777799204
   },
   "quest:binxonia-the-long-round": {
    "first": "",
@@ -205,8 +205,8 @@ globalThis.BXC_PAGE_EDITS = {
     "Report the full route to [[#/npc/ellis-pike|Ellis Pike]] to finish the quest. [[spot:54,13|Ellis Pike]]"
    ],
    "notes": "",
-   "done": false,
-   "updatedAt": 1791775950176
+   "done": true,
+   "updatedAt": 1791777799204
   },
   "quest:binxonia-holes-at-the-elbows": {
    "first": "",
@@ -215,8 +215,8 @@ globalThis.BXC_PAGE_EDITS = {
     "Bring it to [[#/npc/nessa-holt|Nessa Holt]] to finish the quest. [[spot:8,15|Nessa Holt]]"
    ],
    "notes": "",
-   "done": false,
-   "updatedAt": 1791775950176
+   "done": true,
+   "updatedAt": 1791777799204
   },
   "quest:binxonia-boots-for-the-road": {
    "first": "",
@@ -230,8 +230,8 @@ globalThis.BXC_PAGE_EDITS = {
     "Go back to **Nessa Holt** with Bram’s answer to finish the quest."
    ],
    "notes": "",
-   "done": false,
-   "updatedAt": 1791775950176
+   "done": true,
+   "updatedAt": 1791777799204
   },
   "quest:binxonia-wolves-at-the-fence": {
    "first": "",
@@ -240,8 +240,8 @@ globalThis.BXC_PAGE_EDITS = {
     "Return to [[#/npc/bram-fen|Bram Fen]] to finish the quest. [[spot:31,48|Bram Fen]]"
    ],
    "notes": "",
-   "done": false,
-   "updatedAt": 1791775950176
+   "done": true,
+   "updatedAt": 1791777799204
   },
   "quest:binxonia-watch-your-step": {
    "first": "",
@@ -251,8 +251,8 @@ globalThis.BXC_PAGE_EDITS = {
     "Report back to [[#/npc/bram-fen|Bram Fen]] to finish the quest. [[spot:31,48|Bram Fen]]"
    ],
    "notes": "",
-   "done": false,
-   "updatedAt": 1791775950176
+   "done": true,
+   "updatedAt": 1791777799204
   },
   "quest:binxonia-an-unpaid-toll": {
    "first": "",
@@ -262,8 +262,8 @@ globalThis.BXC_PAGE_EDITS = {
     "Report their defeat to [[#/npc/bram-fen|Bram Fen]] to finish the quest. [[spot:31,48|Bram Fen]]"
    ],
    "notes": "",
-   "done": false,
-   "updatedAt": 1791775950176
+   "done": true,
+   "updatedAt": 1791777799204
   },
   "quest:board-goblin-culling": {
    "first": "",
@@ -272,8 +272,8 @@ globalThis.BXC_PAGE_EDITS = {
     "Report to [[#/npc/mira|Mira]] in Binxonia to finish the quest. [[map:npc:mira|Show on map]]"
    ],
    "notes": "",
-   "done": false,
-   "updatedAt": 1791775950176
+   "done": true,
+   "updatedAt": 1791777799204
   },
   "quest:crypt-someones-been-digging": {
    "first": "",
@@ -283,8 +283,8 @@ globalThis.BXC_PAGE_EDITS = {
     "Report back to [[#/npc/halden-rooke|Halden Rooke]] to finish the quest. [[spot:71,88|Halden Rooke]]"
    ],
    "notes": "",
-   "done": false,
-   "updatedAt": 1791775950176
+   "done": true,
+   "updatedAt": 1791777799204
   },
   "quest:crypt-the-bell-ringer": {
    "first": "",
@@ -294,8 +294,8 @@ globalThis.BXC_PAGE_EDITS = {
     "Report back to [[#/npc/halden-rooke|Halden Rooke]] and choose your reward to finish the quest. [[spot:71,88|Halden Rooke]]"
    ],
    "notes": "",
-   "done": false,
-   "updatedAt": 1791775950176
+   "done": true,
+   "updatedAt": 1791777799204
   },
   "quest:the-mercy-knives": {
    "first": "",
@@ -306,8 +306,8 @@ globalThis.BXC_PAGE_EDITS = {
     "Go back to **Warden Maud Ferrow** to learn the dagger and finish the quest."
    ],
    "notes": "",
-   "done": false,
-   "updatedAt": 1791775950176
+   "done": true,
+   "updatedAt": 1791777799204
   }
  }
 };
