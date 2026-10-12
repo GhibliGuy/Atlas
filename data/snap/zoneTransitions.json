@@ -1,4 +1,11 @@
 [
+{"sessionId":"a569cd43","time":1791816729073,"fromZ":null,"toZ":-205,"zoneName":"Wraithhollow","pvpMode":"lawless","atX":1010.1,"atY":847.5,"key":4163},
+{"sessionId":"934cb3ef","time":1791816474099,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":4162},
+{"sessionId":"934cb3ef","time":1791816464822,"fromZ":0,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":4161},
+{"sessionId":"6956c0b7","time":1791816144433,"fromZ":null,"toZ":-205,"zoneName":"Wraithhollow","pvpMode":"lawless","atX":1011.9,"atY":848.2,"key":4160},
+{"sessionId":"50a5444c","time":1791815077441,"fromZ":null,"toZ":-205,"zoneName":"Wraithhollow","pvpMode":"lawless","atX":1013.1,"atY":847.1,"key":4159},
+{"sessionId":"ba320ae8","time":1791814459279,"fromZ":null,"toZ":-205,"zoneName":"Wraithhollow","pvpMode":"lawless","atX":1013,"atY":846.6,"key":4158},
+{"sessionId":"81451ec0","time":1791813723785,"fromZ":null,"toZ":-205,"zoneName":"Wraithhollow","pvpMode":"lawless","atX":1011.4,"atY":846.4,"key":4157},
 {"sessionId":"82766a14","time":1791813103179,"fromZ":null,"toZ":-205,"zoneName":"Wraithhollow","pvpMode":"lawless","atX":1014,"atY":847.9,"key":4156},
 {"sessionId":"934cb3ef","time":1791812584394,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":4155},
 {"sessionId":"934cb3ef","time":1791812564504,"fromZ":null,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":4154},
