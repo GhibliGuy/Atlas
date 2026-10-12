@@ -1,4 +1,7 @@
 [
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1791834557115,"sessionId":"a87616f0","key":432},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"npcName":"Orc Grunt","time":1791828722958,"sessionId":"2c3d0537","key":431},
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"npcName":"Orc Warrior","time":1791828140271,"sessionId":"517ed45e","key":430},
 {"type":"gem.found","typeId":"gem-amber","carat":3,"dropped":false,"time":1791823178840,"sessionId":"23a70e76","key":429},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1791821615556,"sessionId":"23a70e76","key":428},
 {"type":"gem.found","typeId":"gem-amber","carat":2,"dropped":false,"time":1791817236995,"sessionId":"934cb3ef","key":427},
