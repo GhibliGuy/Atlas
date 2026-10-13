@@ -1,4 +1,8 @@
 [
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"time":1791899560238,"sessionId":"481f33e8","key":449},
+{"type":"gem.found","typeId":"gem-sapphire","carat":1,"dropped":false,"time":1791894586409,"sessionId":"0b019424","key":448},
+{"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"time":1791894211795,"sessionId":"30e34813","key":447},
+{"type":"gem.found","typeId":"gem-iolite","carat":1.5,"dropped":false,"time":1791893153614,"sessionId":"cfec52c9","key":446},
 {"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"npcName":"Orc Grunt","time":1791858575571,"sessionId":"489a07c5","key":445},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1791857636810,"sessionId":"5fa7a5af","key":444},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"npcName":"Goblin King","time":1791856414917,"sessionId":"54980c40","key":443},
