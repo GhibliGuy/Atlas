@@ -1,4 +1,7 @@
 [
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"time":1791924754449,"sessionId":"2cf8c890","key":468},
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"time":1791924651564,"sessionId":"2cf8c890","key":467},
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"time":1791923228980,"sessionId":"2cf8c890","key":466},
 {"type":"gem.found","typeId":"gem-pearl","carat":1.5,"dropped":false,"npcName":"Black Tam","time":1791921126259,"sessionId":"f0fb2d93","key":465},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"npcName":"Sellsword","time":1791919892846,"sessionId":"8cee1d33","key":464},
 {"type":"gem.found","typeId":"gem-emerald","carat":1.5,"dropped":false,"time":1791918748493,"sessionId":"52ae1edb","key":463},
