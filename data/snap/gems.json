@@ -1,4 +1,10 @@
 [
+{"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"npcName":"Orc Berserker","time":1791906661019,"sessionId":"e584d227","key":455},
+{"type":"gem.found","typeId":"gem-emerald","carat":1,"dropped":false,"time":1791904305607,"sessionId":"481f33e8","key":454},
+{"type":"gem.found","typeId":"gem-ruby","carat":1.5,"dropped":false,"time":1791903498708,"sessionId":"481f33e8","key":453},
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"time":1791902042156,"sessionId":"481f33e8","key":452},
+{"type":"gem.found","typeId":"gem-diamond","carat":2,"dropped":false,"time":1791900271126,"sessionId":"481f33e8","key":451},
+{"type":"gem.found","typeId":"gem-ruby","carat":1,"dropped":false,"time":1791900234471,"sessionId":"481f33e8","key":450},
 {"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"time":1791899560238,"sessionId":"481f33e8","key":449},
 {"type":"gem.found","typeId":"gem-sapphire","carat":1,"dropped":false,"time":1791894586409,"sessionId":"0b019424","key":448},
 {"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"time":1791894211795,"sessionId":"30e34813","key":447},
