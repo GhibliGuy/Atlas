@@ -1,4 +1,10 @@
 [
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"npcName":"Goblin King","time":1791856414917,"sessionId":"54980c40","key":443},
+{"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"time":1791854776553,"sessionId":"10930f79","key":442},
+{"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"npcName":"Bandit","time":1791852475181,"sessionId":"38c1ad4d","key":441},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1791851163787,"sessionId":"f95e72d1","key":440},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1791850789216,"sessionId":"f95e72d1","key":439},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1791850363034,"sessionId":"f95e72d1","key":438},
 {"type":"gem.found","typeId":"gem-iolite","carat":1,"dropped":false,"time":1791847406558,"sessionId":"f95e72d1","key":437},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1791846857430,"sessionId":"f95e72d1","key":436},
 {"type":"gem.found","typeId":"gem-topaz","carat":1,"dropped":false,"npcName":"Orc Grunt","time":1791845099841,"sessionId":"53e59323","key":435},
