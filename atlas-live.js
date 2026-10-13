@@ -1319,6 +1319,15 @@ function deriveZones(){
     const m=ensure(z).monsters; const id=String(o.typeId||o.name||'unknown');
     const r=m.get(id)||{count:0,lastSeen:0,name:o.name||id}; r.count++; r.lastSeen=Math.max(r.lastSeen,num(o.time)||0); m.set(id,r);
   }
+  // ...and every monster met there (13 Oct 2026): the sightings list is only the newest stretch of play, so a dungeon
+  // last visited before it showed no monsters at all (82 of 119 rooms were missing some). The npcs list keeps every
+  // monster ever met with the floor it was on; a row counts whichever is more, its sightings or the monsters met.
+  {const met=new Map();
+   for(const n of snapshot?.npcs||[]){
+     const p=(n.position&&n.position.z)?n.position:n.originPosition;const z=p?.z; if(z==null||!z||!zones.has(z))continue;
+     const id=String(n.typeId||n.name||'unknown'),k=z+'|'+id,e=met.get(k)||{z,id,n:0,lastSeen:0,name:n.name||id};e.n++;e.lastSeen=Math.max(e.lastSeen,num(n.lastSeen)||0);met.set(k,e);
+   }
+   for(const e of met.values()){const m=ensure(e.z).monsters,r=m.get(e.id)||{count:0,lastSeen:0,name:e.name};r.count=Math.max(r.count,e.n);r.lastSeen=Math.max(r.lastSeen,e.lastSeen);m.set(e.id,r)}}
   for(const o of snapshot?.worldObjects||[]){
     const z=o.position?.z; if(z==null||!zones.has(z))continue;
     const skill=state.objectSkillByType?.get(o.typeId);
@@ -1817,6 +1826,15 @@ function zoneRowsHere(z){
     const named=!!ns&&ns!==slugId(t)&&ns!==typeName.get(t),id=named?'npc:'+ns:t;
     const r=mons.get(id)||{id,typeId:t,npc:named?ns:null,count:0,lastSeen:0,name:named?n:(o.name||t)};r.count++;r.lastSeen=Math.max(r.lastSeen,num(o.time)||0);mons.set(id,r);
   }
+  // every monster met in this room too (the sightings are only the newest stretch of play): the larger count wins
+  {const met=new Map();
+   for(const o of snapshot?.npcs||[]){
+     const p=(o.position&&o.position.z)?o.position:o.originPosition;if(p?.z!==z||!here(p))continue;
+     const t=String(o.typeId||o.name||'unknown'),n=String(o.name||'').trim(),ns=slugId(n);
+     const named=!!ns&&ns!==slugId(t)&&ns!==typeName.get(t),id=named?'npc:'+ns:t;
+     const e=met.get(id)||{id,typeId:t,npc:named?ns:null,n:0,lastSeen:0,name:named?n:(o.name||t)};e.n++;e.lastSeen=Math.max(e.lastSeen,num(o.lastSeen)||0);met.set(id,e);
+   }
+   for(const e of met.values()){const r=mons.get(e.id)||{id:e.id,typeId:e.typeId,npc:e.npc,count:0,lastSeen:0,name:e.name};r.count=Math.max(r.count,e.n);r.lastSeen=Math.max(r.lastSeen,e.lastSeen);mons.set(e.id,r)}}
   for(const o of snapshot?.worldObjects||[]){
     if(o.position?.z!==z||!here(o.position)||!state.objectSkillByType?.get(o.typeId))continue;
     const key=resourceKeyFor(o),yieldItem=state.resourceYieldByObjectId?.get(o.id)||null;
@@ -1901,6 +1919,14 @@ function zoneDetailSvg(z){
     const id=o.id!=null?String(o.id):Symbol();
     const existing=npcFirstById.get(id);
     if(!existing||(num(o.time)||0)<(num(existing.time)||0))npcFirstById.set(id,o);
+  }
+  // every monster met in this room too (13 Oct 2026): the sightings are only the newest stretch of play, so rooms last
+  // visited before it were drawn empty; the npcs list has each one ever met, at its spawn point (or where last seen)
+  for(const n of snapshot?.npcs||[]){
+    if(n.id==null||npcFirstById.has(String(n.id)))continue;
+    const p=n.originPosition?.z===z?n.originPosition:n.position?.z===z?n.position:null;
+    if(!p||!here(p))continue;
+    npcFirstById.set(String(n.id),{...n,position:p,time:num(n.firstSeen)||num(n.lastSeen)||0});
   }
   const npcsHere=[...npcFirstById.values()];
   const ownParentZ=state.zoneParent?.get(z);
