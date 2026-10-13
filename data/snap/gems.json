@@ -1,4 +1,5 @@
 [
+{"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"time":1791908603517,"sessionId":"c9ed0da2","key":456},
 {"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"npcName":"Orc Berserker","time":1791906661019,"sessionId":"e584d227","key":455},
 {"type":"gem.found","typeId":"gem-emerald","carat":1,"dropped":false,"time":1791904305607,"sessionId":"481f33e8","key":454},
 {"type":"gem.found","typeId":"gem-ruby","carat":1.5,"dropped":false,"time":1791903498708,"sessionId":"481f33e8","key":453},
