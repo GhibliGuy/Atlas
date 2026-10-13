@@ -1,4 +1,6 @@
 [
+{"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"npcName":"Orc Grunt","time":1791858575571,"sessionId":"489a07c5","key":445},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1791857636810,"sessionId":"5fa7a5af","key":444},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"npcName":"Goblin King","time":1791856414917,"sessionId":"54980c40","key":443},
 {"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"time":1791854776553,"sessionId":"10930f79","key":442},
 {"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"npcName":"Bandit","time":1791852475181,"sessionId":"38c1ad4d","key":441},
