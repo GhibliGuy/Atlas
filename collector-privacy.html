@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atlas Collector privacy policy</title>
+<meta name="description" content="What the Binxonia Atlas Collector browser extension collects, what it never collects, and where its finds go.">
+<link rel="stylesheet" href="vendor/fonts/fonts.css">
+<link rel="icon" href="data:,">
+<style>
+  :root{--bg:#161b17;--panel:#20271f;--edge:#3c4a3a;--ink:#ece3cc;--muted:#a3b49e;--accent:#c9a45c;color-scheme:dark}
+  @media (prefers-color-scheme:light){:root{--bg:#f4f1ea;--panel:#ffffff;--edge:#d8d2c4;--ink:#24251f;--muted:#5d6457;--accent:#845f17;color-scheme:light}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 'Atkinson Hyperlegible',system-ui,'Segoe UI',sans-serif}
+  main{max-width:720px;margin:0 auto;padding:40px 16px 64px}
+  h1{font:400 40px/1.1 'Gloock',Georgia,serif;margin:0 0 6px}
+  h2{font:400 24px/1.25 'Gloock',Georgia,serif;margin:34px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--edge)}
+  .lede{color:var(--muted);margin:0 0 6px}
+  .updated{color:var(--muted);font-size:14px;margin:0 0 28px}
+  a{color:var(--accent)}
+  ul{padding-left:22px}li{margin:4px 0}
+  .box{background:var(--panel);border:1px solid var(--edge);border-radius:12px;padding:14px 18px;margin:12px 0}
+  .box h3{margin:0 0 4px;font-size:16px}
+  .box ul{margin:4px 0 0}
+</style>
+</head>
+<body>
+<main>
+  <h1>Atlas Collector privacy policy</h1>
+  <p class="lede">The Binxonia Atlas Collector is a free browser extension that helps build the <a href="./">Binxonia Atlas</a>, a fan-made field guide to the game Binxonia. This page explains what it collects and where that goes.</p>
+  <p class="updated">Last updated 13 October 2026</p>
+
+  <h2>In short</h2>
+  <p>The extension only looks at the game world: monsters, places, rooms, item drops and quest text. It never collects anything about you or other players, and it only sends things the Atlas does not already have, for a person to review before they appear on the Atlas.</p>
+
+  <h2>What it collects</h2>
+  <p>While you play on <b>play.binxonia.com</b>, the extension listens to the world data the game already sends to your browser, and keeps only parts the public Atlas does not have yet:</p>
+  <div class="box"><h3>Game world data</h3><ul>
+    <li>Monsters: their kind, level, and where in the game world they appear</li>
+    <li>Resources such as rocks, trees, plants and fishing spots, and where they are</li>
+    <li>The layout of rooms and dungeons (floors, walls and objects in them)</li>
+    <li>Which items a monster dropped when you looted it</li>
+    <li>Quest text (names, descriptions and dialogue written by the game)</li>
+  </ul></div>
+  <p>Each submission also carries a random contributor code made by the extension (it is not linked to you or your account), the extension's version, and the time of each find.</p>
+
+  <h2>What it never collects</h2>
+  <ul>
+    <li>Your character's name, position, stats, inventory or equipment</li>
+    <li>Other players (names, positions or anything else about them)</li>
+    <li>Chat, private messages, trades, guild or friends lists</li>
+    <li>Your Binxonia account, login, email or password</li>
+    <li>Anything from other websites, or your browsing history</li>
+  </ul>
+  <p>The extension never acts in the game: it does not click, move, send messages or change anything you do.</p>
+
+  <h2>How it works</h2>
+  <ul>
+    <li>The extension reads the public Atlas data from this website to know what is already recorded, and checks every 30 minutes whether the Atlas has been updated.</li>
+    <li>New finds are kept in your browser until they are sent, every 10 minutes (or when you press "Send now"). You can turn automatic sending off in the extension's popup.</li>
+    <li>Finds are sent over HTTPS to a small relay service hosted on Cloudflare, which files them in a public GitHub repository for review: <a href="https://github.com/GhibliGuy/Atlas-contributions">GhibliGuy/Atlas-contributions</a>.</li>
+    <li>The Atlas maintainer reviews each submission. Accepted finds become part of the public Atlas; rejected ones are not used.</li>
+  </ul>
+
+  <h2>Who can see it</h2>
+  <p>Everything that is sent is game world data that is meant to be public on the Atlas. Submissions are stored in the public GitHub repository above, where anyone can see them. Nothing is sold, shared with advertisers, or used for anything other than building the Atlas.</p>
+  <p>When the extension sends finds, the relay service necessarily receives your IP address as part of the connection. The relay uses it only for a short-term limit on how often one address can send, does not store it with your finds, and does not log it on purpose; Cloudflare, which hosts the relay, may keep standard request logs for a short time under its own privacy policy.</p>
+  <p>The extension uses no cookies, analytics, ads or tracking of any kind.</p>
+
+  <h2>Your choices</h2>
+  <ul>
+    <li>Turn off "Send new finds automatically" in the popup to stop sending; you can still send by hand, or never.</li>
+    <li>Removing the extension deletes everything it keeps in your browser.</li>
+    <li>If you want a submission removed from the review repository, open an issue on <a href="https://github.com/GhibliGuy/Atlas/issues">the Atlas's GitHub page</a> with the date you sent it.</li>
+  </ul>
+
+  <h2>Contact</h2>
+  <p>Questions about this policy or the extension: open an issue on <a href="https://github.com/GhibliGuy/Atlas/issues">github.com/GhibliGuy/Atlas</a>.</p>
+  <p class="updated">The Binxonia Atlas and the Atlas Collector are fan projects.</p>
+</main>
+</body>
+</html>
