@@ -989,11 +989,17 @@ function deriveDrops(){
   state.drops = rows;
   const agg = new Map();
   for(const d of rows){
+    if(d.summary==='looted')continue;   // corpses looted per monster: deriveKills
     const elite = d.monsterElite===true;
     const sourceType = d.monsterTypeId ? `monster:${d.monsterTypeId}${elite?':elite':''}` : d.resourceTypeId ? `resource:${d.resourceTypeId}` : 'other:unknown';
     const key = `${sourceType}|${d.itemTypeId||'unknown'}`;
     if(!agg.has(key)) agg.set(key,{key,sourceType,itemTypeId:String(d.itemTypeId||'unknown'),monsterTypeId:d.monsterTypeId||null,resourceTypeId:d.resourceTypeId||null,monsterName:d.monsterName||null,elite,events:0,totalQty:0,minQty:null,maxQty:null,lastSeen:0,examples:[],enchants:{},qualities:{}});
-    const r=agg.get(key); r.events++; const qty=Number(d.quantity||1)||1; r.totalQty += qty; r.minQty=r.minQty===null?qty:Math.min(r.minQty,qty); r.maxQty=r.maxQty===null?qty:Math.max(r.maxQty,qty); r.lastSeen=Math.max(r.lastSeen, num(d.time)||0); if(d.enchant)r.enchants[d.enchant]=(r.enchants[d.enchant]||0)+qty; if(d.quality)r.qualities[d.quality]=(r.qualities[d.quality]||0)+qty; if(r.examples.length<5) r.examples.push(d);
+    const r=agg.get(key);
+    // a summary row (13 Oct 2026, background.js snapPart) is every drop of this source and item the collector holds: n of
+    // them, quantity in all; a live row since is one drop
+    if(d.summary){r.events+=d.n||0;r.totalQty+=Number(d.quantity)||0;if(d.minQty!=null)r.minQty=r.minQty===null?d.minQty:Math.min(r.minQty,d.minQty);if(d.maxQty!=null)r.maxQty=r.maxQty===null?d.maxQty:Math.max(r.maxQty,d.maxQty);r.lastSeen=Math.max(r.lastSeen,num(d.time)||0);if(!r.monsterName&&d.monsterName)r.monsterName=d.monsterName;
+      for(const [k2,v] of Object.entries(d.enchants||{}))r.enchants[k2]=(r.enchants[k2]||0)+v;for(const [k2,v] of Object.entries(d.qualities||{}))r.qualities[k2]=(r.qualities[k2]||0)+v;for(const ex of d.examples||[])if(r.examples.length<5)r.examples.push(ex);continue}
+    r.events++; const qty=Number(d.quantity||1)||1; r.totalQty += qty; r.minQty=r.minQty===null?qty:Math.min(r.minQty,qty); r.maxQty=r.maxQty===null?qty:Math.max(r.maxQty,qty); r.lastSeen=Math.max(r.lastSeen, num(d.time)||0); if(d.enchant)r.enchants[d.enchant]=(r.enchants[d.enchant]||0)+qty; if(d.quality)r.qualities[d.quality]=(r.qualities[d.quality]||0)+qty; if(r.examples.length<5) r.examples.push(d);
   }
   state.dropAgg = agg;
 }
@@ -1317,7 +1323,7 @@ function deriveZones(){
   for(const o of snapshot?.npcObservations||[]){
     const z=o.position?.z; if(z==null||!zones.has(z))continue;
     const m=ensure(z).monsters; const id=String(o.typeId||o.name||'unknown');
-    const r=m.get(id)||{count:0,lastSeen:0,name:o.name||id}; r.count++; r.lastSeen=Math.max(r.lastSeen,num(o.time)||0); m.set(id,r);
+    const r=m.get(id)||{count:0,lastSeen:0,name:o.name||id}; r.count+=(o.n||1); r.lastSeen=Math.max(r.lastSeen,num(o.time)||0); m.set(id,r);   // n: a summary row stands for n sightings
   }
   // ...and every monster met there (13 Oct 2026): the sightings list is only the newest stretch of play, so a dungeon
   // last visited before it showed no monsters at all (82 of 119 rooms were missing some). The npcs list keeps every
@@ -1824,7 +1830,7 @@ function zoneRowsHere(z){
     if(o.position?.z!==z||!here(o.position))continue;
     const t=String(o.typeId||o.name||'unknown'),n=String(o.name||'').trim(),ns=slugId(n);
     const named=!!ns&&ns!==slugId(t)&&ns!==typeName.get(t),id=named?'npc:'+ns:t;
-    const r=mons.get(id)||{id,typeId:t,npc:named?ns:null,count:0,lastSeen:0,name:named?n:(o.name||t)};r.count++;r.lastSeen=Math.max(r.lastSeen,num(o.time)||0);mons.set(id,r);
+    const r=mons.get(id)||{id,typeId:t,npc:named?ns:null,count:0,lastSeen:0,name:named?n:(o.name||t)};r.count+=(o.n||1);r.lastSeen=Math.max(r.lastSeen,num(o.time)||0);mons.set(id,r);
   }
   // every monster met in this room too (the sightings are only the newest stretch of play): the larger count wins
   {const met=new Map();
@@ -3601,10 +3607,13 @@ function newsHtml(){
       const k=nm.toLowerCase();let r=kills.get(k);if(!r)kills.set(k,r={name:nm,kills:0,xp:0,last:0});
       r.kills++;r.xp+=num(e.amount)||0;r.last=Math.max(r.last,num(e.time)||0);
     }
-    const looted=new Map();  // monster typeId -> {corpses:Set, items:Map(itemTypeId -> Set of corpses)}
+    // monster typeId -> {corpses:Set, items:Map(itemTypeId -> Set of corpses), base, itemBase}: base/itemBase are the
+    // collector's counts over everything it holds (a summary 'looted' row), the sets the corpses looted live since
+    const looted=new Map();
     for(const d of snapshot?.drops||[]){
+      if(d.summary==='looted'&&d.monsterTypeId){let m=looted.get(d.monsterTypeId);if(!m)looted.set(d.monsterTypeId,m={corpses:new Set(),items:new Map(),base:0,itemBase:new Map()});m.base+=d.corpses||0;for(const [it,c] of Object.entries(d.items||{}))m.itemBase.set(it,(m.itemBase.get(it)||0)+c);continue}
       if(d.source!=='loot'||!d.npcId||!d.monsterTypeId||!d.itemTypeId)continue;
-      let m=looted.get(d.monsterTypeId);if(!m)looted.set(d.monsterTypeId,m={corpses:new Set(),items:new Map()});
+      let m=looted.get(d.monsterTypeId);if(!m)looted.set(d.monsterTypeId,m={corpses:new Set(),items:new Map(),base:0,itemBase:new Map()});
       m.corpses.add(d.npcId);
       let s=m.items.get(d.itemTypeId);if(!s)m.items.set(d.itemTypeId,s=new Set());s.add(d.npcId);
     }
@@ -3617,18 +3626,19 @@ function newsHtml(){
     if(nm)monsterNameCache.set(typeId,nm);
     return nm;
   }
+  const lootedCorpses=lt=>lt?(lt.base||0)+lt.corpses.size:0, lootedWith=(lt,item)=>lt?(lt.itemBase?.get(item)||0)+(lt.items.get(item)?.size||0):0;
   function killStatsFor(typeId){const n=monsterNameFor(typeId);return n?state.kills?.get(String(n).toLowerCase())||null:null}
   function killsLineHtml(typeId){
     const ks=killStatsFor(typeId),lt=state.looted?.get(typeId);
-    if(!ks)return lt?`<div class="muted">No kills of this monster reported yet; ${fmt(lt.corpses.size)} looted corpse${lt.corpses.size===1?'':'s'} recorded.</div>`:'';
-    return `<div>You have killed it <b>${fmt(ks.kills)}</b> time${ks.kills===1?'':'s'} · ${fmt(ks.xp)} XP earned (about ${fmt(Math.round(ks.xp/ks.kills))} per kill) · last kill ${esc(when(ks.last))}${lt?` · looted <b>${fmt(lt.corpses.size)}</b> of those corpses`:''}</div>`;
+    if(!ks)return lt?`<div class="muted">No kills of this monster reported yet; ${fmt(lootedCorpses(lt))} looted corpse${lootedCorpses(lt)===1?'':'s'} recorded.</div>`:'';
+    return `<div>You have killed it <b>${fmt(ks.kills)}</b> time${ks.kills===1?'':'s'} · ${fmt(ks.xp)} XP earned (about ${fmt(Math.round(ks.xp/ks.kills))} per kill) · last kill ${esc(when(ks.last))}${lt?` · looted <b>${fmt(lootedCorpses(lt))}</b> of those corpses`:''}</div>`;
   }
   // Table for the Drops tab: everything you have killed, and how much of it you looted.
   function killsPanelHtml(){
     const rows=[...(state.kills||new Map()).values()].sort((a,b)=>b.kills-a.kills);
     if(!rows.length)return '';
     const byName=new Map();
-    for(const [typeId,l] of state.looted||[]){const n=monsterNameFor(typeId);if(n)byName.set(String(n).toLowerCase(),(byName.get(String(n).toLowerCase())||0)+l.corpses.size)}
+    for(const [typeId,l] of state.looted||[]){const n=monsterNameFor(typeId);if(n)byName.set(String(n).toLowerCase(),(byName.get(String(n).toLowerCase())||0)+lootedCorpses(l))}
     return `<div class="collector-panel"><div class="collector-title">What you have killed</div><div class="muted" style="margin-bottom:6px">From the game's own kill reports. "Looted" counts the corpses whose loot the collector recorded; drop percentages elsewhere are of those.</div><table class="research-table"><thead><tr><th>Monster</th><th>Kills</th><th>XP earned</th><th>Looted</th><th>Last kill</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.name)}</td><td>${fmt(r.kills)}</td><td>${fmt(r.xp)}</td><td>${fmt(byName.get(r.name.toLowerCase())||0)}</td><td>${esc(when(r.last))}</td></tr>`).join('')}</tbody></table></div>`;
   }
   // ---- Quest items ------------------------------------------------------------------------------------------
@@ -3650,9 +3660,9 @@ function newsHtml(){
       const chips=items.map(r=>{
         const range=r.minQty===r.maxQty?fmt(r.minQty):fmt(r.minQty)+'\u2013'+fmt(r.maxQty);
         const enchantPlain=Object.entries(r.enchants||{}).sort((a,b)=>b[1]-a[1]).map(([k,n])=>k+' x'+n).join(', ');
-        const tip=prettyId(r.itemTypeId)+(enchantPlain?' ('+enchantPlain+')':'')+' - '+(lt&&lt.corpses.size?'in '+Math.round(100*(lt.items.get(r.itemTypeId)?.size||0)/lt.corpses.size)+'% of '+fmt(lt.corpses.size)+' looted corpses, ':'')+fmt(r.events)+' recorded drop'+(r.events===1?'':'s')+', '+fmt(r.totalQty)+' total, '+range+' per drop';
-        const lootedN=lt&&lt.corpses.size?(lt.items.get(r.itemTypeId)?.size||0):null;
-        let statText=lootedN!==null?Math.round(100*lootedN/lt.corpses.size)+'% \u00b7 '+fmt(lootedN)+'/'+fmt(lt.corpses.size):fmt(r.events)+' drop'+(r.events===1?'':'s');
+        const tip=prettyId(r.itemTypeId)+(enchantPlain?' ('+enchantPlain+')':'')+' - '+(lt&&lootedCorpses(lt)?'in '+Math.round(100*lootedWith(lt,r.itemTypeId)/lootedCorpses(lt))+'% of '+fmt(lootedCorpses(lt))+' looted corpses, ':'')+fmt(r.events)+' recorded drop'+(r.events===1?'':'s')+', '+fmt(r.totalQty)+' total, '+range+' per drop';
+        const lootedN=lt&&lootedCorpses(lt)?lootedWith(lt,r.itemTypeId):null;
+        let statText=lootedN!==null?Math.round(100*lootedN/lootedCorpses(lt))+'% \u00b7 '+fmt(lootedN)+'/'+fmt(lootedCorpses(lt)):fmt(r.events)+' drop'+(r.events===1?'':'s');
         const qr=questItem(r.itemTypeId);   // tagged, rate unchanged
         return '<div class="entity-chip dropicon-link'+(elite?' elite':'')+(qr?' quest':'')+'" data-item="'+esc(r.itemTypeId)+'" title="'+esc(tip+(qr?' - Quest item: '+qr.quests.join(' / '):''))+'"><img class="thumb itemthumb" src="'+esc(itemImgFor(r.itemTypeId))+'" alt="">'+(qr?'<span class="quest-tag" title="Quest item">Q</span>':'')+'<span class="entity-chip-label">'+esc(prettyId(r.itemTypeId))+'</span><span class="entity-chip-stat">'+esc(statText)+'</span>'+qualityNote(r)+'</div>';
       });
@@ -4265,8 +4275,8 @@ function newsHtml(){
       const rows=delta[k];
       if(Array.isArray(rows)&&rows.length){
         // new rows go to the place they happened in (splitPlaces), and are kept as sent for the next full split
-        // drops keep every monster row (the snapshot sends all of them, see background.js snapPart): only the rest is capped
-        const cap=DELTA_KEY_LIMITS[k],add=(list,r)=>{const m=[...r,...(list||[])];if(!cap||m.length<=cap)return m;if(k!=='drops')return m.slice(0,cap);let n=0;return m.filter(d=>++n<=cap||(d&&d.monsterTypeId))};
+        // drops and sightings keep the summary rows (all history, see background.js snapPart): only rows added live are capped
+        const cap=DELTA_KEY_LIMITS[k],add=(list,r)=>{const m=[...r,...(list||[])];if(!cap||m.length<=cap)return m;if(k!=='drops'&&k!=='npcObservations')return m.slice(0,cap);let n=0;return m.filter(d=>(d&&(d.summary||d.n!=null))||++n<=cap)};   // the collector's summary rows (every drop and sighting it holds) always stay; only live rows are capped
         const placed=k==='zoneTransitions'?placeTransitions(rows,snapshot[k]||[]):k==='npcObservations'?rows.map(placeRow):rows;
         if(rawSnapshot&&rawSnapshot!==snapshot)rawSnapshot[k]=add(rawSnapshot[k],rows);
         snapshot[k]=add(snapshot[k],placed);
@@ -5123,7 +5133,7 @@ function newsHtml(){
     const by=new Map(),seen=new Set();
     for(const o of snapshot?.npcObservations||[]){
       if(o.typeId!==type||!Number.isFinite(o.level))continue;
-      const e=by.get(o.level)||{level:o.level,n:0,pts:[]};e.n++;
+      const e=by.get(o.level)||{level:o.level,n:0,pts:[]};e.n+=(o.n||1);
       const p=o.position;if(p&&!p.z&&Number.isFinite(p.x)){const k=o.level+'|'+Math.round(p.x/10)+'|'+Math.round(p.y/10);if(!seen.has(k)){seen.add(k);e.pts.push({x:p.x,y:p.y})}}
       by.set(o.level,e);
     }
@@ -5165,7 +5175,7 @@ function newsHtml(){
       const plain=typeName.get(n.typeId)||String(n.typeId).replace(/-/g,' ');
       if(name.toLowerCase()===plain||name.toLowerCase()===String(n.typeId).replace(/-/g,' '))return;
       const k=npcSlug(name);let e=map.get(k);if(!e)map.set(k,e={slug:k,name,typeId:n.typeId,levels:new Map(),cls:new Set(),zones:new Map(),pts:[],seen:0,maxHp:null});
-      e.seen++;if(Number.isFinite(n.level))e.levels.set(n.level,(e.levels.get(n.level)||0)+1);if(n.npcClass)e.cls.add(n.npcClass);
+      const w=isObs&&n.n||1;e.seen+=w;if(Number.isFinite(n.level))e.levels.set(n.level,(e.levels.get(n.level)||0)+w);if(n.npcClass)e.cls.add(n.npcClass);
       if(!isObs&&Number.isFinite(n.maxHitpoints))e.maxHp=Math.max(e.maxHp||0,n.maxHitpoints);
       const p=n.position;if(p&&Number.isFinite(p.x)){if(p.z)e.zones.set(p.z,(e.zones.get(p.z)||0)+1);else if(e.pts.length<400)e.pts.push({x:p.x,y:p.y})}
     };

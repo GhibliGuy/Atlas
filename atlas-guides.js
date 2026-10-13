@@ -1102,7 +1102,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   const QUEST_AREAS={'plymouth-the-ogre-traitor':{place:'Ogre Isle',text:'Finishing it earns the crossing to Ogre Isle, so the whole island and everything on it opens up. Gerald Seabroden sends you to the dock: “You’ve earned the crossing.” The ferry out costs 50 gold, and the way back is free.',news:[['update-the-exchange-opens','The Exchange Opens','13 Sep 2026'],['update-ogre-isle-opens-at-thirty','Ogre Isle Opens at Thirty','26 Sep 2026']]}};
   function questAreaUnlocks(q){const a=QUEST_AREAS[q.questId];if(!a)return '';
     const S=globalThis.BINXONIA_COLLECTOR_SNAPSHOT||{},at=globalThis.bxcQuestRegionAt;if(typeof at!=='function')return `<p>${esc(a.text)}</p>`;
-    const by=new Map();for(const o of [...(S.npcObservations||[]),...(S.npcs||[])]){const p=o&&o.position;if(!p||p.z)continue;const v=by.get(o.typeId)||[0,0];v[1]++;if(at(p.x,p.y))v[0]++;by.set(o.typeId,v)}
+    const by=new Map();for(const o of [...(S.npcObservations||[]),...(S.npcs||[])]){const p=o&&o.position;if(!p||p.z)continue;const v=by.get(o.typeId)||[0,0],w=o.n||1;v[1]+=w;if(at(p.x,p.y))v[0]+=w;by.set(o.typeId,v)}
     const only=[...by].filter(([,v])=>v[0]&&v[0]>=v[1]*.9).map(([t])=>(typeof D!=='undefined'&&D.catalog||[]).find(m=>m.typeId===t)).filter(Boolean).sort((x,y)=>(x.baseLevel||0)-(y.baseLevel||0));
     const places=(typeof D!=='undefined'&&D.pois||[]).filter(p=>at(+p.x,+p.y));
     return `<p><b>${esc(a.place)}</b></p><p>${esc(a.text)}</p>`
