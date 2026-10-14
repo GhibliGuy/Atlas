@@ -1,4 +1,7 @@
 [
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"npcName":"Sellsword","time":1791983800512,"sessionId":"3c4aedbe","key":494},
+{"type":"gem.found","typeId":"gem-amber","carat":2,"dropped":false,"time":1791983457387,"sessionId":"6fdf1b7d","key":493},
+{"type":"gem.found","typeId":"gem-iolite","carat":1,"dropped":false,"time":1791982312775,"sessionId":"e3d32b2f","key":492},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1791948932701,"sessionId":"37c96e17","key":491},
 {"type":"gem.found","typeId":"gem-amber","carat":2.5,"dropped":false,"time":1791947934995,"sessionId":"1ebdd514","key":490},
 {"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"npcName":"Highwayman","time":1791946397345,"sessionId":"f8feeff0","key":489},
