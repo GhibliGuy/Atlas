@@ -30,7 +30,9 @@
     ['[data-calc="crafting"]','Crafting XP','Your training path, tools and upgrades for every trade','Calculators','crafting'],
     ['[data-calc="combat"]','Combat calculator','The best monster and gear for your level, and when to move on','Calculators','combat'],
     ['[data-calc="quality"]','Quality & enchanting','Can you make it, enchant it, and what quality to expect','Calculators','quality'],
-    ['[data-tab="guide"]','Write a guide','Share what you know with other players','Community','guide']
+    ['[data-tab="guide"]','Write a guide','Share what you know with other players','Community','guide'],
+    // the Atlas Collector browser extension (public site only: the app collects for itself)
+    ['https://chromewebstore.google.com/detail/atlas-collector/njnlakpjngjfabbmkcmliipecmpjlgea','Help build the Atlas','Add the Atlas Collector to Chrome: it spots what the Atlas is missing while you play and sends it in for review','Community','collector']
   ];
   const GROUPS=['Start here','Quests','Explore','Gathering','Calculators','Community'];
   // a quest tile's line: how many (in one group, or all of them) and what they are
@@ -52,6 +54,7 @@
     monsters:{hint:'monster',ids:()=>['red-dragon','young-red-dragon','baby-red-dragon','sand-wyrm','sand-wyrmling']},
     items:{hint:'item',ids:()=>TI.concat(TA)},
     uniques:{hint:'item',ids:()=>(globalThis.BXC_GAME_DATA?.uniques||[]).map(u=>u.typeId)},
+    collector:{hint:'item',ids:()=>['plymouth-tide-charts','warp-appleseed-farm','warp-mirewick','warp-wispmeyer']},
     zones:{hint:'item',ids:()=>['key-buried-treasure-1','key-orc-champion']},
     resources:{hint:'item',ids:()=>['bass','catfish','salmon','trout']},
     gems:{hint:'item',ids:()=>GEMS},
@@ -156,12 +159,12 @@
   // a first handful of guides for someone new
   const STARTER=[['getting-started','Getting started'],['levels-and-xp','Levels and XP'],['combat','Combat'],['mining','Mining'],['quality-and-enchanting','Quality & enchanting'],['travel','Travel']];
   let el=null,lastFocus=null;
-  function tabFor(sel){return document.querySelector('.tab'+(sel==='map'?'[data-tab="map"]':sel))}
+  function tabFor(sel){if(/^https:/.test(sel))return !IN_APP;return document.querySelector('.tab'+(sel==='map'?'[data-tab="map"]':sel))}
   function build(){
     el=document.createElement('div');el.id='atlasSplash';if(IN_APP)el.className='splash-app';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');el.setAttribute('aria-labelledby','splashTitle');
     let k=0;const fm=featured();
     const tile=t=>{
-      return `<button type="button" class="splash-tile" data-i="${TILES.indexOf(t)}" style="--i:${k++}"><span class="splash-ico-wrap"><img class="splash-tile-ico" data-ico="${esc(t[4]||'')}" alt="" hidden></span><span class="splash-tile-words"><b>${esc(t[1])}</b><span class="splash-tile-text">${esc(typeof t[2]==='function'?t[2](typeof D!=='undefined'?D:{}):t[2])}</span></span></button>`};
+      const ext=/^https:/.test(t[0]);return `<${ext?`a href="${esc(t[0])}" target="_blank" rel="noopener"`:'button type="button"'} class="splash-tile" data-i="${TILES.indexOf(t)}" style="--i:${k++}"><span class="splash-ico-wrap"><img class="splash-tile-ico" data-ico="${esc(t[4]||'')}" alt="" hidden></span><span class="splash-tile-words"><b>${esc(t[1])}</b><span class="splash-tile-text">${esc(typeof t[2]==='function'?t[2](typeof D!=='undefined'?D:{}):t[2])}</span></span></${ext?'a':'button'}>`};
     const tiles=GROUPS.map(g=>{const ts=TILES.filter(t=>t[3]===g&&tabFor(t[0]));return ts.length?`<section class="splash-group"><h2>${esc(g)}</h2><div class="splash-grid">${ts.map(tile).join('')}</div></section>`:''}).join('');
     const starters=STARTER.map(([slug,t])=>`<a class="q-chip" href="#/guide/${slug}">${esc(t)}</a>`).join('');
     const lead=`<span class="splash-new-lead"><b>New to Binxonia?</b><span class="splash-arrow" aria-hidden="true">➜</span></span>`;
@@ -188,7 +191,7 @@
       sec.querySelector('.splash-news-list').innerHTML=list.map(p=>`<article class="splash-news-item"><p class="splash-news-date">${esc(p.date||'')}</p><h3>${p.url?`<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.title)}</a>`:esc(p.title)}</h3><p>${esc(String(p.excerpt||'').slice(0,220))}${String(p.excerpt||'').length>220?'…':''}</p></article>`).join('');sec.hidden=false}).catch(()=>{if(n>0)setTimeout(()=>tryNews(n-1),4000)});
     if(IN_APP&&typeof globalThis.bxcNews==='function')tryNews(3);   // the app's bridge may not answer yet right at start
     el.addEventListener('input',e=>{if(e.target.id==='fightLv'){put(FIGHT_KEY,e.target.value);fightUpdate()}});fightUpdate();
-    el.addEventListener('click',e=>{const b=e.target.closest('.splash-tile');if(b){go(TILES[+b.dataset.i][0]);return}
+    el.addEventListener('click',e=>{const b=e.target.closest('.splash-tile');if(b&&b.tagName==='A')return;if(b){go(TILES[+b.dataset.i][0]);return}
       const f=e.target.closest('.splash-feature-go,.fight-pick');if(f){close();(globalThis.bxcGo||(h=>{location.hash=h}))('#/monster/'+encodeURIComponent(f.dataset.monster));return}
       if(e.target.closest('.splash-new a'))close()});
     el.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close()}});

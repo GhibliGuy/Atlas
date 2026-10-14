@@ -1339,3 +1339,6 @@ html[data-theme="light"] #content a.uq-name:not(.page-link){color:#a8510a}
 .pd-table th{width:2.6em;text-align:left;font-weight:700;color:var(--muted);padding:3px 6px 3px 0;vertical-align:top;font-variant-numeric:tabular-nums}
 .pd-table td{padding:3px 0;border-bottom:1px solid var(--edge);line-height:1.4}
 .pd-table tr:last-child td{border-bottom:0}
+
+/* the home page's one outside link (Atlas Collector) looks like every other tile */
+a.splash-tile,a.splash-tile:hover,a.splash-tile:visited{text-decoration:none;color:var(--ink)}
