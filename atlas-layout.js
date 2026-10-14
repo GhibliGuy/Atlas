@@ -1,4 +1,27 @@
 /* Layout only. Does not access or modify collected research data. */
+// The Atlas Collector banner (public site only): a thin strip on top of every page until "Don't show this again".
+(() => {
+  if (!window.BXC_PUBLIC) return;
+  const KEY = 'bxcCollectorBannerHidden', STORE = 'https://chromewebstore.google.com/detail/atlas-collector/njnlakpjngjfabbmkcmliipecmpjlgea';
+  try { if (localStorage.getItem(KEY) === '1') return; } catch {}
+  const show = () => {
+    if (document.getElementById('bxcBanner') || !document.body) return;
+    const b = document.createElement('div');
+    b.id = 'bxcBanner'; b.setAttribute('role', 'region'); b.setAttribute('aria-label', 'Atlas Collector');
+    b.innerHTML = '<span class="bxb-text">The <b>Atlas Collector</b> is now live<span class="bxb-more">: a Chrome extension that fills in what the Atlas is missing while you play</span>.</span>'
+      + '<a class="bxb-get" href="' + STORE + '" target="_blank" rel="noopener">Add to Chrome</a>'
+      + '<button type="button" class="bxb-hide">Don’t show this again</button>';
+    b.querySelector('.bxb-hide').addEventListener('click', () => {
+      try { localStorage.setItem(KEY, '1'); } catch {}
+      b.remove(); document.documentElement.style.removeProperty('--bxc-banner');
+      if (typeof map !== 'undefined' && map.invalidateSize) map.invalidateSize({ pan: false });
+    });
+    document.body.prepend(b);
+    const fit = () => { if (b.isConnected) document.documentElement.style.setProperty('--bxc-banner', b.offsetHeight + 'px'); };
+    fit(); addEventListener('resize', fit);
+  };
+  if (document.body) show(); else document.addEventListener('DOMContentLoaded', show);
+})();
 (() => {
   const main = document.getElementById('main');
   const splitter = document.getElementById('splitter');
