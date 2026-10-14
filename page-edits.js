@@ -308,6 +308,139 @@ globalThis.BXC_PAGE_EDITS = {
    "notes": "",
    "done": true,
    "updatedAt": 1791777799204
+  },
+  "quest:binxonia-a-cord-of-pine": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
+  },
+  "quest:binxonia-a-winters-wool": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
+  },
+  "quest:binxonia-scriptorium-apprentice": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
+  },
+  "quest:crypt-names-on-the-stones": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
+  },
+  "quest:longmeadow-quiet-rows": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
+  },
+  "quest:longmeadow-silver-in-the-deep": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
+  },
+  "quest:longmeadow-what-jill-knows": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
+  },
+  "quest:mage-acid-what-cuts-a-gem": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
+  },
+  "quest:mage-fire-still-burning": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
+  },
+  "quest:mage-restoration-small-mercies": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
+  },
+  "quest:mage-shock-fourth-gallery": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
+  },
+  "quest:mining-trainer-quest": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
+  },
+  "quest:mossreach-downwind": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
+  },
+  "quest:pirate-treasure": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
+  },
+  "quest:rustpick-lamps-out": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
+  },
+  "quest:willow-downs-the-matriarch": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
+  },
+  "quest:windthorne-gullet": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
+  },
+  "quest:wispmeyer-road-nobody-rides": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
+  },
+  "quest:wispmeyer-the-white-mare": {
+   "first": "",
+   "steps": [],
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792006828182
   }
  }
 };
