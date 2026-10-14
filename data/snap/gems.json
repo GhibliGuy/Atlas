@@ -1,4 +1,8 @@
 [
+{"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"time":1792019277344,"sessionId":"51491d1f","key":514},
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"time":1792018273759,"sessionId":"51491d1f","key":513},
+{"type":"gem.found","typeId":"gem-diamond","carat":1.5,"dropped":false,"time":1792018200318,"sessionId":"51491d1f","key":512},
+{"type":"gem.found","typeId":"gem-ruby","carat":1,"dropped":false,"time":1792017607931,"sessionId":"51491d1f","key":511},
 {"type":"gem.found","typeId":"gem-iolite","carat":1,"dropped":false,"time":1792008828506,"sessionId":"ee99bc87","key":510},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1792008232927,"sessionId":"35861696","key":509},
 {"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"time":1792007945126,"sessionId":"c14928d5","key":508},
