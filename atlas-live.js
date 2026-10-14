@@ -5165,13 +5165,16 @@ function newsHtml(){
   // that differs from its type's name gets one: #/npc/<slug of the name>.
   const npcSlug=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
   let npcCache={npcs:null,obs:null,map:new Map()};
+  // names never shown (the user's request; keep in step with HIDDEN_NPC_NAMES in background.js, which also strips them
+  // from what is published): they count as ordinary monsters of their kind
+  const HIDDEN_NPC_NAMES=new Set(['ghibs delight']);
   function namedNpcs(){
     const npcs=snapshot?.npcs,obs=snapshot?.npcObservations;
     if(npcCache.npcs===npcs&&npcCache.obs===obs)return npcCache.map;
     const typeName=new Map((D.catalog||[]).map(m=>[m.typeId,String(m.name||'').toLowerCase()]));
     const map=new Map();
     const add=(n,isObs)=>{
-      const name=String(n.name||'').trim();if(!name||!n.typeId)return;
+      const name=String(n.name||'').trim();if(!name||!n.typeId||HIDDEN_NPC_NAMES.has(name.toLowerCase()))return;
       const plain=typeName.get(n.typeId)||String(n.typeId).replace(/-/g,' ');
       if(name.toLowerCase()===plain||name.toLowerCase()===String(n.typeId).replace(/-/g,' '))return;
       const k=npcSlug(name);let e=map.get(k);if(!e)map.set(k,e={slug:k,name,typeId:n.typeId,levels:new Map(),cls:new Set(),zones:new Map(),pts:[],seen:0,maxHp:null});
