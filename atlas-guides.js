@@ -299,7 +299,16 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   const RF_CHANCE=[.9,.85,.78,.7,.62,.55,.47,.4,.33,.26,.2],RF_GEM=c=>c>=11?4:c>=10?3.5:c>=9?3:c>=8?2.5:2,RF_FEE=c=>1500+500*c,RF_REROLL_FEE=[1000,1500,2000,3000];
   globalThis.bxcReforge={chance:RF_CHANCE,fee:RF_FEE,gem:RF_GEM};   // for the Quality calculator's infusing planner
   const famName=f=>{const r=globalThis.BXC_FAMILY_RULES?.families?.[f];return r&&r.name?r.name:pretty(f)};
-  const reagentSrc=srcs=>srcs.map(([f,cls])=>esc(famName(f))+(cls?' ('+esc(cls)+'s)':'')).join(', ');
+  // the monsters of a family (the Atlas's catalog, lowest level first), each a link to its Bestiary page
+  const famMembers=f=>((typeof D!=='undefined'?D.catalog:[])||[]).filter(m=>m.family===f).sort((a,b)=>(a.baseLevel||0)-(b.baseLevel||0));
+  const famMonsters=f=>famMembers(f).map(m=>monster(m.typeId,m.name)).join(', ');
+  // "Dropped by": the family, then its monsters as links (just the link when the family is one monster of that name)
+  const reagentSrc=srcs=>srcs.map(([f,cls])=>{
+    const ms=famMembers(f),fam=esc(famName(f))+(cls?' <span class="muted">('+esc(cls)+'s only)</span>':'');
+    if(!ms.length)return fam;
+    if(ms.length===1&&!cls&&String(ms[0].name).toLowerCase()===String(famName(f)).toLowerCase())return famMonsters(f);
+    return `<b>${fam}</b>: ${famMonsters(f)}`;
+  }).join('<br>');
   // for the Bestiary: the reagent(s) a monster of this family (and class) can drop
   globalThis.bxcReagentsFor=(family,npcClass)=>REAGENTS.filter(([,,src])=>src.some(([f,cls])=>f===family&&(!cls||cls===npcClass))).map(([id,kind])=>({id,kind}));
   globalThis.bxcReagentsByFamily=family=>REAGENTS.filter(([,,src])=>src.some(([f])=>f===family)).map(([id,kind,src])=>({id,kind,onlyClass:(src.find(([f])=>f===family)||[])[1]||null}));
@@ -556,11 +565,11 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   // which monster families drop it - the game's rules (REAGENTS, RF_ENCH/RF_STONE/RF_LINE), as on the Reforging page.
   globalThis.bxcReagentIds=()=>REAGENTS.map(r=>r[0]);   // the home page tile's pictures
   reg({slug:'reagents',group:'Gear, gems & enchanting',title:'Reagents',blurb:'The rare monster drops used for reforging: what each one is for and which monsters drop it.',build:()=>{
-    const byFam=REAGENTS.flatMap(([id,kind,src])=>src.map(([f,cls])=>[famName(f)+(cls?' ('+cls+'s)':''),id,kind])).sort((x,y)=>x[0].localeCompare(y[0]));
+    const byFam=REAGENTS.flatMap(([id,kind,src])=>src.map(([f,cls])=>[famName(f)+(cls?' ('+cls+'s only)':''),id,kind,f])).sort((x,y)=>x[0].localeCompare(y[0]));
     return {lede:'Reagents are rare drops from certain monster families. You need them to <b>reforge</b> gear: <b>enchant reagents</b> infuse an enchant one carat higher, and <b>gear-line reagents</b> reroll a piece’s quality.',sections:[
       ['what','How you get them',`<p>Every monster kind that feeds a reagent has a <b>small chance</b> to drop it on any kill. <b>Elites drop them far more often</b>, and an <b>elite boss drops every reagent its kind carries</b>. Reagents <b>don’t stack</b>: each takes its own bag slot and trades on the Exchange one at a time, so you can buy the one you need. Drop chances aren’t published. Each monster page in the Bestiary says which reagent it drops.</p><p>What to do with them: ${guide('reforging')}.</p>`],
       ['list','Every reagent',reagentsHtml()],
-      ['by-family','By monster family',table(['Family','Reagent','Used to'],byFam.map(([f,id,kind])=>[esc(f),item(id),kind==='enchant'?'infuse an enchant':'reroll quality']))],
+      ['by-family','By monster family',table(['Family','Its monsters','Reagent','Used to'],byFam.map(([f,id,kind,fid])=>[esc(f),famMonsters(fid)||'<span class="muted">—</span>',item(id),kind==='enchant'?'infuse an enchant':'reroll quality']))],
       ['source','Where this comes from',note('From the game’s own rules file: which families drop which reagent, and what each one infuses or rerolls.')]
     ],related:['reforging','quality-and-enchanting','gems']};
   }});
