@@ -1,4 +1,8 @@
 [
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1791948932701,"sessionId":"37c96e17","key":491},
+{"type":"gem.found","typeId":"gem-amber","carat":2.5,"dropped":false,"time":1791947934995,"sessionId":"1ebdd514","key":490},
+{"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"npcName":"Highwayman","time":1791946397345,"sessionId":"f8feeff0","key":489},
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"time":1791945873881,"sessionId":"50a889d7","key":488},
 {"type":"gem.found","typeId":"gem-onyx","carat":1,"dropped":false,"time":1791941656694,"sessionId":"9af74e0c","key":487},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1791941649077,"sessionId":"f937a946","key":486},
 {"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"time":1791941011081,"sessionId":"9af74e0c","key":485},
