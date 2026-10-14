@@ -552,6 +552,18 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       ['source','Where this comes from',note('From the game’s own rules: the list of unique items, the effect wording the game shows in its tooltips, and its drop-chance function. It updates whenever the game does.')]
     ],related:['reforging','quality-and-enchanting','combat']};
   }});
+  // ---- Reagents (14 Oct 2026): their own page (the Reforging guide keeps its section): every reagent, what it is for and
+  // which monster families drop it - the game's rules (REAGENTS, RF_ENCH/RF_STONE/RF_LINE), as on the Reforging page.
+  globalThis.bxcReagentIds=()=>REAGENTS.map(r=>r[0]);   // the home page tile's pictures
+  reg({slug:'reagents',group:'Gear, gems & enchanting',title:'Reagents',blurb:'The rare monster drops used for reforging: what each one is for and which monsters drop it.',build:()=>{
+    const byFam=REAGENTS.flatMap(([id,kind,src])=>src.map(([f,cls])=>[famName(f)+(cls?' ('+cls+'s)':''),id,kind])).sort((x,y)=>x[0].localeCompare(y[0]));
+    return {lede:'Reagents are rare drops from certain monster families. You need them to <b>reforge</b> gear: <b>enchant reagents</b> infuse an enchant one carat higher, and <b>gear-line reagents</b> reroll a piece’s quality.',sections:[
+      ['what','How you get them',`<p>Every monster kind that feeds a reagent has a <b>small chance</b> to drop it on any kill. <b>Elites drop them far more often</b>, and an <b>elite boss drops every reagent its kind carries</b>. Reagents <b>don’t stack</b>: each takes its own bag slot and trades on the Exchange one at a time, so you can buy the one you need. Drop chances aren’t published. Each monster page in the Bestiary says which reagent it drops.</p><p>What to do with them: ${guide('reforging')}.</p>`],
+      ['list','Every reagent',reagentsHtml()],
+      ['by-family','By monster family',table(['Family','Reagent','Used to'],byFam.map(([f,id,kind])=>[esc(f),item(id),kind==='enchant'?'infuse an enchant':'reroll quality']))],
+      ['source','Where this comes from',note('From the game’s own rules file: which families drop which reagent, and what each one infuses or rerolls.')]
+    ],related:['reforging','quality-and-enchanting','gems']};
+  }});
   // ---- Pendants (11 Oct 2026): the nine pendants and what each does at every carat, in the game's own words (game-data.js
   // `pendants`, built by data-from-rules.js from the rules' pendant text function, 1 to 6 carats - the rules' cap).
   reg({slug:'pendants',group:'Gear, gems & enchanting',title:'Pendants',blurb:'The nine pendants and what each does at every carat.',build:()=>{
