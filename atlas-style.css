@@ -1342,3 +1342,4 @@ html[data-theme="light"] #content a.uq-name:not(.page-link){color:#a8510a}
 
 /* the home page's one outside link (Atlas Collector) looks like every other tile */
 a.splash-tile,a.splash-tile:hover,a.splash-tile:visited{text-decoration:none;color:var(--ink)}
+.splash-legal{margin:4px 0 0;font-size:12.5px}.splash-legal a{color:var(--muted)}.splash-legal a:hover{color:var(--ink)}

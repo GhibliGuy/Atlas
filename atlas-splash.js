@@ -179,7 +179,7 @@
       ${fightHtml()}
       ${IN_APP?'<section class="splash-news" hidden aria-labelledby="newsH"><h2 id="newsH">What’s new in Binxonia</h2><div class="splash-news-list"></div></section>':''}
       ${tiles}
-      <footer class="splash-foot"><button type="button" class="splash-enter">Open the map</button><label><input type="checkbox" id="splashSkip"> Go straight to the map next time</label></footer>
+      <footer class="splash-foot"><button type="button" class="splash-enter">Open the map</button><label><input type="checkbox" id="splashSkip"> Go straight to the map next time</label>${IN_APP?'':'<p class="splash-legal"><a href="collector-privacy.html">Atlas Collector privacy policy</a></p>'}</footer>
     </div>`;
     document.body.append(el);cachedIcons();
     el.querySelector('#splashSkip').checked=get(SKIP_KEY)==='1';
