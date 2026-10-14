@@ -1,4 +1,10 @@
 [
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"time":1791991945809,"sessionId":"0033122e","key":500},
+{"type":"gem.found","typeId":"gem-emerald","carat":1.5,"dropped":false,"time":1791990789607,"sessionId":"9a87e64c","key":499},
+{"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"time":1791989894319,"sessionId":"1ce23754","key":498},
+{"type":"gem.found","typeId":"gem-sapphire","carat":1,"dropped":false,"time":1791988661497,"sessionId":"1ce23754","key":497},
+{"type":"gem.found","typeId":"gem-iolite","carat":1,"dropped":false,"time":1791987451414,"sessionId":"72cfb0e0","key":496},
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"time":1791986728265,"sessionId":"1ce23754","key":495},
 {"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"npcName":"Sellsword","time":1791983800512,"sessionId":"3c4aedbe","key":494},
 {"type":"gem.found","typeId":"gem-amber","carat":2,"dropped":false,"time":1791983457387,"sessionId":"6fdf1b7d","key":493},
 {"type":"gem.found","typeId":"gem-iolite","carat":1,"dropped":false,"time":1791982312775,"sessionId":"e3d32b2f","key":492},
