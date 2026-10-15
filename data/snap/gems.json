@@ -1,4 +1,6 @@
 [
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"npcName":"Venn the Crateminder","time":1792075645273,"sessionId":"1ffe0569","key":529},
+{"type":"gem.found","typeId":"gem-sapphire","carat":2,"dropped":false,"time":1792073921576,"sessionId":"ca552659","key":528},
 {"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"time":1792071728120,"sessionId":"ca552659","key":527},
 {"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"time":1792071343150,"sessionId":"ca552659","key":526},
 {"type":"gem.found","typeId":"gem-onyx","carat":1.5,"dropped":false,"time":1792070046024,"sessionId":"ca552659","key":525},
