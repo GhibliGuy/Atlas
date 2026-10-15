@@ -1,4 +1,5 @@
 [
+{"type":"gem.found","typeId":"gem-ruby","carat":1.5,"dropped":false,"time":1792029995330,"sessionId":"c206552a","key":519},
 {"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"time":1792026575307,"sessionId":"51491d1f","key":518},
 {"type":"gem.found","typeId":"gem-onyx","carat":2,"dropped":false,"time":1792025159772,"sessionId":"51491d1f","key":517},
 {"type":"gem.found","typeId":"gem-ruby","carat":1,"dropped":false,"time":1792024475093,"sessionId":"51491d1f","key":516},
