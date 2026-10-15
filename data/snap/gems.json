@@ -1,4 +1,12 @@
 [
+{"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"time":1792071728120,"sessionId":"ca552659","key":527},
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"time":1792071343150,"sessionId":"ca552659","key":526},
+{"type":"gem.found","typeId":"gem-onyx","carat":1.5,"dropped":false,"time":1792070046024,"sessionId":"ca552659","key":525},
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"time":1792069132671,"sessionId":"2679f2bd","key":524},
+{"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"time":1792068779098,"sessionId":"2679f2bd","key":523},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1792067502372,"sessionId":"b4e8ba1b","key":522},
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"time":1792066599296,"sessionId":"2679f2bd","key":521},
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"time":1792065900330,"sessionId":"2679f2bd","key":520},
 {"type":"gem.found","typeId":"gem-ruby","carat":1.5,"dropped":false,"time":1792029995330,"sessionId":"c206552a","key":519},
 {"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"time":1792026575307,"sessionId":"51491d1f","key":518},
 {"type":"gem.found","typeId":"gem-onyx","carat":2,"dropped":false,"time":1792025159772,"sessionId":"51491d1f","key":517},
