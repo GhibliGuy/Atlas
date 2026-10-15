@@ -1,4 +1,6 @@
 [
+{"sessionId":"492a3283","time":1792097140196,"fromZ":null,"toZ":-244,"zoneName":"The Ashen Citadel","pvpMode":"lawless","atX":1843.3,"atY":366.9,"key":5253},
+{"sessionId":"132429a4","time":1792096423143,"fromZ":null,"toZ":-244,"zoneName":"The Ashen Citadel","pvpMode":"lawless","atX":1843.4,"atY":367.1,"key":5252},
 {"sessionId":"70046273","time":1792093878329,"fromZ":null,"toZ":-244,"zoneName":"The Ashen Citadel","pvpMode":"lawless","atX":1843,"atY":366.9,"key":5251},
 {"sessionId":"a481b1d7","time":1792093223809,"fromZ":null,"toZ":-244,"zoneName":"The Ashen Citadel","pvpMode":"lawless","atX":1843.7,"atY":351,"key":5250},
 {"sessionId":"069e348e","time":1792092290592,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":5249},
@@ -4996,7 +4998,5 @@
 {"sessionId":"53ad2dff","time":1790210056086,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":13,"atY":-12,"key":255},
 {"sessionId":"c43bf3b2","time":1790210052226,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":254},
 {"sessionId":"79c88ce6","time":1790204117572,"fromZ":-10,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":253},
-{"sessionId":"79c88ce6","time":1790204020604,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":15,"atY":-8,"key":252},
-{"sessionId":"614dba5a","time":1790196536330,"fromZ":-1,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":16.82,"atY":-11,"key":251},
-{"sessionId":"614dba5a","time":1790196483989,"fromZ":20,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":135.01,"atY":-74.98,"key":250}
+{"sessionId":"79c88ce6","time":1790204020604,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":15,"atY":-8,"key":252}
 ]
