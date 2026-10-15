@@ -1,4 +1,6 @@
 [
+{"sessionId":"3832f08b","time":1792037632122,"fromZ":null,"toZ":-205,"zoneName":"Wraithhollow","pvpMode":"lawless","atX":1005.2,"atY":846.5,"key":5095},
+{"sessionId":"ffa3e63d","time":1792036124933,"fromZ":null,"toZ":-205,"zoneName":"Wraithhollow","pvpMode":"lawless","atX":1005.9,"atY":847.6,"key":5094},
 {"sessionId":"042f9216","time":1792035883924,"fromZ":null,"toZ":-205,"zoneName":"Wraithhollow","pvpMode":"lawless","atX":1005.7,"atY":847.1,"key":5093},
 {"sessionId":"59f50474","time":1792035776402,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":5092},
 {"sessionId":"59f50474","time":1792035755935,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":5091},
@@ -4996,7 +4998,5 @@
 {"sessionId":"b5674d73","time":1790009619183,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":14,"atY":-12,"key":84},
 {"sessionId":"4388e389","time":1790009612468,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":14,"atY":-12,"key":83},
 {"sessionId":"30b04e04","time":1790008798477,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":13,"atY":-12,"key":82},
-{"sessionId":"f2f04503","time":1790008795270,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":13,"atY":-14,"key":81},
-{"sessionId":"513c8346","time":1790008774686,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":13,"atY":-14,"key":80},
-{"sessionId":"2319f683","time":1790008719993,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":13,"atY":-14,"key":79}
+{"sessionId":"f2f04503","time":1790008795270,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":13,"atY":-14,"key":81}
 ]
