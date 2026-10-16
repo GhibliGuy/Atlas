@@ -1,4 +1,11 @@
 [
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"time":1792165839318,"sessionId":"f4114f19","key":550},
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"time":1792165486413,"sessionId":"f4114f19","key":549},
+{"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"time":1792162973874,"sessionId":"85218009","key":548},
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"time":1792161601713,"sessionId":"85218009","key":547},
+{"type":"gem.found","typeId":"gem-sapphire","carat":1,"dropped":false,"time":1792160974022,"sessionId":"85218009","key":546},
+{"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"npcName":"Lord Vorhal the Dragonbane","time":1792160844077,"sessionId":"e5539760","key":545},
+{"type":"gem.found","typeId":"gem-diamond","carat":2,"dropped":false,"time":1792160006206,"sessionId":"14187cef","key":544},
 {"type":"gem.found","typeId":"gem-ruby","carat":1.5,"dropped":false,"time":1792156297268,"sessionId":"55b454dd","key":543},
 {"type":"gem.found","typeId":"gem-emerald","carat":1,"dropped":false,"time":1792155889945,"sessionId":"55b454dd","key":542},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"npcName":"Virikh Templar","time":1792155057617,"sessionId":"daf3a108","key":541},
