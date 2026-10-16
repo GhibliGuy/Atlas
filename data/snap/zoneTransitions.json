@@ -1,4 +1,6 @@
 [
+{"sessionId":"e0ea3214","time":1792121408679,"fromZ":null,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":null,"atY":null,"key":5301},
+{"sessionId":"3056f31b","time":1792121305043,"fromZ":null,"toZ":-244,"zoneName":"The Ashen Citadel","pvpMode":"lawless","atX":1842.9,"atY":367.2,"key":5300},
 {"sessionId":"ccc4e6b8","time":1792119242601,"fromZ":null,"toZ":-244,"zoneName":"The Ashen Citadel","pvpMode":"lawless","atX":null,"atY":null,"key":5299},
 {"sessionId":"d0069bf4","time":1792119082144,"fromZ":null,"toZ":-244,"zoneName":"The Ashen Citadel","pvpMode":"lawless","atX":1842.5,"atY":365.4,"key":5298},
 {"sessionId":"b7557db1","time":1792118407610,"fromZ":null,"toZ":-244,"zoneName":"The Ashen Citadel","pvpMode":"lawless","atX":1842.8,"atY":366.4,"key":5297},
@@ -4996,7 +4998,5 @@
 {"sessionId":"362bce71","time":1790282810079,"fromZ":-10,"toZ":-35,"zoneName":"Binxonia","pvpMode":"none","atX":-21.95,"atY":16.94,"key":305},
 {"sessionId":"cfb5915a","time":1790282716842,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":304},
 {"sessionId":"362bce71","time":1790282703180,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":13,"atY":-12,"key":303},
-{"sessionId":"1ee9e0af","time":1790277475328,"fromZ":-100,"toZ":-101,"zoneName":"Agauton Mine","pvpMode":"lawless","atX":978.36,"atY":155.24,"key":302},
-{"sessionId":"1ee9e0af","time":1790277431190,"fromZ":-10,"toZ":-100,"zoneName":"Midland Mine","pvpMode":"none","atX":913.42,"atY":191.57,"key":301},
-{"sessionId":"1ee9e0af","time":1790277179236,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":13,"atY":-13,"key":300}
+{"sessionId":"1ee9e0af","time":1790277475328,"fromZ":-100,"toZ":-101,"zoneName":"Agauton Mine","pvpMode":"lawless","atX":978.36,"atY":155.24,"key":302}
 ]
