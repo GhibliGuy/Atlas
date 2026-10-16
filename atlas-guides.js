@@ -742,11 +742,12 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const enchChips=(id,fams)=>Object.entries(ER).filter(([k])=>fams.includes(k)).flatMap(([kind,l])=>l.filter(e=>e.gems.includes(id)).map(e=>chip(id,`data-pop="one" data-kind="${esc(kind)}" data-ench="${esc(e.name)}"`,e.name.replace(/^of (the )?/,'')+(kind==='bow'?' (bow)':''),pretty(kind)+': '+e.effect))).join('')||NONE;
     const artisan=(GD&&GD.enchants||[]).find(e=>e.family==='tool');
     const wornChip=(id,arr,what)=>{const t=(arr||[]).find(x=>x.gem===id)?.text;if(!t)return NONE;const w=t[3]||t[1]||'',[nm,...rest]=w.split(': ');return chip(id,`data-pop="${what}"`,rest.length?nm:pretty(what),(rest.length?rest.join(': '):w)+' (at 3 carats)')};
-    // one card per gem, every card the same six lines (a red cross where the gem goes into nothing of that kind), so
+    // one card per gem, every card the same eight lines (a red cross where the gem goes into nothing of that kind), so
     // they read alike and line up; staff enchants on their own line. Any gem makes a tool of the Artisan.
     const line=(k,v)=>`<div class="gg-line"><span class="gg-line-k">${k}</span><span class="gg-chips">${v}</span></div>`;
     const cards=`<div class="gg-cards">${Object.entries(EG).map(([id,g])=>`<div class="gg-card"><div class="gg-card-head">${item('gem-'+id,g.name)}<span class="gg-card-skill">${skillGuideLink(g.found)}</span></div>`
       +line('Weapon',enchChips(id,['weapon','bow']))+line('Staff',enchChips(id,['staff']))+line('Armor',(()=>{const own=enchChips(id,['armor']);return own!==NONE?own:chip(id,'data-pop="filler"','Filler','Any gem can be the third gem of an armour enchant')})())   // no armour recipe of its own: it can still fill the third slot of one
+      +line('Shield',enchChips(id,['shield']))+line('Book',enchChips(id,['spellbook']))   // shield and spellbook enchants (15 Oct 2026)
       +line('Tool',artisan?chip(id,`data-pop="one" data-kind="tool" data-ench="${esc(artisan.name)}"`,'Artisan','Tool: '+(artisan.effect?.[4]||'+5% success a carat')+' (any one gem, set while forging)'):NONE)
       +line('Ring',wornChip(id,GD&&GD.rings,'ring'))+line('Pendant',wornChip(id,GD&&GD.pendants,'pendant'))+'</div>').join('')}</div>`;
     // Rarity is a gem's size, not its kind (a skill's gems come up at random): one tile per carat in the rarity's colour,

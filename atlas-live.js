@@ -4909,6 +4909,8 @@ function newsHtml(){
   const r1=v=>Math.round(v*10)/10;
   function gearOf(id){
     id=String(id||'');
+    // the werewolf spellbook is named after the beast, its material is werewolfpelt
+    if(id==='werewolf-spellbook'&&G_MATERIAL.werewolfpelt)return {type:'spellbook',mat:'werewolfpelt',tier:G_MATERIAL.werewolfpelt[0],kind:G_MATERIAL.werewolfpelt[1]};
     const mat=Object.keys(G_MATERIAL).filter(m=>id.startsWith(m+'-')).sort((a,b)=>b.length-a.length)[0];
     if(!mat){if(G_TOOLS.has(id)&&G_MATERIAL.iron)return {type:'tool',mat:'iron',tier:G_MATERIAL.iron[0],kind:'metal'};if(id==='wand')return {type:'staff',mat:'basic',tier:0,kind:'wood'};return null}
     const rest=id.slice(mat.length+1),[tier,kind]=G_MATERIAL[mat];
@@ -4916,6 +4918,7 @@ function newsHtml(){
     if(rest==='shield')return {type:'shield',mat,tier,kind};
     if(G_WEAPON[rest])return {type:'weapon',mat,tier,kind,w:G_WEAPON[rest],name:rest};
     if(rest==='staff')return {type:'staff',mat,tier,kind};
+    if(rest==='spellbook')return {type:'spellbook',mat,tier,kind};
     if(G_TOOLS.has(rest)&&kind==='metal')return {type:'tool',mat,tier,kind};
     return null;
   }
@@ -4955,21 +4958,27 @@ function newsHtml(){
   const S_ENCH=[['','No enchant'],['staff-fire','of Fire'],['staff-ice','of Frost'],['staff-shock','of Lightning'],['staff-acid','of Acid']],S_SCHOOL={'staff-fire':'fire','staff-ice':'ice','staff-shock':'shock','staff-acid':'acid'};
   const A_ENCH=[['','No enchant'],['titan','of the Titan'],['camel','of the Camel'],['weasel','of the Weasel'],['leopard','of the Leopard'],['sage','of the Sage'],['mage','of the Mage']];
   const A_ATTR={titan:'STR',camel:'END',weasel:'DEX',leopard:'SPD',sage:'INT',mage:'MAG'},A_PER_CARAT=5;
-  const isArmorish=g=>!!g&&(g.type==='armor'||g.type==='shield');
-  const enchList=g=>g&&g.type==='staff'?S_ENCH:g&&g.type==='tool'?T_ENCH:isArmorish(g)?A_ENCH:g&&g.type==='weapon'&&!/bow/.test(g.name||'')?W_ENCH.filter(e=>e[0]!=='seeking'):W_ENCH;
-  const enchKey=g=>g&&g.type==='staff'?'bxcStaffEnch':g&&g.type==='tool'?'bxcToolEnch':g&&g.type==='shield'?'bxcShieldEnch':g&&g.type==='armor'?'bxcArmorEnch':'bxcWeaponEnch';
-  // shields take no enchant in the game (even though the rules file would allow an armor one), so none is offered
-  const hasEnchant=g=>!!g&&(g.type==='weapon'||g.type==='tool'||g.type==='armor'||g.type==='staff');
-  const W_SHORT={'staff-fire':'Fire','staff-ice':'Frost','staff-shock':'Lightning','staff-acid':'Acid',titan:'Titan',camel:'Camel',weasel:'Weasel',leopard:'Leopard',sage:'Sage',mage:'Mage',artisan:'Artisan',destruction:'Destruction',burn:'Flame',freeze:'Freezing',shock:'Storm',corrode:'Corrosion',seeking:'Seeking'};
+  // shields and spellbooks have their own enchants (game rules, 15 Oct 2026): a diamond and two of one gem; what they
+  // do comes from the game's own wording (BXC_GAME_DATA.enchants, 1c scaled by the carats)
+  const SH_ENCH=[['','No enchant'],['tortoise','of the Tortoise'],['owl','of the Owl'],['hedgehog','of the Hedgehog'],['mastiff','of the Mastiff']];
+  const B_ENCH=[['','No enchant'],['focus','of Focus'],['wellspring','of the Wellspring'],['insight','of Insight'],['mercy','of Mercy']];
+  const OWN_GEMS={tortoise:'onyx',owl:'sapphire',hedgehog:'emerald',mastiff:'ruby',focus:'topaz',wellspring:'pearl',insight:'iolite',mercy:'amber'};
+  const ownEffect=(k,c)=>{const e=(globalThis.BXC_GAME_DATA?.enchants||[]).find(x=>x.id===k),one=String(e&&e.effect&&e.effect[1]||'');return one?one.replace(/\d+(\.\d+)?/,m=>String(+(+m*c).toFixed(3))):''};
+  const isArmorish=g=>!!g&&g.type==='armor';
+  const enchList=g=>g&&g.type==='staff'?S_ENCH:g&&g.type==='tool'?T_ENCH:g&&g.type==='shield'?SH_ENCH:g&&g.type==='spellbook'?B_ENCH:isArmorish(g)?A_ENCH:g&&g.type==='weapon'&&!/bow/.test(g.name||'')?W_ENCH.filter(e=>e[0]!=='seeking'):W_ENCH;
+  const enchKey=g=>g&&g.type==='staff'?'bxcStaffEnch':g&&g.type==='tool'?'bxcToolEnch':g&&g.type==='shield'?'bxcShieldEnch2':g&&g.type==='spellbook'?'bxcBookEnch':g&&g.type==='armor'?'bxcArmorEnch':'bxcWeaponEnch';
+  const hasEnchant=g=>!!g&&['weapon','tool','armor','staff','shield','spellbook'].includes(g.type);
+  const W_SHORT={'staff-fire':'Fire','staff-ice':'Frost','staff-shock':'Lightning','staff-acid':'Acid',titan:'Titan',camel:'Camel',weasel:'Weasel',leopard:'Leopard',sage:'Sage',mage:'Mage',tortoise:'Tortoise',owl:'Owl',hedgehog:'Hedgehog',mastiff:'Mastiff',focus:'Focus',wellspring:'Wellspring',insight:'Insight',mercy:'Mercy',artisan:'Artisan',destruction:'Destruction',burn:'Flame',freeze:'Freezing',shock:'Storm',corrode:'Corrosion',seeking:'Seeking'};
   // what the enchant adds to a hit (the same at every quality: it is worked from the weapon's average roll)
   function wEnchAdd(g,en){if(g&&g.type==='tool'&&en&&en.ench==='artisan'&&en.c)return {txt:`+${Math.round(T_PER_CARAT*en.c*100)}% success`,dmg:0};
     if(g&&g.type==='staff'&&en&&S_SCHOOL[en.ench]&&en.c)return {txt:`+${en.c} ${S_SCHOOL[en.ench]} school`,dmg:0};
+    if(en&&OWN_GEMS[en.ench]&&en.c)return {txt:ownEffect(en.ench,en.c),dmg:0};
     if(isArmorish(g)&&en&&A_ATTR[en.ench]&&en.c)return {txt:`+${A_PER_CARAT*en.c} ${A_ATTR[en.ench]}`,dmg:0};
     if(!g||g.type!=='weapon'||!en||!en.ench||!en.c)return null;const [,a,b,mult]=g.w,v=(a+b)/2*en.c*W_PER_CARAT*mult;
     return en.ench==='seeking'?{txt:`+${2*en.c}% to hit`,dmg:0}:en.ench==='destruction'?{txt:`+${r1(v)} damage`,dmg:v}:{txt:`+${r1(v)} ${en.ench}`,dmg:v}}
   const W_PER_CARAT=globalThis.BXC_GAME_DATA?.combat?.enchantPerCarat||1/4.5;
   // weapons: three gems of up to 1 carat a metal tier; tools: one gem, same cap (iron 1 ... titanium 4)
-  const wEnchCap=g=>g&&(g.type==='weapon'||g.type==='staff'||isArmorish(g))?3*Math.max(0,g.tier||0):g&&g.type==='tool'?Math.max(0,g.tier||0):0;
+  const wEnchCap=g=>g&&(g.type==='weapon'||g.type==='staff'||g.type==='shield'||g.type==='spellbook'||isArmorish(g))?3*Math.max(0,g.tier||0):g&&g.type==='tool'?Math.max(0,g.tier||0):0;
   const gemsIn=g=>g&&g.type==='tool'?1:3;
   function wEnchState(g){let v={};try{v=JSON.parse(localStorage.getItem(enchKey(g))||'{}')}catch(_){}
     const ench=enchList(g).some(e=>e[0]===v.ench)?v.ench:'',c=Math.max(0,Math.min(wEnchCap(g),Math.floor(+v.c||0)));return {ench:c?ench:'',c:ench?c:0}}
@@ -4985,7 +4994,8 @@ function newsHtml(){
       const set=v=>Math.min(.75,(v*5*m)/(v*5*m+25));
       return {main:`${piece(base[0])} armor · ${piece(base[1])} magic defense${en&&A_ATTR[en.ench]&&en.c?` · +${A_PER_CARAT*en.c} ${A_ATTR[en.ench]}`:''}`,set:`${Math.round(set(base[0])*100)}% blows · ${Math.round(set(base[1])*100)}% spells`};
     }
-    if(g.type==='shield'){const t=g.kind==='metal'&&g.tier>0?G_SHIELD_METAL:G_SHIELD_SOFT;return {main:`${r1((g.mat==='thak'?7.5:t[g.tier])*m)} shield defense${en&&A_ATTR[en.ench]&&en.c?` · +${A_PER_CARAT*en.c} ${A_ATTR[en.ench]}`:''}`}}
+    if(g.type==='shield'){const t=g.kind==='metal'&&g.tier>0?G_SHIELD_METAL:G_SHIELD_SOFT;return {main:`${r1((g.mat==='thak'?7.5:t[g.tier])*m)} shield defense${en&&OWN_GEMS[en.ench]&&en.c?' · '+ownEffect(en.ench,en.c):''}`}}
+    if(g.type==='spellbook')return {main:`Tier ${g.tier} spellbook${en&&OWN_GEMS[en.ench]&&en.c?' · '+ownEffect(en.ench,en.c):''}`};
     // the game adds 10% of the quality's value to the metal's bonus (it does not multiply it)
     if(g.type==='staff'){const steps=[0,1,4,7,12][g.tier]||0,sc=en&&S_SCHOOL[en.ench]&&en.c?en.c:0;
       return {main:`${steps?`+${steps} spell steps · `:'no spell steps · '}spells ×${r1(m*100)/100}${sc?` · +${sc} ${S_SCHOOL[en.ench]} school, +1 damage per 10 INT`:''}`,avg:steps*m}}
@@ -5074,7 +5084,7 @@ function newsHtml(){
     const cur=en.ench||'',curC=en.c||0;
     const ench=`<div class="q-picker w-ench" data-gear="${esc(id)}" role="group" aria-label="Enchant">${enchList(g).map(([k])=>`<button type="button" class="q-chip${k===cur?' on':''}" data-wench="${k}">${esc(short[k])}</button>`).join('')}</div>`;
     const carats=cur?`<div class="q-picker w-carat" role="group" aria-label="Carats">${Array.from({length:cap},(_,i)=>i+1).map(c=>{const big=Math.ceil(c/n),r=gemRar(big);return `<button type="button" class="q-chip${c===curC?' on':''} q-${RARITY_Q[r]}" data-wcarat="${c}" title="${n>1?`${c} carats: three gems, the biggest ${big}c`:`a ${c}-carat gem`} (${r})">${c}c</button>`}).join('')}</div>`:'';
-    return ench+carats+(cur?`<p class="s muted">${n>1?`Three gems${isArmorish(g)?' (iolite, the kind\'s own gem and any one)':''}, up to ${cap/3}c each on this ${g.type==='armor'?'armor':g.type==='shield'?'shield':'metal'}${isArmorish(g)?', +5 to the attribute a carat':''}. 2-carat gems are what the gem combiner makes, so 6c is the realistic top`:`One gem, up to ${cap}c on this metal, +5% success a carat. 2 carats is what the gem combiner makes, so 2c is the realistic top`}; the colours are how rare the gems are.</p>`:'');
+    return ench+carats+(cur?`<p class="s muted">${n>1?`Three gems${isArmorish(g)?' (iolite, the kind\'s own gem and any one)':OWN_GEMS[cur]?` (a diamond and two ${OWN_GEMS[cur]} gems)`:''}, up to ${cap/3}c each on this ${g.type==='armor'?'armor':g.type==='shield'?'shield':g.type==='spellbook'?'book':'metal'}${isArmorish(g)?', +5 to the attribute a carat':''}. 2-carat gems are what the gem combiner makes, so 6c is the realistic top`:`One gem, up to ${cap}c on this metal, +5% success a carat. 2 carats is what the gem combiner makes, so 2c is the realistic top`}; the colours are how rare the gems are.</p>`:'');
   }
   function reWeaponEnch(patch){
     const box=document.querySelector('.w-ench');if(!box)return;const id=box.dataset.gear,g=gearOf(id);if(!g)return;
@@ -5553,7 +5563,7 @@ function newsHtml(){
       ${usedIn.length?`<h2>Used to make</h2><ul class="wp-list">${usedIn.map(x=>`<li><a href="${pageHref('item',x.id)}">${esc(x.item)}</a> <span class="muted">· ${esc(x.skill)} ${esc(x.level)}</span></li>`).join('')}</ul>`:''}
     </div><aside class="wp-infobox"><div class="wp-pic ${gearOf(id)&&/^(weapon|staff)$/.test(gearOf(id).type)&&wEnchState(gearOf(id)).ench?'e-glow-'+wEnchState(gearOf(id)).ench+' ':''}${/^gem-/.test(id)?gemGlow(gemPick(pageNow&&pageNow.kind==='item'&&pageNow.id===id?pageNow.q:null)):typeof qualityGlow==='function'?qualityGlow(pageNow&&pageNow.kind==='item'&&pageNow.id===id?pageNow.q:null):''}"><img src="${esc(itemImgFor(id))}" alt="${esc(name)}">${hasEnchant(gearOf(id))?`<span id="gearEnchBadge" class="wp-badge">${gearEnchBadge(id)}</span>`:''}</div><h3>${esc(name)}${pageNow&&pageNow.kind==='item'&&pageNow.id===id&&pageNow.q&&pageNow.q!=='all'?(/^gem-/.test(id)?(gemPick(pageNow.q)!=null?` <span class="q-name q-${RARITY_Q[gemRar(gemPick(pageNow.q))]}">(${gemPick(pageNow.q)}c)</span>`:''):` <span class="q-name q-${esc(pageNow.q)}">(${esc(qLabel(pageNow.q))})</span>`):''}</h3><table>
       ${gearOf(id)&&gearOf(id).type==='shield'?(()=>{const g=gearOf(id),pq=pageNow&&pageNow.kind==='item'&&pageNow.id===id?pageNow.q:null,t=Q_TIERS.includes(pq)?pq:'ordinary';return `<tr><th>Defense</th><td>${esc(gearStats(g,t).main)} <span class="muted">(${esc(qLabel(t))})</span></td></tr>`})():''}
-      ${hasEnchant(gearOf(id))?`<tr><th>${gearOf(id).type==='tool'?'Bonus':gearOf(id).type==='staff'?'Spells':isArmorish(gearOf(id))?'Stats':'Damage'}</th><td id="gearDmg">${gearDamageCell(id,pageNow&&pageNow.kind==='item'&&pageNow.id===id?pageNow.q:null)}</td></tr>`:''}
+      ${hasEnchant(gearOf(id))?`<tr><th>${gearOf(id).type==='tool'?'Bonus':gearOf(id).type==='staff'?'Spells':/^(shield|spellbook)$/.test(gearOf(id).type)?'Enchant':isArmorish(gearOf(id))?'Stats':'Damage'}</th><td id="gearDmg">${gearDamageCell(id,pageNow&&pageNow.kind==='item'&&pageNow.id===id?pageNow.q:null)}</td></tr>`:''}
       ${gearReqRow(id)}
       ${recipe?infoRow('Made with',esc(recipe.skill)+' '+esc(recipe.level)):''}
       ${r?infoRow('Dropped by',r.monsterSources.size?fmt(new Set([...r.monsterSources.values()].map(m=>m.typeId)).size)+' monster'+(r.monsterSources.size===1?'':'s'):'—'):''}
