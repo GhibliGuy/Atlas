@@ -181,7 +181,7 @@ const ENCHANT_RECIPES={
   {name:'of Lightning',gems:['amber','topaz','topaz'],effect:'shock school +4'}
  ]
 };
-const ENCHANT_TIER={iron:1,silver:2,gold:3,titanium:4,pine:1,oak:2,'black walnut':3,shagbark:4,imp:1,snakeskin:2,ogrewax:3,dragonscale:4,deerhide:1,bearhide:2,werewolfpelt:3,dragonhide:4};
+const ENCHANT_TIER={iron:1,silver:2,gold:3,titanium:4,pine:1,oak:2,'black walnut':3,shagbark:4,imp:1,snakeskin:2,ogrewax:3,dragonscale:4,deerhide:1,bearhide:2,werewolfpelt:3,werewolf:3,dragonhide:4};
 const ENCHANT_TOOL_PCT=[5,13,22,32];   // success-chance bonus of an Artisan tool at full carat, by metal tier
 // ---- The game's own data (game-data.js, generated from its rules by the app - see data-from-rules.js) ----------------
 // replaces the built-in copies above wherever it is loaded; the built-in ones stay as a fallback.
@@ -213,13 +213,15 @@ const likelyTier=p=>{let acc=0;for(let i=QUALITY_TIERS.length-1;i>=0;i--){acc+=p
 const orBetterOf=(p,t)=>QUALITY_TIERS.slice(QUALITY_TIERS.indexOf(t)).reduce((a,x)=>a+(p[x]||0),0);
 const likelyQuality=over=>likelyTier(interpolateCraftQuality(Math.min(30,Math.max(0,over))));
 const ENCHANT_TOOL_SERVES=[[/Scribing Quill$/,'Scribing'],[/Herbalist Sickle$/,'Herblore'],[/Sewing Kit$/,'Tailoring'],[/Leatherworking Awl$/,'Leatherworking'],[/Fishing Rod$/,'Fishing'],[/Shears$/,'Shearing'],[/Carving Tool$/,'Bowyer'],[/Pickaxe$/,'Mining'],[/Axe$/,'Lumberjack'],[/Frying Pan$/,'Cooking'],[/Smithing Hammer$/,'Smithing']];
-// What kind of enchant a recipe's item can take (null = cannot be enchanted: shields and ammunition), and its material tier.
+// What kind of enchant a recipe's item can take (null = cannot be enchanted: ammunition), and its material tier.
 function enchantInfo(r){
  const name=r.item;let kind=null;
- if(r.skill==='Weapon Smithing')kind='weapon';
+ // shields and spellbooks have their own enchants (game rules 15 Oct 2026: armour = head/arms/torso/legs/feet and capes;
+ // a shield takes the shield family, a spellbook the spellbook family)
+ if(/Shield$/.test(name))kind='shield';
+ else if(/Spellbook$/.test(name))kind='spellbook';
+ else if(r.skill==='Weapon Smithing')kind='weapon';
  else if(r.skill==='Bowyer')kind=/Staff$/.test(name)?'staff':/(Bow|Longbow|Crossbow)$/.test(name)?'bow':null;
- // shields take the armour enchants too (game rules Ud: armor family = head/arms/torso/legs/feet, back (capes) and an
- // off-hand shield)
  else if(r.skill==='Armor Smithing')kind=/Ring$/.test(name)?'ring':'armor';
  else if(r.skill==='Tailoring'||r.skill==='Leatherworking')kind='armor';
  else if(r.skill==='Tool Smithing')kind='tool';
@@ -578,7 +580,7 @@ function calcGather(){
      :`<div class="craft-answer no">Not yet - it needs ${r.skill} level ${r.level}. You're ${r.level-lvl} level${r.level-lvl===1?'':'s'} short.</div>`);
    // 2 - can you enchant it
    let s2;
-   if(!e.kind)s2=step(2,'Can you enchant it?',`<div class="craft-answer">No - this item can't take an enchant. Shields and ammunition never can; everything else you hold or wear can.</div>`,'dim');
+   if(!e.kind)s2=step(2,'Can you enchant it?',`<div class="craft-answer">No - this item can't take an enchant. Ammunition never can; everything else you hold or wear can.</div>`,'dim');
    else{
      const mastered=lvl>=masteryLevel,left=masteryLevel-lvl,prog=Math.max(0,Math.min(1,(lvl-(toolUp?r.level:masteryRec.level))/Math.max(1,masteryLevel-(toolUp?r.level:masteryRec.level))));
      const over=masteryLevel-masteryRec.level;
