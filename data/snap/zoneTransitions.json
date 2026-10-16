@@ -1,4 +1,8 @@
 [
+{"sessionId":"2e0a7481","time":1792182742585,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":5424},
+{"sessionId":"2e0a7481","time":1792182710338,"fromZ":600,"toZ":0,"kind":"outdoors","outX":1688,"outY":1869,"key":5423},
+{"sessionId":"2e0a7481","time":1792182675840,"fromZ":0,"toZ":600,"zoneName":"City of Westergarde","pvpMode":"none","atX":1690,"atY":1871,"key":5422},
+{"sessionId":"2e0a7481","time":1792182507724,"fromZ":11000,"toZ":0,"kind":"outdoors","outX":1706,"outY":1818,"key":5421},
 {"sessionId":"2e0a7481","time":1792179594743,"fromZ":null,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":-19,"atY":20,"key":5420},
 {"sessionId":"1b8cbf32","time":1792178847721,"fromZ":null,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":-6,"atY":27,"key":5419},
 {"sessionId":"6d2fbd42","time":1792178536826,"fromZ":0,"toZ":11001,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":8,"atY":17,"key":5418},
@@ -4994,9 +4998,5 @@
 {"sessionId":"df884f3c","time":1790364437833,"fromZ":null,"toZ":-160,"zoneName":"Titanium Mine","pvpMode":"lawless","atX":2234.84,"atY":440.25,"key":428},
 {"sessionId":"e3f77b3b","time":1790364372153,"fromZ":null,"toZ":-160,"zoneName":"Titanium Mine","pvpMode":"lawless","atX":2249.33,"atY":472.56,"key":427},
 {"sessionId":"9868be75","time":1790363455249,"fromZ":null,"toZ":-160,"zoneName":"Titanium Mine","pvpMode":"lawless","atX":2243,"atY":457,"key":426},
-{"sessionId":"66324766","time":1790362998133,"fromZ":null,"toZ":-160,"zoneName":"Titanium Mine","pvpMode":"lawless","atX":2237.96,"atY":441.7,"key":425},
-{"sessionId":"79129ceb","time":1790362796409,"fromZ":null,"toZ":-160,"zoneName":"Titanium Mine","pvpMode":"lawless","atX":2237,"atY":458,"key":424},
-{"sessionId":"40beb092","time":1790362098817,"fromZ":null,"toZ":-160,"zoneName":"Titanium Mine","pvpMode":"lawless","atX":2246.59,"atY":461.26,"key":423},
-{"sessionId":"33661871","time":1790360723153,"fromZ":null,"toZ":-160,"zoneName":"Titanium Mine","pvpMode":"lawless","atX":2250,"atY":468,"key":422},
-{"sessionId":"f973f2ab","time":1790360096476,"fromZ":null,"toZ":-160,"zoneName":"Titanium Mine","pvpMode":"lawless","atX":2250,"atY":470,"key":421}
+{"sessionId":"66324766","time":1790362998133,"fromZ":null,"toZ":-160,"zoneName":"Titanium Mine","pvpMode":"lawless","atX":2237.96,"atY":441.7,"key":425}
 ]
