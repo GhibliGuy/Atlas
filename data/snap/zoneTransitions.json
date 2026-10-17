@@ -1,4 +1,7 @@
 [
+{"sessionId":"502dde1f","time":1792276220074,"fromZ":11001,"toZ":0,"kind":"outdoors","outX":1706,"outY":1819,"key":5796},
+{"sessionId":"502dde1f","time":1792276214558,"fromZ":null,"toZ":11001,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":2,"atY":4,"key":5795},
+{"sessionId":"40376fe7","time":1792275047501,"fromZ":null,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":-5,"atY":28,"key":5794},
 {"sessionId":"f1695249","time":1792272112569,"fromZ":null,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":28,"key":5793},
 {"sessionId":"59e5db8f","time":1792267149923,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":5792},
 {"sessionId":"59e5db8f","time":1792267149409,"fromZ":11000,"toZ":0,"kind":"outdoors","outX":1705.8,"outY":1818.1,"key":5791},
@@ -4995,8 +4998,5 @@
 {"sessionId":"ee68c5ac","time":1790611749826,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":800},
 {"sessionId":"14fb5e33","time":1790611477858,"fromZ":null,"toZ":1,"zoneName":"Wispmeyer","pvpMode":"none","atX":896,"atY":-703,"key":799},
 {"sessionId":"194840cf","time":1790611385219,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":12,"atY":-12,"key":798},
-{"sessionId":"ee68c5ac","time":1790611362123,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":797},
-{"sessionId":"ee68c5ac","time":1790611008382,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":796},
-{"sessionId":"ee68c5ac","time":1790610659682,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":13,"atY":-11,"key":795},
-{"sessionId":"24f033d0","time":1790610267293,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":12,"atY":-12,"key":794}
+{"sessionId":"ee68c5ac","time":1790611362123,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":797}
 ]
