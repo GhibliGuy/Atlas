@@ -953,6 +953,45 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     ],related:['tailoring','bowyer','tool-smithing']};
   }});
 
+  // Farming (16 Oct 2026, news "Farming"): crops, mill and dishes from the game's own rules (game-recipes.js: crops, mill,
+  // dish recipes); the rest from the rules file by hand (game-rules-Bjb8exl7): fields you can tend = 2 + 2 a 10 levels,
+  // a ripe crop dies 48 h later (red field: last 12 h), seed drop chances per kill, dough (flour + 1 water, Cooking 1,
+  // 5 XP), Quick Growth (-4% growth time a carat; +10% seeds back at 3c, +15% at 4c), bucket fills, meal buffs (the
+  // rules' wording: "Meal: +N stat for 2 min").
+  reg({slug:'farming',group:'Gathering skills',title:'Farming',blurb:'Crops, fields, watering, hoes and bone meal, and the farm dishes they cook into.',build:()=>{
+    const GR=globalThis.BXC_GAME_RECIPES||{},crops=(GR.crops||[]).slice().sort((a,b)=>a.level-b.level),mill=GR.mill||[];
+    const R=typeof RECIPES!=='undefined'?RECIPES:[],dishes=R.filter(r=>r.skill==='Cooking'&&r.dish).sort((a,b)=>a.level-b.level);
+    const hoes=R.filter(r=>/(^|-)hoe$/.test(r.id)).sort((a,b)=>a.level-b.level),buckets=R.filter(r=>/-bucket$/.test(r.id)).sort((a,b)=>a.level-b.level);
+    const dur=ms=>{const m=Math.round(ms/6e4),h=Math.floor(m/60),r=m%60;return h?`${h} h${r?' '+r+' min':''}`:`${m} min`};
+    const SEED_DROP={'carrot-seeds':[.04,1,3],'wheat-seeds':[.04,1,3],'potato-seeds':[.04,1,2],'cabbage-seeds':[.03,1,2],'onion-seeds':[.03,1,2],'pumpkin-seeds':[.02,1,2],'dune-melon-seeds':[.01,1,1],'moonbloom-seeds':[.006,1,1],'emberroot-seeds':[.003,1,1]};
+    const MEAL={'carrot-soup':'+3 DEX','catfish-pie':'+3 max HP','chicken-pot-pie':'+3 STR',bread:'+3 max stamina','baked-potato':'+3 END','bass-pie':'+4 max HP','cabbage-rolls':'+5 STR','trout-pie':'+5 INT','onion-pie':'+6 END','harvest-pie':'+7 max HP','salmon-pie':'+7 MAG','pumpkin-pie':'+8 max stamina','pumpkin-stew':'+8 END','dune-melon-cooler':'+10 max HP, +3 attack speed','moonbloom-tea':'+10 max mana, +4 MAG','ember-roast':'+12 STR'};
+    const BUCKET_FILLS={'pine-bucket':1,'oak-bucket':2,'black-walnut-bucket':3,'shagbark-bucket':4};
+    const cropRows=crops.map(c=>{const d=SEED_DROP[c.seed],total=c.stages*c.stageMs;
+      return [item(c.id,c.item),n(c.level),`${c.stages} × ${dur(c.stageMs)}<br><span class="muted">${dur(total)} in all</span>`,`${c.minYield}–${c.maxYield}`,pct(c.seedReturn),n(c.xp),item(c.seed)+(d?`<br><span class="muted">${pct(d[0])} a kill, ${d[1]===d[2]?d[1]:d[1]+'–'+d[2]}</span>`:'')]});
+    const fields=[1,10,20,30,40,50,60,70,80,90,100].map(l=>[n(l),n(2+2*Math.floor(l/10))]);
+    const dishRows=dishes.map(r=>[n(r.level),item(r.id,r.item),ingList(r)+(r.water?` + ${n(r.water)} water`:''),n(r.xp),esc(MEAL[r.id]||'—')]);
+    return {lede:'Plant seeds in a farm field, water each stage of growth from a bucket, and come back to harvest. Crops grow in real time, even while you are logged out, and the farm’s produce is cooked into dishes that heal and give a meal buff.',sections:[
+      ['start','Getting started',`<ul class="g-list"><li>Farming costs <b>one skill point</b>. <b>Tobin Hale</b> at the Westergarde farm and <b>Hessa Marlow</b> beside the Wispmeyer windmill teach it, and each gives you a free <b>Field Journal</b>, which lists every crop you have growing, wherever it is.</li>
+        <li>They also sell <b>carrot and wheat seeds</b>, buckets and hoes. Fields stand at the Westergarde farm and beside the Wispmeyer windmill.</li>
+        <li>Equip a <b>hoe</b> in your tool slot: you can’t plant without one. Walk onto a field and use a seed from your bag, or drag the seed onto the field.</li>
+        <li>Every crop is yours alone: two farmers can grow different crops on the same field without seeing each other’s, and nobody can take from yours.</li></ul>`],
+      ['crops','Crops',`<p>Each crop grows in stages, and <b>each stage waits for water</b>: a dry crop does not grow. The times below are with every stage watered straight away. Every harvest gives produce, Farming XP and a chance at a seed back. Seeds beyond carrot and wheat drop from monsters (the game’s chance per kill is shown), from goblins and footpads for the early crops up to red dragons and the Virikh for emberroot.</p>`
+        +(cropRows.length?table(['Crop','Farming','Growing','Harvest','Seed back','XP','Seed'],cropRows):'<p class="muted">The crop list loads with the game’s data.</p>')],
+      ['fields','Fields you can tend',`<p>You can tend <b>2 crops</b> at first and <b>2 more every 10 Farming levels</b>.</p>`+table(['Farming','Crops at once'],fields)],
+      ['care','Watering, bone meal and harvesting',`<ul class="g-list"><li>Fill a <b>bucket</b> at a well, pump, trough, fountain or pond, then use it on the crop (or drop it on the field). A bigger bucket holds more fills.</li>
+        <li><b>Bone meal</b> speeds a growing crop along. Bony monsters drop bones; the mill grinds 2 bones into 1 bone meal. Its effect lasts until the stage it was used on ends.</li>
+        <li>Harvest a ripe crop within <b>2 days</b>: after 48 hours it dies. The field turns <b>red</b> in its last 12 hours. Hover your field to see how the crop is doing (on a phone, tap the field you stand on).</li></ul>`
+        +(buckets.length?table(['Bucket','Carpentry','Fills','Made from'],buckets.map(r=>[item(r.id,r.item),n(r.level),n(BUCKET_FILLS[r.id]||0),ingList(r)])):'')],
+      ['hoes','Hoes and Quick Growth',`<p>Tool smiths forge hoes in iron, silver, gold and titanium; a better hoe brings in more produce at every harvest. A gem set while forging gives the hoe <b>of Quick Growth</b> instead of the Artisan enchant: <b>4% less growth time a carat</b>, and at 3 carats also <b>+10% seeds back</b> (+15% at 4 carats). See ${guide('tool-smithing')}.</p>`
+        +(hoes.length?table(['Hoe','Tool Smithing','Made from'],hoes.map(r=>[item(r.id,r.item),n(r.level),ingList(r)])):'')],
+      ['kitchen','The mill and the kitchen',`<p>The windmills at Westergarde and Wispmeyer each have a <b>mill</b> inside that anyone can use. Drop <b>flour on a bucket of water</b> in your bag to mix <b>dough</b> (Cooking 1, 5 XP); dough is the base of bread and every pie.</p>`
+        +(mill.length?table(['Mill','Made from'],mill.map(r=>[item(r.id,r.item),ingList(r)])):'')
+        +`<p>Every prepared dish gives a <b>meal buff</b>. You can have one at a time; it stacks on top of scrolls and blessings, even on the same stat. Farm dishes also heal faster than other food. The game’s own text gives each buff <b>2 minutes</b>.</p>`
+        +(dishRows.length?table(['Cooking','Dish','Needs','XP','Meal buff'],dishRows):'<p class="muted">The dishes load with the game’s data.</p>')
+        +note(`Vendors no longer sell carrots, cabbages, onions or potatoes: farms are the only place vegetables come from. Cooking chances and burning are in ${guide('cooking')}.`)]
+    ],related:['cooking','tool-smithing','carpentry','herblore']};
+  }});
+
   reg({slug:'economy',group:'World',title:'Gold, vendors & the Exchange',blurb:'Vendor prices, the player market, platinum and taxes.',build:()=>({lede:'Gold comes from monsters and selling; the Exchange lets players trade with each other without meeting.',sections:[
     ['vendors','Vendors',`<ul class="g-list"><li>Vendors sell for <b>5× what they pay</b>. Weapons, armor and shields above tier 1 (and that tier’s wood, hides and cloth) cost far more: silver 45×, gold 180×, titanium 145×.</li><li>They pay an extra <b>1,000 gold per carat</b> of enchantment on an item.</li><li>Stock is limited. Sales of 1,000 gold or more ask you to confirm.</li><li>Selling many of the <b>same item</b> pays a little less for each copy the vendor already holds, down to a floor (since 5 October 2026), so spreading big sales across vendors or days pays more.</li></ul>`],
     ['exchange','The Exchange',`<p>The player market, on the website and at Exchange Clerks in the game, in gold only.</p>`+kv([['Tax','5% on sales'],['Orders','25 per character; they never expire and hold their slot until the goods are collected'],['Stackables','Materials, potions, ammo and warp scrolls trade as a pool at the resting price'],['Gear and gems','Trade by exact quality, enchantment and carat'],['Collecting','Gold goes straight to you; goods are picked up from a clerk']])],
