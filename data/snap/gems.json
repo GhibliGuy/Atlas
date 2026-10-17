@@ -1,4 +1,6 @@
 [
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"time":1792265947120,"sessionId":"59e5db8f","key":566},
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"time":1792264414083,"sessionId":"59e5db8f","key":565},
 {"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"npcName":"Ogre Mauler","time":1792201808363,"sessionId":"d889b72a","key":564},
 {"type":"gem.found","typeId":"gem-amber","carat":1.5,"dropped":false,"npcName":"Virikh","time":1792200621262,"sessionId":"d889b72a","key":563},
 {"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"time":1792195539984,"sessionId":"2b5a77cf","key":562},
