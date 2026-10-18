@@ -3475,12 +3475,21 @@ function newsHtml(){
     // one zone ("fzone:<zone>:<n>") are drawn as one outlined area with its fish, not as points; the old fixed spots,
     // not seen since zones arrived, are left out.
     const fishZones=new Map();let zonesSince=Infinity;
+    // Mining zones (17 Oct 2026): rocks "mzone:<zone>:<n>" move about inside their zone the same way: one outlined area
+    // per zone with its ore; old fixed outdoor rocks not seen since zones arrived are left out (home rocks stay).
+    const mineZones=new Map();let mineSince=Infinity;
+    for(const o of snapshot?.worldObjects||[])if(/^mzone:/.test(String(o.id))&&num(o.firstSeen)!==null)mineSince=Math.min(mineSince,o.firstSeen);
     for(const o of snapshot?.worldObjects||[])if(o.typeId==='fishing-spot'&&/^fzone:/.test(String(o.id))&&num(o.firstSeen)!==null)zonesSince=Math.min(zonesSince,o.firstSeen);
     for(const o of snapshot?.worldObjects||[]){
       if(!o.position||num(o.position.x)===null||num(o.position.y)===null)continue;
       const skill=state.objectSkillByType?.get(o.typeId);
       if(!skill)continue;
       if(o.position.z)continue;
+      if(/-rock$/.test(o.typeId)){
+        const mz=/^mzone:([^:]+):/.exec(String(o.id));
+        if(mz){const z=mineZones.get(mz[1])||{pts:[],o};z.pts.push({x:o.position.x+.5,y:o.position.y+.5});mineZones.set(mz[1],z);continue}
+        if(!String(o.id).startsWith('home-')&&Number.isFinite(mineSince)&&(num(o.lastSeen)||0)<mineSince)continue;
+      }
       if(o.typeId==='fishing-spot'){
         const zm=/^fzone:([^:]+):/.exec(String(o.id));
         if(zm){const z=fishZones.get(zm[1])||{pts:[],o};z.pts.push({x:o.position.x+.5,y:o.position.y+.5});fishZones.set(zm[1],z);continue}
@@ -3514,6 +3523,21 @@ function newsHtml(){
       const poly=L.polygon(ring.map(p=>latlng(p,false)),{color:'#8ccdf0',weight:1.5,dashArray:'6 5',fillColor:'#5fb4e0',fillOpacity:.12,interactive:true});
       poly.bindTooltip(tip,{sticky:true});poly.addTo(layer);poly.on('click',ev=>{if(armedPassthrough(ev))return;goToCard('resources','r',key)});
       const icon=resourceMapIcon(o),cm=icon?L.marker(latlng({x:cx,y:cy},false),{icon}):L.circleMarker(latlng({x:cx,y:cy},false),{radius:4,weight:1,color:'#0d1a10',fillColor:'#5fb4e0',fillOpacity:1});
+      cm.bindTooltip(tip,{sticky:true});cm.addTo(layer);cm.on('click',ev=>{if(armedPassthrough(ev))return;goToCard('resources','r',key)});
+      if(!state.resourceMarkersByType.has(key))state.resourceMarkersByType.set(key,[]);
+      state.resourceMarkersByType.get(key).push(cm);
+    }
+    for(const [zone,z] of mineZones){
+      const cx=z.pts.reduce((a,p)=>a+p.x,0)/z.pts.length,cy=z.pts.reduce((a,p)=>a+p.y,0)/z.pts.length,PAD=2;
+      const P=[...new Map(z.pts.flatMap(p=>Array.from({length:8},(_,i)=>({x:p.x+Math.cos(i*Math.PI/4)*PAD,y:p.y+Math.sin(i*Math.PI/4)*PAD}))).map(p=>[Math.round(p.x*2)+','+Math.round(p.y*2),p])).values()].sort((a,b)=>a.x-b.x||a.y-b.y),cr=(o,a,b)=>(a.x-o.x)*(b.y-o.y)-(a.y-o.y)*(b.x-o.x);
+      let ring=[];
+      if(P.length>=3){const lo=[],up=[];for(const p of P){while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],p)<=0)lo.pop();lo.push(p)}for(const p of P.slice().reverse()){while(up.length>=2&&cr(up[up.length-2],up[up.length-1],p)<=0)up.pop();up.push(p)}ring=lo.slice(0,-1).concat(up.slice(0,-1))}
+      if(ring.length<3){const r=Math.max(3,...z.pts.map(p=>Math.hypot(p.x-cx,p.y-cy)))+PAD;ring=Array.from({length:20},(_,i)=>({x:cx+Math.cos(i/20*Math.PI*2)*r,y:cy+Math.sin(i/20*Math.PI*2)*r}))}
+      const o=z.o,key=resourceKeyFor(o),layer=getResourceLayer(key),ore=String(o.typeId).replace(/-rock$/,''),name=prettyId(ore)+' mining area';
+      const tip=`<b>${esc(name)}</b> · ${z.pts.length} rock${z.pts.length===1?'':'s'} seen<br>The game places these rocks anywhere in here and moves them once mined out: look inside the outline.${CLICK_HINT}`;
+      const poly=L.polygon(ring.map(p=>latlng(p,false)),{color:'#dcbe8c',weight:1.5,dashArray:'6 5',fillColor:'#c8aa78',fillOpacity:.12,interactive:true});
+      poly.bindTooltip(tip,{sticky:true});poly.addTo(layer);poly.on('click',ev=>{if(armedPassthrough(ev))return;goToCard('resources','r',key)});
+      const icon=resourceMapIcon(o),cm=icon?L.marker(latlng({x:cx,y:cy},false),{icon}):L.circleMarker(latlng({x:cx,y:cy},false),{radius:4,weight:1,color:'#0d1a10',fillColor:'#c8aa78',fillOpacity:1});
       cm.bindTooltip(tip,{sticky:true});cm.addTo(layer);cm.on('click',ev=>{if(armedPassthrough(ev))return;goToCard('resources','r',key)});
       if(!state.resourceMarkersByType.has(key))state.resourceMarkersByType.set(key,[]);
       state.resourceMarkersByType.get(key).push(cm);
