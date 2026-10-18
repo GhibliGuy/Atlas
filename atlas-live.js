@@ -3478,7 +3478,7 @@ function newsHtml(){
     // Mining zones (17 Oct 2026): rocks "mzone:<zone>:<n>" move about inside their zone the same way: one outlined area
     // per zone with its ore; old fixed outdoor rocks not seen since zones arrived are left out (home rocks stay).
     const mineZones=new Map();let mineSince=Infinity;
-    for(const o of snapshot?.worldObjects||[])if(/^mzone:/.test(String(o.id))&&num(o.firstSeen)!==null)mineSince=Math.min(mineSince,o.firstSeen);
+    for(const o of snapshot?.worldObjects||[])if(/^mzone:/.test(String(o.id))&&o.position&&!o.position.z&&num(o.firstSeen)!==null)mineSince=Math.min(mineSince,o.firstSeen);   // outdoor zones only (so far every zone is in a cave or mine)
     for(const o of snapshot?.worldObjects||[])if(o.typeId==='fishing-spot'&&/^fzone:/.test(String(o.id))&&num(o.firstSeen)!==null)zonesSince=Math.min(zonesSince,o.firstSeen);
     for(const o of snapshot?.worldObjects||[]){
       if(!o.position||num(o.position.x)===null||num(o.position.y)===null)continue;
@@ -4101,7 +4101,7 @@ function newsHtml(){
     const types=m.npcTypes||[];
     const npcs=(m.npcs||[]).map((r,i)=>{const [ti,id,level,elite,ls,px,py,pz,ox,oy,oz,cls,span]=r,t=types[ti]||[];
       const n={id:id||('lite-'+i),typeId:t[0],name:t[1],level,elite:!!elite,lastSeen:ls*1000,position:{x:px,y:py,z:pz},originPosition:ox!=null?{x:ox,y:oy,z:oz||0}:null};if(cls)n.npcClass=cls;if(span!=null&&ls)n.firstSeen=(ls-span)*1000;return n});
-    const worldObjects=(m.objects||[]).map((r,i)=>{const [typeId,name,x,y,status,fish,z,ls,fs]=r,o={id:'lite-o'+i,typeId,name,position:{x,y,z:z||0},status};if(ls)o.lastSeen=ls*1000;if(fs)o.firstSeen=fs*1000;if(fish)o.data={fishTypes:fish};return o});
+    const worldObjects=(m.objects||[]).map((r,i)=>{const [typeId,name,x,y,status,fish,z,ls,fs,zid]=r,o={id:zid||('lite-o'+i),typeId,name,position:{x,y,z:z||0},status};if(ls)o.lastSeen=ls*1000;if(fs)o.firstSeen=fs*1000;if(fish)o.data={fishTypes:fish};return o});
     rawSnapshot={...base,npcs,worldObjects,npcObservations:[],drops:[],terrain:[],zoneTransitions:[],bxcLite:true,bxcHomeCounts:m.home||null};
     snapshot=rawSnapshot;window.BINXONIA_COLLECTOR_SNAPSHOT=snapshot;
     deriveResourceSkills();deriveResourceCatalog();deriveAssets();
@@ -6086,7 +6086,7 @@ function newsHtml(){
     }
     const objects=[];
     for(const o of snapshot.worldObjects||[]){const p=o.position;if(!p||!Number.isFinite(p.x)||!state.objectSkillByType?.get(o.typeId))continue;   // (inside caves too: the resource list and legend count them)
-      objects.push([o.typeId,o.name||null,p.x,p.y,o.status||null,o.data?.fishTypes?.length?o.data.fishTypes:0,p.z||0,Math.round((o.lastSeen||0)/1000),Math.round((o.firstSeen||0)/1000)]);   // (seen times: the resource list is sorted by them)
+      objects.push([o.typeId,o.name||null,p.x,p.y,o.status||null,o.data?.fishTypes?.length?o.data.fishTypes:0,p.z||0,Math.round((o.lastSeen||0)/1000),Math.round((o.firstSeen||0)/1000),/^[fm]zone:/.test(String(o.id))?String(o.id):0]);   // 10th: a fishing spot or rock of a moving zone keeps its id (its zone is drawn as one area)   // (seen times: the resource list is sorted by them)
     }
     const zones=[...(state.zones?.values()||[])].map(z=>({z:z.z,name:z.name||null,pvpMode:z.pvpMode??null,synthetic:!!z.synthetic}));
     const entrances=[...(state.zoneEntrances||[])].map(([z,e])=>[z,{x:e.x,y:e.y}]);
