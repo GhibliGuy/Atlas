@@ -1,4 +1,9 @@
 [
+{"sessionId":"be0e2144","time":1792302441562,"fromZ":0,"toZ":11001,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":8,"atY":17,"key":5913},
+{"sessionId":"be0e2144","time":1792302426588,"fromZ":600,"toZ":0,"kind":"outdoors","outX":1688,"outY":1869,"key":5912},
+{"sessionId":"be0e2144","time":1792302406352,"fromZ":0,"toZ":600,"zoneName":"City of Westergarde","pvpMode":"none","atX":1690,"atY":1871,"key":5911},
+{"sessionId":"be0e2144","time":1792302391893,"fromZ":11001,"toZ":0,"kind":"outdoors","outX":1706,"outY":1819,"key":5910},
+{"sessionId":"be0e2144","time":1792302305012,"fromZ":null,"toZ":11001,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":3,"atY":8,"key":5909},
 {"sessionId":"d0a88ab2","time":1792295951209,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":5908},
 {"sessionId":"d0a88ab2","time":1792295932959,"fromZ":600,"toZ":0,"kind":"outdoors","outX":1688,"outY":1869,"key":5907},
 {"sessionId":"d0a88ab2","time":1792295903310,"fromZ":0,"toZ":600,"zoneName":"City of Westergarde","pvpMode":"none","atX":1692.3,"atY":1865.5,"key":5906},
@@ -4993,10 +4998,5 @@
 {"sessionId":"65c424b7","time":1790638821490,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":917},
 {"sessionId":"b1311e8e","time":1790638808603,"fromZ":null,"toZ":3,"zoneName":"Binxonia Iron Mine","pvpMode":"none","atX":52,"atY":-154,"key":916},
 {"sessionId":"65c424b7","time":1790638808661,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":14,"atY":-11,"key":915},
-{"sessionId":"a90edd16","time":1790638489202,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":914},
-{"sessionId":"a90edd16","time":1790638371042,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":913},
-{"sessionId":"a90edd16","time":1790637061602,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":912},
-{"sessionId":"a90edd16","time":1790636457623,"fromZ":-2012,"toZ":-2013,"zoneName":"Ogre Cove","pvpMode":"safe","atX":583,"atY":-401,"key":911},
-{"sessionId":"a90edd16","time":1790636451066,"fromZ":null,"toZ":-2012,"zoneName":"Ogre Cove","pvpMode":"safe","atX":577,"atY":-391,"key":910},
-{"sessionId":"e5b6f73b","time":1790636406176,"fromZ":null,"toZ":3,"zoneName":"Binxonia Iron Mine","pvpMode":"none","atX":37,"atY":-148,"key":909}
+{"sessionId":"a90edd16","time":1790638489202,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":914}
 ]
