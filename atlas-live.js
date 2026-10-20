@@ -3690,15 +3690,16 @@ function newsHtml(){
       const chips=items.map(r=>{
         const range=r.minQty===r.maxQty?fmt(r.minQty):fmt(r.minQty)+'\u2013'+fmt(r.maxQty);
         const enchantPlain=Object.entries(r.enchants||{}).sort((a,b)=>b[1]-a[1]).map(([k,n])=>k+' x'+n).join(', ');
-        const tip=prettyId(r.itemTypeId)+(enchantPlain?' ('+enchantPlain+')':'')+' - '+(lt&&lootedCorpses(lt)?'in '+Math.round(100*lootedWith(lt,r.itemTypeId)/lootedCorpses(lt))+'% of '+fmt(lootedCorpses(lt))+' looted corpses, ':'')+fmt(r.events)+' recorded drop'+(r.events===1?'':'s')+', '+fmt(r.totalQty)+' total, '+range+' per drop';
+        const tip=prettyId(r.itemTypeId)+(enchantPlain?' ('+enchantPlain+')':'')+' - '+(lt&&lootedCorpses(lt)&&lootedWith(lt,r.itemTypeId)?'in '+fmt(lootedWith(lt,r.itemTypeId))+' of '+fmt(lootedCorpses(lt))+' looted corpses, ':'')+fmt(r.events)+' recorded drop'+(r.events===1?'':'s')+', '+fmt(r.totalQty)+' total, '+range+' per drop';
         const lootedN=lt&&lootedCorpses(lt)?lootedWith(lt,r.itemTypeId):null;
-        let statText=lootedN!==null?Math.round(100*lootedN/lootedCorpses(lt))+'% \u00b7 '+fmt(lootedN)+'/'+fmt(lootedCorpses(lt)):fmt(r.events)+' drop'+(r.events===1?'':'s');
+        const oneIn=(k,n)=>{const x=n/k;return '1/'+(x<2?String(Math.round(x*10)/10):fmt(Math.round(x)))};   // the drop rate as 1/X (1 kill in X)
+        let statText=lootedN?oneIn(lootedN,lootedCorpses(lt)):fmt(r.events)+' drop'+(r.events===1?'':'s');
         const qr=questItem(r.itemTypeId);   // tagged, rate unchanged
         return '<div class="entity-chip dropicon-link'+(elite?' elite':'')+(qr?' quest':'')+'" data-item="'+esc(r.itemTypeId)+'" title="'+esc(tip+(qr?' - Quest item: '+qr.quests.join(' / '):''))+'"><img class="thumb itemthumb" src="'+esc(itemImgFor(r.itemTypeId))+'" alt="">'+(qr?'<span class="quest-tag" title="Quest item">Q</span>':'')+'<span class="entity-chip-label">'+esc(prettyId(r.itemTypeId))+'</span><span class="entity-chip-stat">'+esc(statText)+'</span>'+qualityNote(r)+'</div>';
       });
       return '<div style="margin-top:8px"><b>'+(elite?'\u2b50 Elite loot':'Normal loot')+'</b>'+chipRowHtml(chips)+'</div>';
     }).join('');
-    return '<div class="collector-extra collector-monster-drops"><b>Observed drops</b>'+killsLine+groups+'<div class="muted" style="margin-top:8px">Percentages are of the corpses whose loot the collector recorded, so kills you did not loot are not counted.</div></div>';
+    return '<div class="collector-extra collector-monster-drops"><b>Observed drops</b>'+killsLine+groups+'<div class="muted" style="margin-top:8px">Drop rate as 1/X: about 1 kill in X drops it, counted over the corpses whose loot was recorded (kills nobody looted are not counted).</div></div>';
   }
   // ---- Gem find chance per gather, confirmed by the developer ----------------------------------
   // Chance depends on the resource's tier (T1-T4 = the skill's four resources in level order): 0.5%, 0.6%, 0.75%, 1%.
