@@ -812,7 +812,7 @@ function dataFetch(u){return fetch(u,{cache:'no-cache'})}
     for(const m of r.monsterSources.values()){const e=by.get(m.typeId)||{typeId:m.typeId,name:m.name,events:0,elite:false};e.events+=m.events||0;e.elite=e.elite||!!m.elite;if(m.minQty)e.minQty=Math.min(e.minQty??Infinity,m.minQty);if(m.maxQty)e.maxQty=Math.max(e.maxQty||0,m.maxQty);by.set(m.typeId,e)}
     if(!by.size)return '<div class="s muted">No monster drops recorded for this item.</div>';
     const pctOf=(k,n)=>{const x=n/k;return '1/'+(x<2?String(Math.round(x*10)/10):fmt(Math.round(x)))};   // the drop rate as 1/X (1 kill in X)
-    const rows=[...by.values()].map(m=>{const lt=state.looted?.get(m.typeId),n=lootedCorpses(lt),k=Math.min(n,lootedWith(lt,r.itemTypeId));return {...m,n,k,rate:n&&k?k/n:null}})
+    const rows=[...by.values()].map(m=>{const lt=state.looted?.get(m.typeId),n=lootedCorpses(lt),k=Math.min(n,lootedWith(lt,r.itemTypeId)||m.events||0);return {...m,n,k,rate:n&&k?k/n:null}})
       .sort((x,y)=>(y.rate??-1)-(x.rate??-1)||y.events-x.events);
     const chips=rows.map(m=>{
       const amt=m.minQty?'×'+(m.minQty===m.maxQty||!m.maxQty?fmt(m.minQty):fmt(m.minQty)+'–'+fmt(m.maxQty)):'';   // how many come in one drop
@@ -3692,7 +3692,7 @@ function newsHtml(){
         const range=r.minQty===r.maxQty?fmt(r.minQty):fmt(r.minQty)+'\u2013'+fmt(r.maxQty);
         const enchantPlain=Object.entries(r.enchants||{}).sort((a,b)=>b[1]-a[1]).map(([k,n])=>k+' x'+n).join(', ');
         const tip=prettyId(r.itemTypeId)+(enchantPlain?' ('+enchantPlain+')':'')+' - '+(lt&&lootedCorpses(lt)&&lootedWith(lt,r.itemTypeId)?'in '+fmt(lootedWith(lt,r.itemTypeId))+' of '+fmt(lootedCorpses(lt))+' looted corpses, ':'')+fmt(r.events)+' recorded drop'+(r.events===1?'':'s')+', '+fmt(r.totalQty)+' total, '+range+' per drop';
-        const lootedN=lt&&lootedCorpses(lt)?lootedWith(lt,r.itemTypeId):null;
+        const lootedN=lt&&lootedCorpses(lt)?(lootedWith(lt,r.itemTypeId)||Math.min(r.events||0,lootedCorpses(lt))):null;   // gold is not kept per corpse: its drops over the looted corpses
         const oneIn=(k,n)=>{const x=n/k;return '1/'+(x<2?String(Math.round(x*10)/10):fmt(Math.round(x)))};   // the drop rate as 1/X (1 kill in X)
         let statText=(lootedN?oneIn(lootedN,lootedCorpses(lt)):fmt(r.events)+' drop'+(r.events===1?'':'s'));   // the rate; the amount in one drop goes on a second line
         const qr=questItem(r.itemTypeId);   // tagged, rate unchanged
