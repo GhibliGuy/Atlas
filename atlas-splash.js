@@ -125,8 +125,11 @@
   // levels and lists them nearest first. Only the bars' classes and the short list change while sliding.
   const FIGHT_KEY='bxcFightLevel',FIGHT_NEAR=3;
   function fightList(){
-    return (typeof D!=='undefined'&&D.catalog||[]).filter(m=>m&&m.name&&!m.passive&&m.family!=='human'&&m.maxHp&&(m.count||m.collectorCount)&&(m.obsMinLevel??m.baseLevel))
-      .map(m=>{const lo=m.obsMinLevel??m.baseLevel,hi=Math.max(lo,m.obsMaxLevel??lo);return {id:m.typeId,name:m.name,lo,hi}}).sort((a,b)=>a.lo-b.lo||a.hi-b.hi);
+    // A sighting at level 0 is one whose level wasn't known, so the lowest level counts from 1 (else the base level).
+    // Passive animals (chickens, rabbits, deer) count too; horses are mounts, not monsters to fight.
+    const lvOk=v=>Number(v)>0?Number(v):null;
+    return (typeof D!=='undefined'&&D.catalog||[]).filter(m=>m&&m.name&&m.family!=='human'&&!/^horse-/.test(m.typeId)&&m.maxHp&&(m.count||m.collectorCount)&&(lvOk(m.obsMinLevel)??lvOk(m.baseLevel)))
+      .map(m=>{const lo=lvOk(m.obsMinLevel)??lvOk(m.baseLevel),hi=Math.max(lo,lvOk(m.obsMaxLevel)??lo);return {id:m.typeId,name:m.name,lo,hi}}).sort((a,b)=>a.lo-b.lo||a.hi-b.hi);
   }
   function fightHtml(){
     const L=fightList();if(L.length<3)return '';
