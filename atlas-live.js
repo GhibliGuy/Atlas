@@ -816,9 +816,9 @@ function dataFetch(u){return fetch(u,{cache:'no-cache'})}
       .sort((x,y)=>(y.rate??-1)-(x.rate??-1)||y.events-x.events);
     const chips=rows.map(m=>{
       const amt=m.minQty?'×'+(m.minQty===m.maxQty||!m.maxQty?fmt(m.minQty):fmt(m.minQty)+'–'+fmt(m.maxQty)):'';   // how many come in one drop
-      const stat=(m.rate!=null?pctOf(m.k,m.n):fmt(m.events)+' drop'+(m.events===1?'':'s'))+(amt?' · '+amt:'');
+      const stat=(m.rate!=null?pctOf(m.k,m.n):fmt(m.events)+' drop'+(m.events===1?'':'s'));   // the rate on the first line, the amount on the second
       const tip=prettyId(m.name)+' - '+(m.rate!=null?`dropped it in ${fmt(m.k)} of ${fmt(m.n)} looted corpses (${pctOf(m.k,m.n)})`:`${fmt(m.events)} recorded drop${m.events===1?'':'s'}; no looted-corpse count for this monster yet`);
-      return '<div class="entity-chip monsterlink'+(m.elite?' elite':'')+'" data-monster="'+esc(m.typeId)+'" title="'+esc(tip)+'"><img class="thumb monsterthumb" src="'+esc(monsterImg({typeId:m.typeId,name:m.name}))+'" alt=""><span class="entity-chip-label">'+esc(prettyId(m.name))+'</span><span class="entity-chip-stat">'+esc(stat)+'</span></div>';
+      return '<div class="entity-chip monsterlink'+(m.elite?' elite':'')+'" data-monster="'+esc(m.typeId)+'" title="'+esc(tip)+'"><img class="thumb monsterthumb" src="'+esc(monsterImg({typeId:m.typeId,name:m.name}))+'" alt=""><span class="entity-chip-label">'+esc(prettyId(m.name))+'</span><span class="entity-chip-stat">'+esc(stat)+(amt?'<br>'+esc(amt):'')+'</span></div>';
     });
     return '<div style="margin-top:10px"><b>Recorded monster drops</b>'+chipRowHtml(chips)+'<div class="s muted" style="margin-top:6px">Drop rate as 1/X (about 1 kill in X drops it, counted over the corpses of each monster whose loot was recorded), and ×N, how many come in one drop.</div></div>';
   }
@@ -3694,9 +3694,9 @@ function newsHtml(){
         const tip=prettyId(r.itemTypeId)+(enchantPlain?' ('+enchantPlain+')':'')+' - '+(lt&&lootedCorpses(lt)&&lootedWith(lt,r.itemTypeId)?'in '+fmt(lootedWith(lt,r.itemTypeId))+' of '+fmt(lootedCorpses(lt))+' looted corpses, ':'')+fmt(r.events)+' recorded drop'+(r.events===1?'':'s')+', '+fmt(r.totalQty)+' total, '+range+' per drop';
         const lootedN=lt&&lootedCorpses(lt)?lootedWith(lt,r.itemTypeId):null;
         const oneIn=(k,n)=>{const x=n/k;return '1/'+(x<2?String(Math.round(x*10)/10):fmt(Math.round(x)))};   // the drop rate as 1/X (1 kill in X)
-        let statText=(lootedN?oneIn(lootedN,lootedCorpses(lt)):fmt(r.events)+' drop'+(r.events===1?'':'s'))+' · ×'+range;   // the rate, and how many come in one drop
+        let statText=(lootedN?oneIn(lootedN,lootedCorpses(lt)):fmt(r.events)+' drop'+(r.events===1?'':'s'));   // the rate; the amount in one drop goes on a second line
         const qr=questItem(r.itemTypeId);   // tagged, rate unchanged
-        return '<div class="entity-chip dropicon-link'+(elite?' elite':'')+(qr?' quest':'')+'" data-item="'+esc(r.itemTypeId)+'" title="'+esc(tip+(qr?' - Quest item: '+qr.quests.join(' / '):''))+'"><img class="thumb itemthumb" src="'+esc(itemImgFor(r.itemTypeId))+'" alt="">'+(qr?'<span class="quest-tag" title="Quest item">Q</span>':'')+'<span class="entity-chip-label">'+esc(prettyId(r.itemTypeId))+'</span><span class="entity-chip-stat">'+esc(statText)+'</span>'+qualityNote(r)+'</div>';
+        return '<div class="entity-chip dropicon-link'+(elite?' elite':'')+(qr?' quest':'')+'" data-item="'+esc(r.itemTypeId)+'" title="'+esc(tip+(qr?' - Quest item: '+qr.quests.join(' / '):''))+'"><img class="thumb itemthumb" src="'+esc(itemImgFor(r.itemTypeId))+'" alt="">'+(qr?'<span class="quest-tag" title="Quest item">Q</span>':'')+'<span class="entity-chip-label">'+esc(prettyId(r.itemTypeId))+'</span><span class="entity-chip-stat">'+esc(statText)+'<br>×'+esc(range)+'</span>'+qualityNote(r)+'</div>';
       });
       return '<div style="margin-top:8px"><b>'+(elite?'\u2b50 Elite loot':'Normal loot')+'</b>'+chipRowHtml(chips)+'</div>';
     }).join('');
