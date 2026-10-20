@@ -5258,7 +5258,8 @@ function newsHtml(){
       ${outdoors.length?`<ul class="wp-list">${outdoors.slice(0,5).map(a=>`<li>${placeLine(a)}</li>`).join('')}</ul>`:''}
       ${!places.length&&!outdoors.length?'<p class="muted">No position recorded yet.</p>':''}
       ${places.length||outdoors.length?`<button type="button" class="show-on-map" data-map-kind="npc" data-map-id="${esc(slug)}">Show on map</button>`:''}
-      ${drops.length?`<h2>Drops</h2><div class="collector-extra">${chipRowHtml(drops.sort((a,b)=>b.events-a.events).map(d=>'<div class="entity-chip dropicon-link" data-item="'+esc(d.itemTypeId)+'"><img class="thumb itemthumb" src="'+esc(itemImgFor(d.itemTypeId))+'" alt=""><span class="entity-chip-label">'+esc(prettyId(d.itemTypeId))+'</span><span class="entity-chip-stat">'+fmt(d.events)+' drop'+(d.events===1?'':'s')+'</span></div>'))}</div>`:e.typeId!=='human'?`<h2>Drops</h2><p class="muted">No drops recorded for ${esc(e.name)} yet.</p>`:''}
+      ${bossLootHtml(e.name)}
+      ${drops.length?`<h2>${uniqueOfBoss(e.name).length?'Drops players have recorded':'Drops'}</h2><div class="collector-extra">${chipRowHtml(drops.sort((a,b)=>b.events-a.events).map(d=>'<div class="entity-chip dropicon-link" data-item="'+esc(d.itemTypeId)+'"><img class="thumb itemthumb" src="'+esc(itemImgFor(d.itemTypeId))+'" alt=""><span class="entity-chip-label">'+esc(prettyId(d.itemTypeId))+'</span><span class="entity-chip-stat">'+fmt(d.events)+' drop'+(d.events===1?'':'s')+'</span></div>'))}</div>`:e.typeId!=='human'?`<h2>Drops</h2><p class="muted">No drops recorded for ${esc(e.name)} yet.</p>`:''}
       ${npcsOfType(e.typeId).length>1?`<h2>Other named ${esc(typeLabel)}s</h2><p>${npcsOfType(e.typeId).filter(x=>x.slug!==slug).slice(0,30).map(x=>`<a href="${pageHref('npc',x.slug)}">${esc(x.name)}</a>`).join(' · ')}</p>`:''}
     </div><aside class="wp-infobox"><div class="wp-pic"><img src="${esc(npcImg(e))}" alt=""></div><h3>${esc(e.name)}</h3><table>
       ${infoRow('Kind',`<a href="${pageHref('monster',e.typeId)}">${esc(typeLabel)}</a>`)}${role?infoRow('Role',esc(role)):''}
@@ -5484,7 +5485,8 @@ function newsHtml(){
       ${(()=>{const rs=m&&globalThis.bxcReagentsByFamily?globalThis.bxcReagentsByFamily(m.family):[];if(!rs.length)return '';return `<p class="s"><b>Reagent:</b> ${rs.map(r=>`<a href="${pageHref('item',r.id)}">${esc(prettyId(r.id))}</a> <span class="muted">(${r.onlyClass?esc(r.onlyClass)+'s only; ':''}${r.kind==='enchant'?'infuses an enchant':'rerolls quality'})</span>`).join(', ')}. About 1 kill in 500, 1 in 50 from an elite. <a href="#/guide/reforging">Reforging</a></p>`})()}
       ${monsterLevelsHtml(id,pageNow&&pageNow.kind==='monster'&&pageNow.id===id?pageNow.lv:null)}
       ${looksHtml(id,pl)}
-      <h2>Drops</h2>${(typeof monsterDropsHtml==='function'&&monsterDropsHtml(id))||'<p class="muted">No drops recorded yet.</p>'}
+      ${bossLootHtml(name)}
+      <h2>${uniqueOfBoss(name).length?'Drops players have recorded':'Drops'}</h2>${(typeof monsterDropsHtml==='function'&&monsterDropsHtml(id))||'<p class="muted">No drops recorded yet.</p>'}
       ${caveList(cavesFor('monster',id)).replace('Inside caves and mines','Inside dungeons and buildings')}
       <h2>Where to find it</h2>${areas.length?`${insetMapHtml(pts,areas[0])}<ul class="wp-list">${areas.slice(0,8).map(a=>`<li>${placeLine(a)} <span class="muted">· ${fmt(a.n)} spot${a.n===1?'':'s'}</span></li>`).join('')}</ul>${mapBtn('monster',id)}`:'<p class="muted">No sightings yet.</p>'}
       ${namedListHtml(id)}
@@ -5568,6 +5570,22 @@ function newsHtml(){
     return `<p><b class="uq-tag">Unique.</b> Dropped by ${boss} on <b>${pct(u.chance)}</b> of kills (<b>${pct(u.eliteChance)}</b> from an elite). Built on <a href="${pageHref('item',u.basePiece)}">${esc(prettyId(u.basePiece))}</a>${u.bound?'; bound, so it can’t be traded':''}. Unique items can’t be reforged.</p>`
       +(u.effects&&u.effects.length?`<ul class="wp-list">${u.effects.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:'')
       +`<p class="muted">See <a href="#/guide/unique-items">Unique items</a> for all of them.</p>`;
+  }
+  // A boss's own loot (20 Oct 2026): its unique from the game's rules (game-data.js `uniques`, matched by the boss's
+  // name) and what every boss kill gives, from the game's own guide (Monsters chapter, 15 Oct 2026). Shown on the
+  // boss's page above the drops players have recorded.
+  const bossName=s=>String(s||'').toLowerCase().replace(/^the /,'').trim();
+  const uniqueOfBoss=name=>{const n=bossName(name);return n?(globalThis.BXC_GAME_DATA?.uniques||[]).filter(u=>u.bossName&&bossName(u.bossName)===n):[]};
+  function bossLootHtml(name){
+    const us=uniqueOfBoss(name);if(!us.length)return '';
+    const pct=v=>v==null?'?':(Math.round(v*1000)/10)+'%',oneIn=v=>v?'1 in '+fmt(Math.round(1/v)):'';
+    const uq=us.map(u=>`<li><img class="thumb itemthumb" src="${esc(itemImgFor(u.typeId))}" alt="" style="width:28px;height:28px;vertical-align:middle;margin-right:6px"><a href="${pageHref('item',u.typeId)}"><b>${esc(u.name)}</b></a> <span class="muted">(unique ${esc(prettyId(u.basePiece))}${u.bound?', bound':''})</span>: <b>${pct(u.chance)}</b> of kills (${oneIn(u.chance)}), <b>${pct(u.eliteChance)}</b> from an elite (${oneIn(u.eliteChance)}).${u.effects&&u.effects.length?' <span class="muted">'+u.effects.map(esc).join(' ')+'</span>':''}</li>`).join('');
+    return `<h2>What it can drop</h2><ul class="wp-list">${uq}
+      <li><b>Gear every kill:</b> a piece from its tier, excellent or better, and a second piece 1 kill in 5.</li>
+      <li><b>Gold</b> worth about 5 ordinary kills.</li>
+      <li><b>Enchanted:</b> 1 kill in 100 enchants a piece (up to 9c, and only what its material can hold).</li>
+      <li><b>Elite:</b> a boss spawns elite 1 time in 100, and an elite makes its unique 5 times as likely.</li></ul>
+      <p class="muted">From the game’s rules and its own guide. See <a href="#/guide/unique-items">Unique items</a>.</p>`;
   }
   function itemPageHtml(id){
     const r=state.items?.get(id),name=prettyId(id);
