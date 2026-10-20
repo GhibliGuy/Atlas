@@ -33,9 +33,22 @@
   // (id: null = no one has recorded the quest yet, so it has no page to link)
   const WEAPON_QUEST={spear:{id:'warrior-spear-beyond-the-point',name:'Beyond the Point',from:'Guard Tobin Reed near Underleaf, warriors, level 10'},
     mace:{id:'warrior-mace-the-broken-hammers',name:'The Broken Hammers',from:'Hester Bell near Rustpick Mine, warriors, level 11'},
-    crossbow:{id:null,name:'The Heavy Bow',from:'the Archery Vendor by the targets in Underleaf, any class, level 10'}};
+    crossbow:{id:'underleaf-the-heavy-bow',name:'The Heavy Bow',from:'the Archery Vendor by the targets in Underleaf, any class, level 10'},
+    dagger:{id:'the-mercy-knives',name:'The Mercy Knives',from:'Warden Maud Ferrow, level 11'}};
+  // Which weapon skill a weapon needs (the game's own split: rules Li), and who starts with it / how everyone else
+  // learns it. Item pages show it as "Skill needed" (globalThis.bxcWeaponSkillHtml, used by atlas-live itemPageHtml).
+  const WEAPON_SKILL_OF=id=>{const t=String(id||'');return /-crossbow$/.test(t)?'crossbow':/-(sword|longsword|scimitar|rapier)$/.test(t)?'sword':/-(dagger|kryss)$/.test(t)?'dagger':/-(bow|longbow)$/.test(t)?'bow':/-(mace|warmace)$/.test(t)?'mace':/-(spear|battlespear)$/.test(t)?'spear':/-staff$/.test(t)?'staff':null};
+  const WEAPON_LEARN={sword:{starts:'Warriors',tome:'Sword'},dagger:{starts:'Archers',tome:'Dagger'},bow:{starts:'Archers',tome:'Bow'},mace:{starts:null},spear:{starts:null},crossbow:{starts:null}};
+  globalThis.bxcWeaponSkillHtml=id=>{
+    const u=(globalThis.BXC_GAME_DATA?.uniques||[]).find(x=>x.typeId===id),k=WEAPON_SKILL_OF(u?u.basePiece:id);if(!k)return '';
+    if(k==='staff')return `<h2>Skill needed</h2><p>Any class can cast with a staff, using a spell it has learned. Each school of magic is a skill of its own: see <a href="#/guide/magic">Magic</a> for the schools and where spell scrolls drop.</p>`;
+    const L=WEAPON_LEARN[k],q=WEAPON_QUEST[k],name=pretty(k),ways=[];
+    if(q)ways.push(`finish the quest <b>${weaponQuest(k)}</b> (${esc(q.from)}): free, and you keep the skill for good`);
+    if(L.tome)ways.push(`study a <b>${name} tome</b> (1 skill point; vendors no longer sell them, so look on the Exchange)`);
+    return `<h2>Skill needed</h2><p>Wielding it takes the <a href="#/guide/special-attacks"><b>${name}</b> weapon skill</a>. ${L.starts?`<b>${L.starts}</b> start with it.`:'No class starts with it.'} ${ways.length?(L.starts?'Everyone else can ':'To learn it, ')+ways.join(', or ')+'.':''}</p><p class="muted">See <a href="#/guide/special-attacks">Weapon skills &amp; specials</a> for how the skill levels and what it unlocks.</p>`;
+  };
   const weaponQuest=k=>{const w=WEAPON_QUEST[k];return !w?'':w.id?`<a href="#/guide/quest-${w.id}">${w.name}</a>`:w.name};
-  const weaponQuestNote=k=>WEAPON_QUEST[k]?`<p class="g-note"><b>Needs a quest:</b> the ${k} skill is learned by finishing ${weaponQuest(k)} (${WEAPON_QUEST[k].from}). You can’t wield ${k}s until you have it.</p>`:'';
+  const weaponQuestNote=k=>WEAPON_QUEST[k]&&!(WEAPON_LEARN[k]||{}).starts?`<p class="g-note"><b>Needs a quest:</b> the ${k} skill is learned by finishing ${weaponQuest(k)} (${WEAPON_QUEST[k].from}). You can’t wield ${k}s until you have it.</p>`:'';
   // which damage type a weapon deals: maces crush; daggers, spears, crossbows and the rapier stab; the rest slash
   const dmgType=(name,skill)=>name==='Rapier'?'stab':skill==='mace'?'crush':['dagger','spear','crossbow'].includes(skill)?'stab':'slash';
   // material tiers: a weapon's roll is multiplied by 1 + bonus; wearing it needs a level and a stat
@@ -875,7 +888,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       ['learn','Unlocking combat skills',`<p>You can only wield the weapon types you know, and each is a skill of its own that levels with the damage you deal. You start with your class’s weapons; the rest come from <b>quests</b> or a <b>tome</b>.</p>`+
         table(['Skill','Who starts with it','How everyone else gets it','Cost'],[
           [item('titanium-sword','Sword'),'Warriors',`A <b>Sword tome</b>: study it from your pack.`,'1 skill point'],
-          [item('titanium-dagger','Dagger'),'Archers',`A <b>Dagger tome</b>.`,'1 skill point'],
+          [item('titanium-dagger','Dagger'),'Archers',`Quest <b>${weaponQuest('dagger')}</b> from <b>Warden Maud Ferrow</b> (level 11; you also get a dagger), or a <b>Dagger tome</b>.`,'Free / 1 skill point'],
           [item('shagbark-longbow','Bow'),'Archers',`A <b>Bow tome</b>.`,'1 skill point'],
           [item('titanium-mace','Mace'),'—',`Quest <b>${weaponQuest('mace')}</b> from <b>Hester Bell</b> near Rustpick Mine (warriors, level 11). You also get a mace.`,'Free'],
           [item('titanium-spear','Spear'),'—',`Quest <b>${weaponQuest('spear')}</b> from <b>Tobin Reed</b> near Underleaf (warriors, level 10). You also get a spear.`,'Free'],
@@ -921,7 +934,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       ['stats','Strength, Dexterity and crits',`<p>Swords, maces and spears add <b>${(SD().strength*100).toFixed(1)}% of their average roll per point of Strength</b>. The <b>dagger</b> is a finesse blade: it scales with <b>Dexterity</b> instead and crits more (+${CRIT_DAGGER}% crit chance on top of the ${CRIT_BASE}% base and ${CRIT_PER_DEX}% per Dexterity, capped at ${CRIT_CAP}%). A crit hits ×${CRIT_MULT}.</p>`],
       ['types','Picking by damage type',`<p>Maces <b>crush</b>, daggers, spears and the rapier <b>stab</b>, and the other swords <b>slash</b>. A monster weak to your type takes <b>${Math.round((WEAK-1)*100)}% more</b>; one that resists it takes <b>${Math.round((1-RESIST)*100)}% less</b>. <a href="#/guide/monster-families">Monster families</a> shows who is weak to what, and the <a href="#/calc-combat">Combat calculator</a> ranks monsters for your weapon.</p>`],
       ['boost','Enchants and rings',`<p>Weapon enchants: <b>Destruction</b> adds to every hit; <b>Flame</b>, <b>Freezing</b>, <b>Storm</b> and <b>Corrosion</b> add elemental damage. (Seeking is for bows and crossbows only.) Rings: <b>Brawler</b> (${esc(ringText('brawler',4)||'more melee damage')} at 4 carats), <b>Duelist</b> (${esc(ringText('duelist',4)||'more crit chance')}) and <b>Reaper</b> (${esc(ringText('reaper',4)||'more damage on low-health targets')}).</p>`],
-      ['learn','Learning them',`<p>Warriors start with the sword and archers with the dagger. Warriors learn the <b>mace</b> (${weaponQuest('mace')}, Hester Bell near Rustpick Mine) and the <b>spear</b> (${weaponQuest('spear')}, Tobin Reed near Underleaf) from level 10–11 quests at no skill point; a sword or dagger tome costs a skill point. See <a href="#/guide/special-attacks">Weapon skills &amp; specials</a> for the full table and every special attack.</p>`]
+      ['learn','Learning them',`<p>Warriors start with the sword and archers with the dagger. Warriors learn the <b>mace</b> (${weaponQuest('mace')}, Hester Bell near Rustpick Mine) and the <b>spear</b> (${weaponQuest('spear')}, Tobin Reed near Underleaf) from level 10–11 quests at no skill point; a sword or dagger tome costs a skill point. The <b>dagger</b> is also taught free by ${weaponQuest('dagger')} (Warden Maud Ferrow). See <a href="#/guide/special-attacks">Weapon skills &amp; specials</a> for the full table and every special attack.</p>`]
     ],related:['special-attacks','combat','monster-families','armor']};
   }});
   reg({slug:'ranged',group:'Ranged',title:'Ranged weapons',blurb:'Bows and crossbows: range, Dexterity, ammunition, Seeking and the Hunter ring.',build:()=>{

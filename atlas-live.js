@@ -5599,6 +5599,7 @@ function newsHtml(){
       ${PUBLIC_MODE?'':`<section class="mk-box" data-mk-slug="${esc(id)}" data-mk-name="${esc(name)}"><button type="button" class="mk-load">Market prices</button><div class="mk-out"></div></section>`}
       ${questItem(id)?`<p class="wp-quest"><b>Quest item.</b> Asked for by ${esc(questItem(id).quests.join(' / '))}.</p>`:''}
       ${(()=>{const t=gearReqText(id);return t?`<p class="wp-req"><b>Requires</b> ${t} <span class="muted">to equip</span></p>`:''})()}
+      ${(globalThis.bxcWeaponSkillHtml&&globalThis.bxcWeaponSkillHtml(id))||''}
       <h2>How to get it</h2>
       ${uniqueInfoHtml(id)}
       ${scrollInfoHtml(id)}
