@@ -806,14 +806,20 @@ function dataFetch(u){return fetch(u,{cache:'no-cache'})}
     return terms.every(t=>text.includes(t));
   }
   function itemMonsterRates(r){
-    const sources=[...r.monsterSources.values()].sort((a,b)=>b.events-a.events);
-    if(!sources.length)return '<div class="s muted">No monster drops recorded for this item.</div>';
-    const chips=sources.map(m=>{
-      const pct=m.sourceEvents?(100*m.events/m.sourceEvents).toFixed(1)+'%':'\u2014';
-      const tip=prettyId(m.name)+' - '+(m.elite?'Elite':'Normal')+', '+pct+' of recorded drops ('+fmt(m.events)+' / '+fmt(m.sourceEvents)+' events)';
-      return '<div class="entity-chip monsterlink'+(m.elite?' elite':'')+'" data-monster="'+esc(m.typeId)+'" title="'+esc(tip)+'"><img class="thumb monsterthumb" src="'+esc(monsterImg({typeId:m.typeId,name:m.name}))+'" alt=""><span class="entity-chip-label">'+esc(prettyId(m.name))+'</span><span class="entity-chip-stat">'+esc(pct)+'</span></div>';
+    // The drop rate per monster (20 Oct 2026): of the corpses of that monster whose loot was recorded, how many held this
+    // item (state.looted, the same counts the monster pages use). Elite and normal rows of one monster are one chip.
+    const by=new Map();
+    for(const m of r.monsterSources.values()){const e=by.get(m.typeId)||{typeId:m.typeId,name:m.name,events:0,elite:false};e.events+=m.events||0;e.elite=e.elite||!!m.elite;by.set(m.typeId,e)}
+    if(!by.size)return '<div class="s muted">No monster drops recorded for this item.</div>';
+    const pctOf=(k,n)=>{const v=100*k/n;return (v>=10?Math.round(v):v>=1?v.toFixed(1):v.toFixed(2).replace(/0$/,''))+'%'};
+    const rows=[...by.values()].map(m=>{const lt=state.looted?.get(m.typeId),n=lootedCorpses(lt),k=Math.min(n,lootedWith(lt,r.itemTypeId));return {...m,n,k,rate:n&&k?k/n:null}})
+      .sort((x,y)=>(y.rate??-1)-(x.rate??-1)||y.events-x.events);
+    const chips=rows.map(m=>{
+      const stat=m.rate!=null?pctOf(m.k,m.n):fmt(m.events)+' drop'+(m.events===1?'':'s');
+      const tip=prettyId(m.name)+' - '+(m.rate!=null?`dropped it in ${fmt(m.k)} of ${fmt(m.n)} looted corpses (${pctOf(m.k,m.n)})`:`${fmt(m.events)} recorded drop${m.events===1?'':'s'}; no looted-corpse count for this monster yet`);
+      return '<div class="entity-chip monsterlink'+(m.elite?' elite':'')+'" data-monster="'+esc(m.typeId)+'" title="'+esc(tip)+'"><img class="thumb monsterthumb" src="'+esc(monsterImg({typeId:m.typeId,name:m.name}))+'" alt=""><span class="entity-chip-label">'+esc(prettyId(m.name))+'</span><span class="entity-chip-stat">'+esc(stat)+(m.rate!=null?'<br><span class="muted">'+fmt(m.k)+' / '+fmt(m.n)+'</span>':'')+'</span></div>';
     });
-    return '<div style="margin-top:10px"><b>Recorded monster drops</b>'+chipRowHtml(chips)+'<div class="s muted" style="margin-top:6px">Share of logged loot events from this monster, not a per-kill chance.</div></div>';
+    return '<div style="margin-top:10px"><b>Recorded monster drops</b>'+chipRowHtml(chips)+'<div class="s muted" style="margin-top:6px">Drop rate per kill: of the corpses of each monster whose loot was recorded, how many held this item.</div></div>';
   }
   // one item's full card (the map panel's "where it comes from")
   function itemCardHtml(r){return `<div class="card" data-item="${esc(r.itemTypeId)}"><img class="thumb itemthumb" src="${itemImgFor(r.itemTypeId)}" alt="${esc(prettyId(r.itemTypeId))}"><div class="name"><a class="page-link" href="${pageHref('item',r.itemTypeId)}">${esc(prettyId(r.itemTypeId))}</a>${questItem(r.itemTypeId)?` <span class="quest-badge" title="Asked for by ${esc(questItem(r.itemTypeId).quests.join(' / '))}">Quest item</span>`:''}</div><div class="s">${esc(itemSourcesText(r))}</div>${itemMonsterRates(r)}<div class="s muted">Last seen ${when(r.lastSeen)}</div>${(r.monsterSources.size||[...(state.resourceCatalog?.values()||[])].some(x=>x.yieldItem===r.itemTypeId))?`<button type="button" class="show-on-map" data-map-kind="item" data-map-id="${esc(r.itemTypeId)}">Show on map</button>`:''}</div>`}
