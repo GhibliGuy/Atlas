@@ -187,6 +187,8 @@
     el.querySelector('#splashSkip').checked=get(SKIP_KEY)==='1';
     el.querySelector('#splashSkip').addEventListener('change',e=>put(SKIP_KEY,e.target.checked?'1':null));
     el.querySelector('.splash-search').addEventListener('submit',e=>{e.preventDefault();search(el.querySelector('#splashQ').value)});
+    // the same results list as the top bar's search, under this box (atlas-live's bxcAttachSearch)
+    const hookSearch=n=>{if(typeof globalThis.bxcAttachSearch==='function')globalThis.bxcAttachSearch(el.querySelector('#splashQ'),{z:20001,before:close});else if(n>0)setTimeout(()=>hookSearch(n-1),300)};hookSearch(20);
     el.querySelector('.splash-enter').addEventListener('click',()=>go('map'));
     // the latest game news (in the app): filled once when it arrives, never redrawn after
     const tryNews=n=>globalThis.bxcNews().then(list=>{const sec=el&&el.querySelector('.splash-news');if(!sec)return;if(!list||!list.length){if(n>0)setTimeout(()=>tryNews(n-1),4000);return}

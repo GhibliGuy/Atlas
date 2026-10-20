@@ -4429,16 +4429,24 @@ function newsHtml(){
       .filter(x=>x.r<6||terms.every(t=>norm(x.e.name+' '+x.e.id+' '+x.e.kind+' '+x.e.detail).includes(t)))
       .sort((a,b)=>a.r-b.r||a.k-b.k||a.n.length-b.n.length||a.n.localeCompare(b.n)).map(x=>x.e);
   }
+  // The results list under a search box: the top bar's, and the home page's (atlas-splash.js calls
+  // globalThis.bxcAttachSearch with its own box, and a before() that closes the home page first).
   function installGlobalSearch(){
     if(!q)return;
-    q.placeholder='Search guides, quests, monsters, items, places…';q.setAttribute('aria-label','Search across the atlas');q.setAttribute('aria-controls','atlasGlobalResults');q.setAttribute('aria-expanded','false');
-    const panel=document.createElement('div');panel.id='atlasGlobalResults';panel.hidden=true;panel.setAttribute('aria-label','Search results');
-    panel.style.cssText='position:fixed;z-index:10000;max-height:60vh;overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--accent-soft);border-radius:10px;padding:10px;box-shadow:0 10px 35px #0009;box-sizing:border-box';document.body.append(panel);
+    q.placeholder='Search guides, quests, monsters, items, places…';q.setAttribute('aria-label','Search across the atlas');
+    attachGlobalSearch(q,{id:'atlasGlobalResults'});
+  }
+  globalThis.bxcAttachSearch=(box,opt)=>attachGlobalSearch(box,{id:'atlasHomeResults',...(opt||{})});
+  function attachGlobalSearch(q,opt){
+    if(!q||q.dataset.bxcSearch)return;q.dataset.bxcSearch='1';
+    q.setAttribute('aria-controls',opt.id);q.setAttribute('aria-expanded','false');
+    const panel=document.createElement('div');panel.id=opt.id;panel.hidden=true;panel.setAttribute('aria-label','Search results');
+    panel.style.cssText='position:fixed;z-index:'+(opt.z||10000)+';max-height:60vh;overflow:auto;background:var(--panel);color:var(--ink);border:1px solid var(--accent-soft);border-radius:10px;padding:10px;box-shadow:0 10px 35px #0009;box-sizing:border-box';document.body.append(panel);
     let results=[],timer;
     function close(){clearTimeout(timer);panel.hidden=true;q.setAttribute('aria-expanded','false')}
     function position(){const r=q.getBoundingClientRect();panel.style.left=Math.max(8,Math.min(r.left,innerWidth-340))+'px';panel.style.top=(r.bottom+6)+'px';panel.style.width=Math.min(Math.max(r.width,340),innerWidth-16)+'px';}
     function openResult(entry){
-      close();q.value='';if(onlyObserved)onlyObserved.checked=false;
+      close();q.value='';if(opt.before)opt.before();if(onlyObserved)onlyObserved.checked=false;
       if(entry.lite){goRoute(entry.href);return}
       if(entry.kind==='Place'||entry.kind==='Section'){goRoute(entry.href);return}
       if(entry.page){openPage(entry.page,entry.id);return}
@@ -4459,6 +4467,7 @@ function newsHtml(){
     panel.addEventListener('click',e=>{const b=e.target.closest('[data-result]');if(!b)return;if(e.button!==0||e.ctrlKey||e.metaKey||e.shiftKey||e.altKey)return;e.preventDefault();openResult(results[Number(b.dataset.result)])});
     panel.addEventListener('keydown',e=>{const buttons=[...panel.querySelectorAll('a[data-result]')],i=buttons.indexOf(document.activeElement);if(e.key==='Escape'){close();q.focus();close()}else if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();buttons[Math.max(0,Math.min(buttons.length-1,i+(e.key==='ArrowDown'?1:-1)))]?.focus()}});
     document.addEventListener('pointerdown',e=>{if(e.target!==q&&!panel.contains(e.target))close()});window.addEventListener('resize',position);
+    document.addEventListener('scroll',()=>{if(!panel.hidden)position()},true);
   }
 
   // Switches to a tab and scrolls to / highlights the card whose data-<attr> equals id. The search
