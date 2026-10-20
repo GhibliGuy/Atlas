@@ -1,4 +1,6 @@
 [
+{"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"npcName":"Virikh","time":1792531380400,"sessionId":"4e0c7083","key":632},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1792529515402,"sessionId":"dd99cfe7","key":631},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1792523839189,"sessionId":"ee7cd565","key":630},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1792523277030,"sessionId":"ee7cd565","key":629},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1792521421915,"sessionId":"ee7cd565","key":628},
