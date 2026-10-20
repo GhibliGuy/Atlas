@@ -1,4 +1,8 @@
 [
+{"type":"gem.found","typeId":"gem-amber","carat":2,"dropped":false,"time":1792501636599,"sessionId":"4de70451","key":618},
+{"type":"gem.found","typeId":"gem-iolite","carat":1,"dropped":false,"time":1792501083160,"sessionId":"4de70451","key":617},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1792500647142,"sessionId":"4de70451","key":616},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1792499864520,"sessionId":"4de70451","key":615},
 {"type":"gem.found","typeId":"gem-emerald","carat":1,"dropped":false,"npcName":"Virikh Templar","time":1792468547806,"sessionId":"16dd4906","key":614},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1792468027792,"sessionId":"a58a3feb","key":613},
 {"type":"gem.found","typeId":"gem-iolite","carat":1,"dropped":false,"time":1792456770432,"sessionId":"b2efeeaa","key":612},
