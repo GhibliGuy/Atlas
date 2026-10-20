@@ -811,9 +811,10 @@ function dataFetch(u){return fetch(u,{cache:'no-cache'})}
     const by=new Map();
     for(const m of r.monsterSources.values()){const e=by.get(m.typeId)||{typeId:m.typeId,name:m.name,events:0,elite:false};e.events+=m.events||0;e.elite=e.elite||!!m.elite;if(m.minQty)e.minQty=Math.min(e.minQty??Infinity,m.minQty);if(m.maxQty)e.maxQty=Math.max(e.maxQty||0,m.maxQty);by.set(m.typeId,e)}
     if(!by.size)return '<div class="s muted">No monster drops recorded for this item.</div>';
+    const avgQty=m=>m.minQty?((m.minQty+(m.maxQty||m.minQty))/2):0;
     const pctOf=(k,n)=>{const x=n/k;return '1/'+(x<2?String(Math.round(x*10)/10):fmt(Math.round(x)))};   // the drop rate as 1/X (1 kill in X)
     const rows=[...by.values()].map(m=>{const lt=state.looted?.get(m.typeId),n=lootedCorpses(lt),k=Math.min(n,lootedWith(lt,r.itemTypeId)||m.events||0);return {...m,n,k,rate:n&&k?k/n:null}})
-      .sort((x,y)=>(y.rate??-1)-(x.rate??-1)||y.events-x.events);
+      .sort((x,y)=>(y.rate??-1)-(x.rate??-1)||avgQty(y)-avgQty(x)||y.events-x.events);   // most often first, then the most per drop
     const chips=rows.map(m=>{
       const amt=m.minQty?'×'+(m.minQty===m.maxQty||!m.maxQty?fmt(m.minQty):fmt(m.minQty)+'–'+fmt(m.maxQty)):'';   // how many come in one drop
       const stat=(m.rate!=null?pctOf(m.k,m.n):fmt(m.events)+' drop'+(m.events===1?'':'s'));   // the rate on the first line, the amount on the second
