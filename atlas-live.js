@@ -788,7 +788,8 @@ function dataFetch(u){return fetch(u,{cache:'no-cache'})}
     if(r.gatherSkill)parts.push(`Gathered (${prettyId(r.gatherSkill)})${r.gatherSuccesses?' · '+fmt(r.gatherSuccesses)+' gathered':''}`);
     if(r.monsterSources.size){
       const top=[...r.monsterSources.values()].sort((a,b)=>b.events-a.events);
-      parts.push(`Monster drop: ${top.slice(0,5).map(m=>prettyId(m.name)).join(', ')}${top.length>5?` +${top.length-5} more`:''}`);
+      const names=[...new Set(top.map(m=>prettyId(m.name)))];   // elite and normal kills of a monster are one name
+      parts.push(`Monster drop: ${names.slice(0,5).join(', ')}${names.length>5?` +${names.length-5} more`:''}`);
     }
     if(r.resourceSources.size){
       const top=[...r.resourceSources.values()].sort((a,b)=>b.events-a.events);
@@ -5609,6 +5610,7 @@ function newsHtml(){
       ${questItem(id)?`<p class="wp-quest"><b>Quest item.</b> Asked for by ${esc(questItem(id).quests.join(' / '))}.</p>`:''}
       ${(()=>{const t=gearReqText(id);return t?`<p class="wp-req"><b>Requires</b> ${t} <span class="muted">to equip</span></p>`:''})()}
       ${(globalThis.bxcWeaponSkillHtml&&globalThis.bxcWeaponSkillHtml(id))||''}
+      ${(globalThis.bxcReagentUsesHtml&&globalThis.bxcReagentUsesHtml(id))||''}
       <h2>How to get it</h2>
       ${uniqueInfoHtml(id)}
       ${scrollInfoHtml(id)}

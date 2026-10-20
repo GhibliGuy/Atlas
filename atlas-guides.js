@@ -336,12 +336,31 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   // expected cost of infusing from one carat to another: each step costs (fee + reagent + gem) / chance on average
   function infuseRange(a,b){let gold=0,tries=0,first=1;for(let c=a;c<b;c++){const ch=RF_CHANCE[c-1];gold+=RF_FEE(c)/ch;tries+=1/ch;first*=ch}return {gold,tries,first}}
   const RF_STATIONS=[['Swords, daggers, maces, spears','Weapon smithing','anvil','smithing hammer'],['Plate armor and shields','Armor smithing','anvil','smithing hammer'],['Knick armor (caster cloth)','Tailoring','tailor’s bench','sewing kit'],['Pelt armor','Leatherworking','tanning rack','leatherworking awl'],['Bows, crossbows, staves','Bowyer','bowyer table','carving tool'],['Capes','Tailoring','tailor’s bench','sewing kit'],['Rings and pendants','Armor smithing','anvil','smithing hammer']];
+  // Every enchant -> its reagent, with the game's own enchant names: the rules' reagent map (game-rules-BmOfzY54.js,
+  // 19 Oct 2026; the one its tooltips read for "Infuses or enchants: ..."). RF_ENCH above holds only the calculator's.
+  const REAGENT_ENCH={leopard:['sirocco-core','of the Leopard'],titan:['giants-knucklebone','of the Titan'],camel:['troll-heart','of the Camel'],weasel:['gilded-plume','of the Weasel'],sage:['soul-shard','of the Sage'],mage:['moonwing-dust','of the Mage'],'of-storm':['fulgurite-shard','of the Storm'],'staff-shock':['fulgurite-shard','staff of Lightning'],'of-corrosion':['deathstalker-venom','of Corrosion'],'staff-acid':['deathstalker-venom','staff of Acid'],'of-flame':['ember-gland','of the Flame'],'staff-fire':['ember-gland','staff of Fire'],'of-freezing':['moonhart-antler','of Freezing'],'staff-ice':['moonhart-antler','staff of Frost'],'staff-restoration':['troll-heart','staff of Healing'],'of-seeking':['vulture-eye','of Seeking'],'of-destruction':['lycan-claw','of Destruction'],tortoise:['troll-heart','of the Tortoise'],owl:['moonwing-dust','of the Owl'],hedgehog:['deathstalker-venom','of the Hedgehog'],mastiff:['lycan-claw','of the Mastiff'],focus:['gilded-plume','of Focus'],wellspring:['soul-shard','of the Wellspring'],insight:['vulture-eye','of Insight'],mercy:['moonhart-antler','of Mercy'],artisan:['giants-knucklebone','of the Artisan'],'quick-growth':['giants-knucklebone','of Quick Growth']};
+  const enchGems=k=>{const p=(globalThis.BXC_GAME_DATA?.enchantPatterns||[]).find(x=>x.enchant===k);return p&&p.gems?p.gems.map(x=>x==='any'?'any gem':pretty(x)).join(' + '):''};
+  const reagentEnchants=id=>Object.entries(REAGENT_ENCH).filter(([,v])=>v[0]===id).map(([k,v])=>({k,label:v[1],gems:enchGems(k)}));
   function reagentsHtml(){
-    const ench=REAGENTS.filter(r=>r[1]==='enchant').map(([id,,src])=>{const what=Object.entries(RF_ENCH).filter(([,v])=>v[0]===id).map(([,v])=>esc(v[2])+' <span class="muted">+ '+esc(pretty(v[1].replace('gem-','')))+'</span>');const stones=Object.entries(RF_STONE).filter(([,r])=>r===id).map(([st])=>esc(pretty(st)));if(stones.length)what.push(stones.join(', ')+' rings and pendants');return [item(id),what.join('<br>'),reagentSrc(src)]});
+    const ench=REAGENTS.filter(r=>r[1]==='enchant').map(([id,,src])=>{const what=reagentEnchants(id).map(e=>esc(e.label)+(e.gems?' <span class="muted">('+esc(e.gems)+')</span>':''));const stones=Object.entries(RF_STONE).filter(([,r])=>r===id).map(([st])=>esc(pretty(st)));if(stones.length)what.push(stones.join(', ')+' rings and pendants');return [item(id),what.join('<br>'),reagentSrc(src)]});
     const qual=REAGENTS.filter(r=>r[1]==='quality').map(([id,,src])=>[item(id),esc(Object.entries(RF_LINE).filter(([,r])=>r===id).map(([l])=>RF_LINE_NAME[l]).join(', ')),reagentSrc(src)]);
-    return `<h3>Enchant reagents (for infusing)</h3>`+table(['Reagent','Infuses <span class="muted">+ gem</span>','Dropped by'],ench)
+    return `<h3>Enchant reagents (for infusing)</h3>`+table(['Reagent','Infuses or enchants <span class="muted">(gems)</span>','Dropped by'],ench)
       +`<h3>Gear-line reagents (for rerolling quality)</h3>`+table(['Reagent','Rerolls','Dropped by'],qual);
   }
+  // A reagent's own item page (20 Oct 2026): what it is for and who drops it, from the same rules as the tables above.
+  globalThis.bxcReagentUsesHtml=id=>{
+    const r=REAGENTS.find(x=>x[0]===id);if(!r)return '';
+    const [,kind,src]=r,uses=[];
+    if(kind==='enchant'){
+      const ench=reagentEnchants(id).map(e=>`<li><b>${esc(e.label)}</b>${e.gems?` <span class="muted">(gems: ${esc(e.gems)})</span>`:''}</li>`);
+      const stones=Object.entries(RF_STONE).filter(([,x])=>x===id).map(([st])=>`<li><b>${esc(pretty(st))} rings and pendants</b> <span class="muted">(their gem: ${item('gem-'+st)})</span></li>`);
+      uses.push(`<p>An <b>enchant reagent</b>. Each <b>infuse</b> (one carat more) and each <b>re-enchant</b> to one of these uses one:</p><ul class="wp-list">${[...ench,...stones].join('')}</ul>`);
+    }else{
+      const lines=Object.entries(RF_LINE).filter(([,x])=>x===id).map(([k])=>RF_LINE_NAME[k]);
+      uses.push(`<p>A <b>gear-line reagent</b>. Each <b>quality reroll</b> of <b>${esc(lines.join(', '))}</b> uses one.</p>`);
+    }
+    return `<h2>What it’s for</h2>${uses.join('')}<p><b>Dropped by</b> ${reagentSrc(src)}, about 1 kill in 500 (an elite 1 in 50).</p><p class="muted">See ${guide('reforging')} for the odds and fees, and ${guide('reagents')} for every reagent.</p>`;
+  };
   // ---- the Reforging guide's calculators (one per section; same rule numbers as the tables). Each is a .rf-calc box
   // with data-calc=kind; one delegated listener recomputes the box that changed (wired once), and every box on the page
   // is filled in right after it is drawn.
