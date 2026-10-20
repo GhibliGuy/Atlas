@@ -441,6 +441,228 @@ globalThis.BXC_PAGE_EDITS = {
    "notes": "",
    "done": true,
    "updatedAt": 1792006828182
+  },
+  "quest:beggar-the-man-in-my-coat": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:beggar-where-they-learn-it": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:binxonia-a-road-worth-keeping": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:board-apples-for-the-press": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:board-bandits-in-the-orchard": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:board-bear-hides-for-winter": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:board-bear-meat-for-the-smokehouse": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:board-boar-for-the-stewpot": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:board-footpads-on-the-road": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:board-giants-at-the-edge": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:board-hides-for-the-harness": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:board-orc-raiders": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:board-ore-order": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:board-pine-for-the-hearth": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:board-rattling-bones": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:board-snakes-in-the-reeds": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:board-snakeskins-for-the-tailor": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:board-venison-for-the-larder": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:board-wool-for-winter": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:board-wool-wanted": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:mage-ice-slow-work": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:spider-friend-hollow-loom": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:spider-friend-missing-merchant": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:spider-friend-trappers-camp": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:underleaf-bitter-points": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:underleaf-hides-before-the-frost": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:underleaf-nobody-came-back": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:underleaf-the-heavy-bow": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:wastelands-sandmaw": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "updatedAt": 1792529365781,
+   "steps": [
+    "Bring **Layla Barthrone** **10** [[#/item/scorpion-stinger|Scorpion Stingers]]. Scorpions drop them ([[map:item:scorpion-stinger|show on map]]). [[spot:1194,242|Layla Barthrone]]",
+    "Kill **Sandmaw** and take [[#/item/sandmaws-stinger|Sandmaw’s Stinger]] from it. [[spot:975,616|Sandmaw]]",
+    "Bring Sandmaw’s Stinger to **Mother Sedge**. She makes [[#/item/sedges-antivenom|Sedge’s Antivenom]] from it. [[spot:98,388|Mother Sedge]]",
+    "Bring the antivenom back to **Layla Barthrone** to finish the quest. [[spot:1196,242|Layla Barthrone]]"
+   ]
+  },
+  "quest:westergarde-too-tidy-for-a-fox": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529246592
+  },
+  "quest:wastelands-keshs-tally": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792529257012
   }
  }
 };
