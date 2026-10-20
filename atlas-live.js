@@ -817,7 +817,7 @@ function dataFetch(u){return fetch(u,{cache:'no-cache'})}
     const chips=rows.map(m=>{
       const stat=m.rate!=null?pctOf(m.k,m.n):fmt(m.events)+' drop'+(m.events===1?'':'s');
       const tip=prettyId(m.name)+' - '+(m.rate!=null?`dropped it in ${fmt(m.k)} of ${fmt(m.n)} looted corpses (${pctOf(m.k,m.n)})`:`${fmt(m.events)} recorded drop${m.events===1?'':'s'}; no looted-corpse count for this monster yet`);
-      return '<div class="entity-chip monsterlink'+(m.elite?' elite':'')+'" data-monster="'+esc(m.typeId)+'" title="'+esc(tip)+'"><img class="thumb monsterthumb" src="'+esc(monsterImg({typeId:m.typeId,name:m.name}))+'" alt=""><span class="entity-chip-label">'+esc(prettyId(m.name))+'</span><span class="entity-chip-stat">'+esc(stat)+(m.rate!=null?'<br><span class="muted">'+fmt(m.k)+' in '+fmt(m.n)+' kills</span>':'')+'</span></div>';
+      return '<div class="entity-chip monsterlink'+(m.elite?' elite':'')+'" data-monster="'+esc(m.typeId)+'" title="'+esc(tip)+'"><img class="thumb monsterthumb" src="'+esc(monsterImg({typeId:m.typeId,name:m.name}))+'" alt=""><span class="entity-chip-label">'+esc(prettyId(m.name))+'</span><span class="entity-chip-stat">'+esc(stat)+'</span></div>';
     });
     return '<div style="margin-top:10px"><b>Recorded monster drops</b>'+chipRowHtml(chips)+'<div class="s muted" style="margin-top:6px">Drop rate as 1/X: about 1 kill in X drops it, counted over the corpses of each monster whose loot was recorded.</div></div>';
   }
