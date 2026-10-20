@@ -763,7 +763,7 @@ function dataFetch(u){return fetch(u,{cache:'no-cache'})}
       if(d.monsterTypeId){
         const key=d.sourceType;
         const m=r.monsterSources.get(key)||{typeId:d.monsterTypeId,name:d.monsterName||d.monsterTypeId,elite:d.elite,sourceType:key,events:0};
-        m.events+=d.events;r.monsterSources.set(key,m);
+        m.events+=d.events;if(Number(d.minQty)>0)m.minQty=Math.min(m.minQty??Infinity,Number(d.minQty));if(Number(d.maxQty)>0)m.maxQty=Math.max(m.maxQty||0,Number(d.maxQty));r.monsterSources.set(key,m);
       }else if(d.resourceTypeId){
         const m=r.resourceSources.get(d.resourceTypeId)||{name:d.resourceTypeId,events:0};
         m.events+=d.events;r.resourceSources.set(d.resourceTypeId,m);
@@ -809,17 +809,18 @@ function dataFetch(u){return fetch(u,{cache:'no-cache'})}
     // The drop rate per monster (20 Oct 2026): of the corpses of that monster whose loot was recorded, how many held this
     // item (state.looted, the same counts the monster pages use). Elite and normal rows of one monster are one chip.
     const by=new Map();
-    for(const m of r.monsterSources.values()){const e=by.get(m.typeId)||{typeId:m.typeId,name:m.name,events:0,elite:false};e.events+=m.events||0;e.elite=e.elite||!!m.elite;by.set(m.typeId,e)}
+    for(const m of r.monsterSources.values()){const e=by.get(m.typeId)||{typeId:m.typeId,name:m.name,events:0,elite:false};e.events+=m.events||0;e.elite=e.elite||!!m.elite;if(m.minQty)e.minQty=Math.min(e.minQty??Infinity,m.minQty);if(m.maxQty)e.maxQty=Math.max(e.maxQty||0,m.maxQty);by.set(m.typeId,e)}
     if(!by.size)return '<div class="s muted">No monster drops recorded for this item.</div>';
     const pctOf=(k,n)=>{const x=n/k;return '1/'+(x<2?String(Math.round(x*10)/10):fmt(Math.round(x)))};   // the drop rate as 1/X (1 kill in X)
     const rows=[...by.values()].map(m=>{const lt=state.looted?.get(m.typeId),n=lootedCorpses(lt),k=Math.min(n,lootedWith(lt,r.itemTypeId));return {...m,n,k,rate:n&&k?k/n:null}})
       .sort((x,y)=>(y.rate??-1)-(x.rate??-1)||y.events-x.events);
     const chips=rows.map(m=>{
-      const stat=m.rate!=null?pctOf(m.k,m.n):fmt(m.events)+' drop'+(m.events===1?'':'s');
+      const amt=m.minQty?'×'+(m.minQty===m.maxQty||!m.maxQty?fmt(m.minQty):fmt(m.minQty)+'–'+fmt(m.maxQty)):'';   // how many come in one drop
+      const stat=(m.rate!=null?pctOf(m.k,m.n):fmt(m.events)+' drop'+(m.events===1?'':'s'))+(amt?' · '+amt:'');
       const tip=prettyId(m.name)+' - '+(m.rate!=null?`dropped it in ${fmt(m.k)} of ${fmt(m.n)} looted corpses (${pctOf(m.k,m.n)})`:`${fmt(m.events)} recorded drop${m.events===1?'':'s'}; no looted-corpse count for this monster yet`);
       return '<div class="entity-chip monsterlink'+(m.elite?' elite':'')+'" data-monster="'+esc(m.typeId)+'" title="'+esc(tip)+'"><img class="thumb monsterthumb" src="'+esc(monsterImg({typeId:m.typeId,name:m.name}))+'" alt=""><span class="entity-chip-label">'+esc(prettyId(m.name))+'</span><span class="entity-chip-stat">'+esc(stat)+'</span></div>';
     });
-    return '<div style="margin-top:10px"><b>Recorded monster drops</b>'+chipRowHtml(chips)+'<div class="s muted" style="margin-top:6px">Drop rate as 1/X: about 1 kill in X drops it, counted over the corpses of each monster whose loot was recorded.</div></div>';
+    return '<div style="margin-top:10px"><b>Recorded monster drops</b>'+chipRowHtml(chips)+'<div class="s muted" style="margin-top:6px">Drop rate as 1/X (about 1 kill in X drops it, counted over the corpses of each monster whose loot was recorded), and ×N, how many come in one drop.</div></div>';
   }
   // one item's full card (the map panel's "where it comes from")
   function itemCardHtml(r){return `<div class="card" data-item="${esc(r.itemTypeId)}"><img class="thumb itemthumb" src="${itemImgFor(r.itemTypeId)}" alt="${esc(prettyId(r.itemTypeId))}"><div class="name"><a class="page-link" href="${pageHref('item',r.itemTypeId)}">${esc(prettyId(r.itemTypeId))}</a>${questItem(r.itemTypeId)?` <span class="quest-badge" title="Asked for by ${esc(questItem(r.itemTypeId).quests.join(' / '))}">Quest item</span>`:''}</div><div class="s">${esc(itemSourcesText(r))}</div>${itemMonsterRates(r)}<div class="s muted">Last seen ${when(r.lastSeen)}</div>${(r.monsterSources.size||[...(state.resourceCatalog?.values()||[])].some(x=>x.yieldItem===r.itemTypeId))?`<button type="button" class="show-on-map" data-map-kind="item" data-map-id="${esc(r.itemTypeId)}">Show on map</button>`:''}</div>`}
@@ -3693,13 +3694,13 @@ function newsHtml(){
         const tip=prettyId(r.itemTypeId)+(enchantPlain?' ('+enchantPlain+')':'')+' - '+(lt&&lootedCorpses(lt)&&lootedWith(lt,r.itemTypeId)?'in '+fmt(lootedWith(lt,r.itemTypeId))+' of '+fmt(lootedCorpses(lt))+' looted corpses, ':'')+fmt(r.events)+' recorded drop'+(r.events===1?'':'s')+', '+fmt(r.totalQty)+' total, '+range+' per drop';
         const lootedN=lt&&lootedCorpses(lt)?lootedWith(lt,r.itemTypeId):null;
         const oneIn=(k,n)=>{const x=n/k;return '1/'+(x<2?String(Math.round(x*10)/10):fmt(Math.round(x)))};   // the drop rate as 1/X (1 kill in X)
-        let statText=lootedN?oneIn(lootedN,lootedCorpses(lt)):fmt(r.events)+' drop'+(r.events===1?'':'s');
+        let statText=(lootedN?oneIn(lootedN,lootedCorpses(lt)):fmt(r.events)+' drop'+(r.events===1?'':'s'))+' · ×'+range;   // the rate, and how many come in one drop
         const qr=questItem(r.itemTypeId);   // tagged, rate unchanged
         return '<div class="entity-chip dropicon-link'+(elite?' elite':'')+(qr?' quest':'')+'" data-item="'+esc(r.itemTypeId)+'" title="'+esc(tip+(qr?' - Quest item: '+qr.quests.join(' / '):''))+'"><img class="thumb itemthumb" src="'+esc(itemImgFor(r.itemTypeId))+'" alt="">'+(qr?'<span class="quest-tag" title="Quest item">Q</span>':'')+'<span class="entity-chip-label">'+esc(prettyId(r.itemTypeId))+'</span><span class="entity-chip-stat">'+esc(statText)+'</span>'+qualityNote(r)+'</div>';
       });
       return '<div style="margin-top:8px"><b>'+(elite?'\u2b50 Elite loot':'Normal loot')+'</b>'+chipRowHtml(chips)+'</div>';
     }).join('');
-    return '<div class="collector-extra collector-monster-drops"><b>Observed drops</b>'+killsLine+groups+'<div class="muted" style="margin-top:8px">Drop rate as 1/X: about 1 kill in X drops it, counted over the corpses whose loot was recorded (kills nobody looted are not counted).</div></div>';
+    return '<div class="collector-extra collector-monster-drops"><b>Observed drops</b>'+killsLine+groups+'<div class="muted" style="margin-top:8px">Drop rate as 1/X (about 1 kill in X drops it, counted over the corpses whose loot was recorded; kills nobody looted are not counted), and ×N, how many come in one drop.</div></div>';
   }
   // ---- Gem find chance per gather, confirmed by the developer ----------------------------------
   // Chance depends on the resource's tier (T1-T4 = the skill's four resources in level order): 0.5%, 0.6%, 0.75%, 1%.
