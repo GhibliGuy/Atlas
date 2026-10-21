@@ -525,7 +525,7 @@ function calcGather(){
  let enCaratPick=null,enNone=false;   // enNone: "No enchant" picked - the plain item
  // The gem sizes that make an enchant of so many carats: the gems' carats add up and round down (the game's rule), each
  // gem is 0.5c to 4c, and anything past the item's limit is lost. Ranked by how easy the stones are to get (the
- // rarest one decides: up to 2c is common - the witch builds those), then by carats wasted in the rounding.
+ // rarest one decides: up to 2c is common; the witch also builds 2.5c and 3c, at a cost), then by carats wasted in the rounding.
  function enCombosHtml(C,n,gems,dmg,maxC){
   if(!C)return '';
   const sizes=[.5,1,1.5,2,2.5,3,3.5,4],rank={common:0,uncommon:1,'semi-rare':2,rare:3,'very rare':4},list=[];
@@ -541,7 +541,7 @@ function calcGather(){
   return '<div class="en-combo"><div class="en-combo-h"><b>'+C+' carat'+(C===1?'':'s')+'</b>'+(what?' → '+what:'')+'</div>'+
    '<div class="muted">'+(n===1?'One '+names[0]+' of this size:':names.join(' + ')+' (in any order), '+(list.length?'sizes that add up to '+C+':':'')+'')+'</div>'+
    (list.length?'<ul class="en-combo-list">'+rows+'</ul>':'<div class="muted">No mix of 0.5c-4c gems makes exactly this.</div>')+
-   '<div class="muted en-combo-foot">Up to 2c is common (the witch builds those); 2.5c uncommon, 3c semi-rare, 3.5c rare, 4c very rare.'+(C===maxC?' This is the most this item holds.':'')+'</div></div>';
+   '<div class="muted en-combo-foot">Up to 2c is common; 2.5c uncommon, 3c semi-rare (the witch can build those too, at a cost), 3.5c rare, 4c very rare.'+(C===maxC?' This is the most this item holds.':'')+'</div></div>';
  }   // the carats picked on the planner (whole carats), kept while you look around
  function renderEnchantPlanner(){
    const root=q('enResult');if(!root)return;
@@ -712,9 +712,12 @@ function renderInfusePlanner(){
 
 // ---- Gem combiner --------------------------------------------------------------------------------------------
 // The witch takes three gems of the same kind and carat and hands back one of that kind half a carat higher for a flat
-// fee, and stops at 2 carats (the game's own witch window: "Give three gems of the same kind and carat"). Every figure on the page comes from the four numbers below, so a change at the bench is a change here
+// fee by the size she makes, up to 3 carats (game-rules-BmOfzY54.js, 19 Oct 2026: 2,500 gold up to 2c, 5,000 for a 2.5c gem,
+// 10,000 for a 3c one; the cap comes with her window, and players confirmed 3c). Before 19 Oct she stopped at 2c for a flat 2,500. Every figure on the page comes from the four numbers below, so a change at the bench is a change here
 // and nothing else. This is separate from transmuting, which swaps a gem's kind without touching its carat.
-const GEM_COMBINE_DEFAULTS={base:1000,fee:2500,per:3,step:.5,cap:2};
+const GEM_COMBINE_DEFAULTS={base:1000,fee:2500,per:3,step:.5,cap:3};
+// what one combine costs, by the size it makes (the rules' combine fee)
+const gemCombineFee=c=>c>=3-1e-9?10000:c>=2.5-1e-9?5000:2500;
 const GEM_COMBINE_KEY='bxc-gem-combiner';
 function gemCombineSettings(){
  const s={...GEM_COMBINE_DEFAULTS};
@@ -722,18 +725,19 @@ function gemCombineSettings(){
  s.step=+s.step>0?+s.step:.5;
  s.per=3;
  s.base=Math.max(0,+s.base||0);
- s.fee=2500;   // the witch's fee never changes
- s.step=.5;s.cap=2;
+ s.fee=2500;   // the fee for the small steps; 2.5c and 3c cost more (gemCombineFee)
+ s.step=.5;s.cap=3;
  return s;
 }
 function gemCombineSave(s){try{localStorage.setItem(GEM_COMBINE_KEY,JSON.stringify(s))}catch{}}
 // one row per carat the witch will make: what it is worth, what it swallows, and what she charges to get there
 function gemLadder(s){
  const steps=Math.max(1,Math.min(12,Math.round(s.cap/s.step)));
- const rows=[];let value=s.base,gems=1,combines=0;
+ const rows=[];let value=s.base,gems=1,combines=0,fees=0;
  for(let k=0;k<steps;k++){
-  rows.push({k,carat:+(s.step*(k+1)).toFixed(2),value,gems,combines,fees:combines*s.fee});
-  value=value*s.per+s.fee;gems*=s.per;combines=combines*s.per+1;
+  rows.push({k,carat:+(s.step*(k+1)).toFixed(2),value,gems,combines,fees});
+  const fee=gemCombineFee(s.step*(k+2));   // making the next size up
+  value=value*s.per+fee;gems*=s.per;combines=combines*s.per+1;fees=fees*s.per+fee;
  }
  return rows;
 }
@@ -741,12 +745,12 @@ function gemLadder(s){
 function gemPromote(counts,s){
  const steps=gemLadder(s).length;
  const have=Array.from({length:steps},(_,i)=>Math.max(0,Math.floor(counts[i]||0)));
- let combines=0;
+ let combines=0,fees=0;
  for(let k=0;k<steps-1;k++){
   const up=Math.floor(have[k]/s.per);
-  if(up>0){have[k]-=up*s.per;have[k+1]+=up;combines+=up}
+  if(up>0){have[k]-=up*s.per;have[k+1]+=up;combines+=up;fees+=up*gemCombineFee(s.step*(k+2))}
  }
- return {have,combines,fees:combines*s.fee};
+ return {have,combines,fees};
 }
 function gemCaratIndex(carat,s){const i=Math.round((+carat||0)/s.step)-1;return Number.isFinite(i)?i:-1}
 const gemCoin=n=>Math.round(n||0).toLocaleString();
@@ -766,8 +770,8 @@ function gemFindShares(){
  return {total:g.length,share:c=>g.length?(m.get(+(+c).toFixed(1))||0)/g.length:null,count:c=>m.get(+(+c).toFixed(1))||0};
 }
 // where a gem of this size can come from: gathering gives every size; monsters of level 10+ give up to 0.5c, 20+ 1c,
-// 30+ 1.5c, 40+ 2c (official guide); the witch builds 1c to 2c from three of the size below
-function gemHowText(c){c=+c;const mon=c<=2+1e-9?`monsters level ${[10,20,30,40][Math.round(c*2)-1]}+`:'',witch=c>.5+1e-9&&c<=2+1e-9?`the witch (3 × ${+(c-.5).toFixed(1)}c)`:'';
+// 30+ 1.5c, 40+ 2c (official guide); the witch builds 1c to 3c from three of the size below
+function gemHowText(c){c=+c;const mon=c<=2+1e-9?`monsters level ${[10,20,30,40][Math.round(c*2)-1]}+`:'',witch=c>.5+1e-9&&c<=3+1e-9?`the witch (3 × ${+(c-.5).toFixed(1)}c, ${gemCombineFee(c).toLocaleString()} gold)`:'';
  const parts=['Gathering',mon,witch].filter(Boolean);return parts.length===1?'Gathering only':parts.slice(0,-1).join(', ')+' or '+parts[parts.length-1]}
 globalThis.bxcGemHow=gemHowText;
 function gemRarityTableHtml(){
@@ -775,7 +779,7 @@ function gemRarityTableHtml(){
  for(let c=.5;c<=4+1e-9;c+=.5){const sh=f.share(c);
   rows.push(`<tr><td>${c}c</td><td>${gemRarityChip(c)}</td><td>${sh==null?'—':(sh*100).toFixed(sh<.1?1:0)+'%'}${f.count(c)?` <span class="muted">(${f.count(c)})</span>`:''}</td><td>${gemHowText(c)}</td></tr>`)}
  return `<div class="g-scroll"><table class="g-table"><thead><tr><th>Carat</th><th>Rarity</th><th>Of gems found</th><th>Where it comes from</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
- <p class="g-note">Up to 2c can be made at the witch, so those count as common. Bigger gems only come from gathering: 2.5c uncommon, 3c semi-rare, 3.5c rare, 4c very rare.${f.total?` “Of gems found” is out of the ${f.total.toLocaleString()} gems players have recorded.`:''}</p>`;
+ <p class="g-note">Up to 2c counts as common. The witch can build 2.5c and 3c too, but one 3c takes 243 small gems, so they stay uncommon and semi-rare; 3.5c (rare) and 4c (very rare) only come from gathering.${f.total?` “Of gems found” is out of the ${f.total.toLocaleString()} gems players have recorded.`:''}</p>`;
 }
 globalThis.bxcGemRarity=gemRarity;globalThis.bxcGemRarityChip=gemRarityChip;globalThis.bxcGemRarityTable=gemRarityTableHtml;
 
@@ -786,13 +790,13 @@ function gemWitchPlan(){
  const k=Math.max(1,Math.min(ladder.length-1,Math.round(+el('gcTarget').value)||ladder.length-1)),n=Math.max(1,Math.min(999,Math.round(+el('gcHow').value)||1));
  const r=ladder[k],need=r.gems*n,cb=r.combines*n;
  const tile=(v,l)=>`<div class="gc-stat"><b>${v}</b><span>${l}</span></div>`;
- el('gcStats').innerHTML=tile(need.toLocaleString(),'0.5c gems of one kind')+tile(cb.toLocaleString(),'combine'+(cb===1?'':'s'))+tile(gemCoin(cb*now.fee),'in fees')+tile(gemCoin(r.value*n),'total cost');
+ el('gcStats').innerHTML=tile(need.toLocaleString(),'0.5c gems of one kind')+tile(cb.toLocaleString(),'combine'+(cb===1?'':'s'))+tile(gemCoin(r.fees*n),'in fees')+tile(gemCoin(r.value*n),'total cost');
 }
 function gemWitchHtml(){
  const s=gemCombineSettings(),rows=gemLadder(s);
  return `<p>The <a href="#/npc/dark-witch">Dark Witch</a> lives in a hut in Midland Forest (her page shows it on the map). She does two things with gems: makes them bigger, and changes their kind.</p>
  <h3>Combine: one size bigger</h3>
- <p>Give her <b>3</b> gems of the <b>same kind and size</b> and <b>${gemCoin(s.fee)}</b> coins; you get back one gem of that kind, half a carat bigger. She goes up to <b>2c</b>.</p>
+ <p>Give her <b>3</b> gems of the <b>same kind and size</b> and a fee; you get back one gem of that kind, half a carat bigger. She goes up to <b>3c</b>. The fee is <b>2,500</b> coins for each combine up to 2c, <b>5,000</b> to make a 2.5c gem and <b>10,000</b> to make a 3c one.</p>
  <div class="gc-card">
   <div class="tool-form gc-inputs">
    <div><label for="gcTarget">Carat you want</label><select id="gcTarget">${rows.slice(1).map(r=>`<option value="${r.k}"${r.k===rows.length-1?' selected':''}>${r.carat}c</option>`).join('')}</select></div>

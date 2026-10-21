@@ -813,9 +813,9 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
         // where gems come from, one labelled row each: gathering, monsters (by level), the Dark Witch
     const src=(k,v)=>`<div class="gg-src"><div class="gg-src-k">${k}</div><div class="gg-src-v">${v}</div></div>`;
     const sources=`<div class="gg-sources">`
-      +src('Gathering',`${finders}. The only way to find a gem bigger than 2c.`)
+      +src('Gathering',`${finders}. The only way to find a gem bigger than 3c.`)
       +src('Monsters',`A flat <b>1%</b> chance, up to a size set by their level. Click one to see which monsters drop gems:<div class="gg-bands">${BANDS.map(band).join('')}</div>`)
-      +src('Dark Witch',`Three gems of the same kind and size become one half a carat bigger, up to 2c. <button type="button" class="gg-to-witch" title="Go to the Dark Witch">How it works</button>`)
+      +src('Dark Witch',`Three gems of the same kind and size become one half a carat bigger, up to 3c (2,500 gold a combine, 5,000 for a 2.5c gem, 10,000 for a 3c). <button type="button" class="gg-to-witch" title="Go to the Dark Witch">How it works</button>`)
       +'</div>';
     return {lede:'Nine gems in eight sizes: the bigger the gem, the rarer it is and the stronger it makes your gear.',sections:[
       ['sources','Where gems come from',sources],
@@ -826,7 +826,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
         +`<li><b>Rings and pendants.</b> A gem set in a ring or pendant gives a lasting bonus of its own: more critical hits, faster movement, bigger hauls and more.</li></ul>`
         +`<p>The bigger the gem, the stronger the effect. Wearing enchanted gear takes <b>5 INT</b> per carat.</p>`+cards],
       ['finding','Gathering odds',`<p><b>Every successful gather</b> has a small chance of turning up a gem from that skill, and better resources give better odds (for fishing, it is the fish that bit that counts). Which of the skill’s gems you get is random.</p>`+table(['','Mining','Fishing','Lumberjack','Chance'],tiers)],
-      ['witch','Dark Witch: building bigger gems (up to 2c)',globalThis.bxcGemWitchHtml?globalThis.bxcGemWitchHtml():'']
+      ['witch','Dark Witch: building bigger gems (up to 3c)',globalThis.bxcGemWitchHtml?globalThis.bxcGemWitchHtml():'']
     ],related:['quality-and-enchanting','mining','lumberjack','fishing']};
   }});
 

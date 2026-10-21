@@ -5114,7 +5114,7 @@ function newsHtml(){
       <td>${globalThis.bxcGemHow?globalThis.bxcGemHow(c):''}</td>${ring?`<td>${esc(ringAt(c)||'—')}</td>`:''}</tr>`).join('');
     const found=mine.filter(g=>!g.dropped).length,dropped=mine.length-found;
     return `<h2>Carats</h2>${picker}
-      <p class="s muted">Gems come in half-carat steps from 0.5c to 4c. Up to ${s.cap}c can be made at the witch, so those count as common; bigger ones only come from finds, and a 4c gem is very rare.</p>
+      <p class="s muted">Gems come in half-carat steps from 0.5c to 4c. Up to 2c counts as common. The witch can build up to ${s.cap}c (one 3c takes 243 small gems); 3.5c and 4c only come from finds, and a 4c gem is very rare.</p>
       <div class="g-scroll"><table class="g-table q-table"><thead><tr><th>Carat</th><th>Rarity</th><th>${esc(prettyId(kind))} found</th><th>Of all gems found</th><th>How you get one</th>${ring?`<th>In a ring (${esc(prettyId(ring.bonus))})</th>`:''}</tr></thead><tbody>${rows}</tbody></table></div>
       <p class="s muted">${mine.length?`${fmt(mine.length)} ${esc(prettyId(kind))} recorded: ${fmt(found)} while gathering${dropped?`, ${fmt(dropped)} from monsters`:''}.`:`No ${esc(prettyId(kind))} recorded yet.`} “Of all gems found” is out of ${fmt(all.length)} gems of every kind. <a href="#/gemcombine">Gem combiner</a></p>`;
   }

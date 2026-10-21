@@ -577,7 +577,7 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
   // which weapons each class plays with (warriors: melee and the crossbow any class can learn; archers: bows, the
   // crossbow and daggers; mages: the spell schools)
   const CLASS_WEAPONS={warrior:w=>!/bow$/.test(w)||w==='crossbow',archer:w=>/bow$/.test(w)||w==='dagger'||w==='kryss'};
-  // Both ring slots: every pair of ring kinds at 2 carats (what the gem combiner makes), keeping the pair that adds the
+  // Both ring slots: every pair of ring kinds at 2 carats (what most players reach; the witch combines up to 3c), keeping the pair that adds the
   // most to each hit (crits included) - Adept for spells, Brawler/Hunter/Duelist/Reaper for weapons
   function bestRings(w,v){
     const kinds=ringsFor(v&&v.cls,w).map(r=>r[0]).filter(Boolean),c=REAL_CARAT_R;let best=null;
@@ -614,11 +614,12 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
   const equipStat=w=>W_SKILL[w]==='dagger'||/bow/.test(w)?'dex':'str';
   function bestTierFor(w,charLv,v){const useAttr=(+v[equipStat(w)]||0)>0;let t=0;   // the weapon's own stat, when it is filled in
     for(let i=1;i<=4;i++)if(charLv>=EQUIP_LEVEL[i]&&(!useAttr||(+v[equipStat(w)]||0)>=EQUIP_ATTR[i]))t=i;return Math.max(t,charLv>=EQUIP_LEVEL[1]?1:0)}
-  // Gem sizes to plan on: the gem combiner makes up to 2 carats, so 2 is realistic, 3 is rare and 4 very rare
+  // Gem sizes to plan on: the witch combines up to 3c (19 Oct 2026), but a 3c takes 243 small gems and 10,000 gold for
+  // the last step, so 2 is what a plan can count on; 3 is semi-rare and 4 very rare
   const REAL_CARAT=2;
   // a quality's rarity from how often the best smith turns it out (under 10% is left out of "Aim for")
   const oddsRarity=o=>o<.02?'very rare':o<.05?'rare':o<.10?'semi-rare':o<.20?'uncommon':'common';
-  const caratNote=(c,what)=>c>=2.5?`${c}-carat ${what} are ${globalThis.bxcGemRarity?globalThis.bxcGemRarity(c):(c>=4?'very rare':c>=3.5?'rare':c>=3?'semi-rare':'uncommon')} (the gem combiner makes up to 2)`:'';
+  const caratNote=(c,what)=>c>=2.5?`${c}-carat ${what} are ${globalThis.bxcGemRarity?globalThis.bxcGemRarity(c):(c>=4?'very rare':c>=3.5?'rare':c>=3?'semi-rare':'uncommon')} ${c<=3?' (the witch can combine up to 3c: 5,000 gold to make a 2.5c, 10,000 for a 3c)':' (only from gathering)'}`:'';
   const W_RECIPE_ID={'short-sword':'sword','long-sword':'longsword','war-mace':'warmace','battle-spear':'battlespear','short-bow':'bow','long-bow':'longbow'};
   const smithSkillOf=w=>/bow/.test(w)?'Bowyer':'Weapon Smithing';
   function weaponRecipeLevel(w,t){if(!t)return null;const id=(/bow/.test(w)?WOOD_IDS:METAL_IDS)[t-1]+'-'+(W_RECIPE_ID[w]||w),r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.level:null}
@@ -858,7 +859,7 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
         const vr=u=>/very rare|no one can make/.test(u.note||'')?2:/rare|uncommon/.test(u.note||'')?1:0;
         ups.sort((a,b)=>(a.future?1:0)-(b.future?1:0)||vr(a)-vr(b)||(b.d||0)-(a.d||0));
         // what to aim for: the best metal you can wield that a smith can make, at the quality they realistically make,
-        // an enchant of three 2-carat gems, and both rings at 2 carats (as far as the gem combiner goes)
+        // an enchant of three 2-carat gems, and both rings at 2 carats (what a player can count on; the witch goes to 3c at a cost)
         let aT=t0;for(let t=t0+1;t<=4;t++)if(lvOk(t)&&!cantMake(t))aT=t;
         const aQ=aT!==t0?realQ(aT):(qi(realQ(aT))>qi(base.qual)?realQ(aT):base.qual),aE=base.ench||'destruction',aC=Math.max(+base.carats||0,Math.min(3*REAL_CARAT,capOf(aT)));
         const aR=rings.map((r,i)=>{if(r.bonus&&+r.carat>=REAL_CARAT)return r;let best=null;for(const [b] of RINGS){if(!b)continue;const rr=rings.map((x,j)=>j===i?{bonus:b,carat:REAL_CARAT}:x),m=metric({...base,tier:aT,qual:aQ,ench:aE,carats:aC,rings:rr});if(m&&(!best||m>best.m))best={b,m}}return best?{bonus:r.bonus||best.b,carat:Math.max(+r.carat||0,REAL_CARAT)}:r});
