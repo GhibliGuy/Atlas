@@ -1,4 +1,13 @@
 [
+{"type":"gem.found","typeId":"gem-topaz","carat":2.5,"dropped":false,"time":1792685921755,"sessionId":"e55dd8ac","key":702},
+{"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"npcName":"Ogre Mauler","time":1792682327709,"sessionId":"fbb26e4a","key":701},
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"npcName":"Ogre Butcher","time":1792681933500,"sessionId":"fbb26e4a","key":700},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"npcName":"Ogre Mauler","time":1792681067030,"sessionId":"fbb26e4a","key":699},
+{"type":"gem.found","typeId":"gem-pearl","carat":1,"dropped":false,"npcName":"Ogre Charger","time":1792680821027,"sessionId":"fbb26e4a","key":698},
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"time":1792680563680,"sessionId":"8ae0642c","key":697},
+{"type":"gem.found","typeId":"gem-diamond","carat":1,"dropped":false,"time":1792680138491,"sessionId":"ca297c9f","key":696},
+{"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"npcName":"Ogre Charger","time":1792679922727,"sessionId":"04c13347","key":695},
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"time":1792679897438,"sessionId":"ca297c9f","key":694},
 {"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"time":1792679428821,"sessionId":"ca297c9f","key":693},
 {"type":"gem.found","typeId":"gem-ruby","carat":1,"dropped":false,"time":1792679162337,"sessionId":"ca297c9f","key":692},
 {"type":"gem.found","typeId":"gem-ruby","carat":1.5,"dropped":false,"time":1792678589925,"sessionId":"ca297c9f","key":691},
