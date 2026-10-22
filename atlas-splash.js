@@ -174,8 +174,8 @@
     const starters=STARTER.map(([slug,t])=>`<a class="q-chip" href="#/guide/${slug}">${esc(t)}</a>`).join('');
     const lead=`<span class="splash-new-lead"><b>New to Binxonia?</b><span class="splash-arrow" aria-hidden="true">➜</span></span>`;
     el.innerHTML=`<div class="splash-backdrop" aria-hidden="true"></div><div class="splash-inner">
-      <header class="splash-head"><p class="splash-kicker">A field guide to the living world</p><h1 id="splashTitle">Binxonia Atlas</h1>
-      <p class="splash-lede">Creatures, items, resources and places of Binxonia, mapped from what players have seen in the game.</p></header>
+      <header class="splash-head splash-head-statue"><img class="splash-statue" src="img/atlas-statue.png" alt="The Atlas Statue in Binxonia" title="The Atlas Statue, in Binxonia" width="159" height="317"><div class="splash-head-text"><p class="splash-kicker">A field guide to the living world</p><h1 id="splashTitle">Binxonia Atlas</h1>
+      <p class="splash-lede">Creatures, items, resources and places of Binxonia, mapped from what players have seen in the game.</p></div></header>
       <form class="splash-search" role="search"><input type="search" id="splashQ" aria-label="Search the atlas" placeholder="Search a monster, item, resource or zone..." autocomplete="off"><button type="submit">Search</button></form>
       <p class="splash-hint">Try <i>ogre</i>, <i>titanium</i>, <i>salmon</i>, or a weakness like <i>crush</i>.</p>
       <div class="splash-stats">${statsHtml()}</div>
