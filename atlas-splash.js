@@ -24,6 +24,7 @@
     ['[data-tab="monsters"]','Bestiary',d=>count(d.catalog)?count(d.catalog)+' creatures - levels, weaknesses, drops and where they roam':'Creatures, their weaknesses, drops and where they roam','Explore','monsters'],
     ['[data-tab="items"]','Items','What every item is, its qualities, enchants and where it comes from','Explore','items'],
     ['[data-gpage="unique-items"]','Unique items',()=>{const n=(globalThis.BXC_GAME_DATA?.uniques||[]).length;return n?n+' boss drops: what each does, who drops it and how often':'Boss drops: what each does, who drops it and how often'},'Explore','uniques'],
+    ['[data-gpage="raids"]','Raids','Six raids from level 15 to 50: where they are, their bosses and the unique piece each has for your class','Explore','raids'],
     ['[data-tab="zones"]','Zones & caves','Dungeons, mines and buildings, mapped from the inside','Explore','zones'],
     ['[data-tab="resources"]','Resources','Ore, trees, fishing spots and herbs on the map','Gathering','resources'],
     ['[data-tab="gems"]','Gems','Where each gem comes from, what each carat does, and building bigger ones','Gathering','gems'],
@@ -55,6 +56,8 @@
     monsters:{hint:'monster',ids:()=>['red-dragon','young-red-dragon','baby-red-dragon','sand-wyrm','sand-wyrmling']},
     items:{hint:'item',ids:()=>TI.concat(TA)},
     uniques:{hint:'item',ids:()=>(globalThis.BXC_GAME_DATA?.uniques||[]).map(u=>u.typeId)},
+    // a raid's unique piece, or (no picture of those yet) the piece it is made on
+    raids:{hint:'item',ids:()=>{const u=globalThis.BXC_GAME_DATA?.uniques||[],r=u.filter(x=>x.raidClass),ids=r.map(x=>x.typeId);return ids.some(id=>globalThis.bxcAssetImg(id,'item'))?ids:r.map(x=>x.basePiece).filter(Boolean)}},
     collector:{hint:'item',ids:()=>['plymouth-tide-charts','warp-appleseed-farm','warp-mirewick','warp-wispmeyer']},
     zones:{hint:'item',ids:()=>['key-buried-treasure-1','key-orc-champion']},
     resources:{hint:'item',ids:()=>['bass','catfish','salmon','trout']},
