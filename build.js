@@ -34,6 +34,13 @@ for (const f of VENDOR_FILES) { fs.mkdirSync(path.dirname(path.join(OUT, f)), { 
 fs.cpSync(path.join(SRC, 'tiles'), path.join(OUT, 'tiles'), { recursive: true });
 // Pictures the guides use (img/events: the game's rifts, fallen giants and blooms, drawn by its own code).
 fs.cpSync(path.join(SRC, 'img'), path.join(OUT, 'img'), { recursive: true });
+// monster-art.json: each monster's picture on the site (typeId -> data/img/<file>), small, for the app's in-game minimap
+// overlay (it shows the monster's portrait over its dot; 22 Oct 2026) - so it never has to download the whole asset list.
+try {
+  const A = JSON.parse(fs.readFileSync(path.join(OUT, 'data', 'snap', 'assets.json'), 'utf8')), rows = Array.isArray(A) ? A : (A.assets || Object.values(A)), art = {};
+  for (const a of rows) if (a && a.entityKind === 'monster' && a.kind === 'monster-render' && !a.variant && a.file && a.entityId) art[a.entityId] = a.file;
+  fs.writeFileSync(path.join(OUT, 'monster-art.json'), JSON.stringify(art));
+} catch (e) { console.warn('monster-art.json not written:', e.message); }
 
 // index.html is atlas.html itself, plus one injected line (window.BXC_PUBLIC=true, read once at the top of
 // atlas-live.js) and one changed data-loading detail: fetch('data/snapshot.json') instead of a live bridge -
