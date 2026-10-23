@@ -1,4 +1,5 @@
 [
+{"sessionId":"76b25a20","time":1792771121941,"fromZ":5405,"toZ":0,"kind":"outdoors","outX":506,"outY":-446,"key":7735},
 {"sessionId":"bad38581","time":1792771082785,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":7734},
 {"sessionId":"bad38581","time":1792771054180,"fromZ":11000,"toZ":0,"kind":"outdoors","outX":1706,"outY":1818,"key":7733},
 {"sessionId":"76b25a20","time":1792770926165,"fromZ":5404,"toZ":5405,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":527,"atY":-464,"key":7732},
@@ -4997,6 +4998,5 @@
 {"sessionId":"e4a873af","time":1791375767644,"fromZ":0,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":2739},
 {"sessionId":"e4a873af","time":1791375764773,"fromZ":20,"toZ":0,"kind":"outdoors","outX":149.6,"outY":-69.32,"key":2738},
 {"sessionId":"e4a873af","time":1791375757933,"fromZ":0,"toZ":20,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":152,"atY":-71,"key":2737},
-{"sessionId":"e4a873af","time":1791375686054,"fromZ":-224,"toZ":0,"kind":"outdoors","outX":156,"outY":-56,"key":2736},
-{"sessionId":"e4a873af","time":1791375650596,"fromZ":-223,"toZ":-224,"zoneName":"Mirewatch Crypt","pvpMode":"none","atX":1643,"atY":112,"key":2735}
+{"sessionId":"e4a873af","time":1791375686054,"fromZ":-224,"toZ":0,"kind":"outdoors","outX":156,"outY":-56,"key":2736}
 ]
