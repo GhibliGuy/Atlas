@@ -814,7 +814,7 @@ function dataFetch(u){return fetch(u,{cache:'no-cache'})}
     if(!by.size)return '<div class="s muted">No monster drops recorded for this item.</div>';
     const avgQty=m=>m.minQty?((m.minQty+(m.maxQty||m.minQty))/2):0;
     const pctOf=(k,n)=>{const x=n/k;return '1/'+(x<2?String(Math.round(x*10)/10):fmt(Math.round(x)))};   // the drop rate as 1/X (1 kill in X)
-    const rows=[...by.values()].map(m=>{const lt=state.looted?.get(m.typeId),n=lootedCorpses(lt),k=Math.min(n,lootedWith(lt,r.itemTypeId)||m.events||0);return {...m,n,k,rate:n&&k?k/n:null}})
+    const rows=[...by.values()].map(m=>{const lt=state.looted?.get(m.typeId),n=lootedCorpses(lt,r.itemTypeId),k=Math.min(n,lootedWith(lt,r.itemTypeId)||m.events||0);return {...m,n,k,rate:n&&k?k/n:null}})
       .sort((x,y)=>(y.rate??-1)-(x.rate??-1)||avgQty(y)-avgQty(x)||y.events-x.events);   // most often first, then the most per drop
     const chips=rows.map(m=>{
       const amt=m.minQty?'×'+(m.minQty===m.maxQty||!m.maxQty?fmt(m.minQty):fmt(m.minQty)+'–'+fmt(m.maxQty)):'';   // how many come in one drop
@@ -3644,7 +3644,7 @@ function newsHtml(){
     // collector's counts over everything it holds (a summary 'looted' row), the sets the corpses looted live since
     const looted=new Map();
     for(const d of snapshot?.drops||[]){
-      if(d.summary==='looted'&&d.monsterTypeId){let m=looted.get(d.monsterTypeId);if(!m)looted.set(d.monsterTypeId,m={corpses:new Set(),items:new Map(),base:0,itemBase:new Map()});m.base+=d.corpses||0;for(const [it,c] of Object.entries(d.items||{}))m.itemBase.set(it,(m.itemBase.get(it)||0)+c);continue}
+      if(d.summary==='looted'&&d.monsterTypeId){let m=looted.get(d.monsterTypeId);if(!m)looted.set(d.monsterTypeId,m={corpses:new Set(),items:new Map(),base:0,itemBase:new Map()});m.base+=d.corpses||0;if(d.corpsesSinceReagents!=null)m.baseSince=(m.baseSince||0)+d.corpsesSinceReagents;for(const [it,c] of Object.entries(d.items||{}))m.itemBase.set(it,(m.itemBase.get(it)||0)+c);continue}
       if(d.source!=='loot'||!d.npcId||!d.monsterTypeId||!d.itemTypeId)continue;
       let m=looted.get(d.monsterTypeId);if(!m)looted.set(d.monsterTypeId,m={corpses:new Set(),items:new Map(),base:0,itemBase:new Map()});
       m.corpses.add(d.npcId);
@@ -3659,7 +3659,9 @@ function newsHtml(){
     if(nm)monsterNameCache.set(typeId,nm);
     return nm;
   }
-  const lootedCorpses=lt=>lt?(lt.base||0)+lt.corpses.size:0, lootedWith=(lt,item)=>lt?(lt.itemBase?.get(item)||0)+(lt.items.get(item)?.size||0):0;
+  // a reagent counts only the corpses looted since reagents arrived (6 Oct 2026; older drops of those items were ordinary drops)
+  const isReagentItem=id=>!!id&&(globalThis.bxcReagentIds?globalThis.bxcReagentIds():[]).includes(id);
+  const lootedCorpses=(lt,item)=>lt?(item&&isReagentItem(item)&&lt.baseSince!=null?lt.baseSince:(lt.base||0))+lt.corpses.size:0, lootedWith=(lt,item)=>lt?(lt.itemBase?.get(item)||0)+(lt.items.get(item)?.size||0):0;
   function killStatsFor(typeId){const n=monsterNameFor(typeId);return n?state.kills?.get(String(n).toLowerCase())||null:null}
   function killsLineHtml(typeId){
     const ks=killStatsFor(typeId),lt=state.looted?.get(typeId);
@@ -3693,10 +3695,10 @@ function newsHtml(){
       const chips=items.map(r=>{
         const range=r.minQty===r.maxQty?fmt(r.minQty):fmt(r.minQty)+'\u2013'+fmt(r.maxQty);
         const enchantPlain=Object.entries(r.enchants||{}).sort((a,b)=>b[1]-a[1]).map(([k,n])=>k+' x'+n).join(', ');
-        const tip=prettyId(r.itemTypeId)+(enchantPlain?' ('+enchantPlain+')':'')+' - '+(lt&&lootedCorpses(lt)&&lootedWith(lt,r.itemTypeId)?'in '+fmt(lootedWith(lt,r.itemTypeId))+' of '+fmt(lootedCorpses(lt))+' looted corpses, ':'')+fmt(r.events)+' recorded drop'+(r.events===1?'':'s')+', '+fmt(r.totalQty)+' total, '+range+' per drop';
-        const lootedN=lt&&lootedCorpses(lt)?(lootedWith(lt,r.itemTypeId)||Math.min(r.events||0,lootedCorpses(lt))):null;   // gold is not kept per corpse: its drops over the looted corpses
+        const tip=prettyId(r.itemTypeId)+(enchantPlain?' ('+enchantPlain+')':'')+' - '+(lt&&lootedCorpses(lt,r.itemTypeId)&&lootedWith(lt,r.itemTypeId)?'in '+fmt(lootedWith(lt,r.itemTypeId))+' of '+fmt(lootedCorpses(lt,r.itemTypeId))+' looted corpses, ':'')+fmt(r.events)+' recorded drop'+(r.events===1?'':'s')+', '+fmt(r.totalQty)+' total, '+range+' per drop';
+        const lootedN=lt&&lootedCorpses(lt)?(lootedWith(lt,r.itemTypeId)||Math.min(r.events||0,lootedCorpses(lt,r.itemTypeId))):null;   // gold is not kept per corpse: its drops over the looted corpses
         const oneIn=(k,n)=>{const x=n/k;return '1/'+(x<2?String(Math.round(x*10)/10):fmt(Math.round(x)))};   // the drop rate as 1/X (1 kill in X)
-        let statText=(lootedN?oneIn(lootedN,lootedCorpses(lt)):fmt(r.events)+' drop'+(r.events===1?'':'s'));   // the rate; the amount in one drop goes on a second line
+        let statText=(lootedN?oneIn(lootedN,lootedCorpses(lt,r.itemTypeId)):fmt(r.events)+' drop'+(r.events===1?'':'s'));   // the rate; the amount in one drop goes on a second line
         const qr=questItem(r.itemTypeId);   // tagged, rate unchanged
         return '<div class="entity-chip dropicon-link'+(elite?' elite':'')+(qr?' quest':'')+'" data-item="'+esc(r.itemTypeId)+'" title="'+esc(tip+(qr?' - Quest item: '+qr.quests.join(' / '):''))+'"><img class="thumb itemthumb" src="'+esc(itemImgFor(r.itemTypeId))+'" alt="">'+(qr?'<span class="quest-tag" title="Quest item">Q</span>':'')+'<span class="entity-chip-label">'+esc(prettyId(r.itemTypeId))+'</span><span class="entity-chip-stat">'+esc(statText)+'<br>×'+esc(range)+'</span>'+qualityNote(r)+'</div>';
       });

@@ -593,27 +593,34 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       ['source','Where this comes from',note('From the game’s own rules: the list of unique items, the effect wording the game shows in its tooltips, and its drop-chance function. It updates whenever the game does.')]
     ],related:['reforging','quality-and-enchanting','combat']};
   }});
-  // ---- Raids (22 Oct 2026): the game's first two, from its rules (the boss list, the raid uniques and the raid scaling:
-  // a raid's last boss has 9x a monster's hitpoints for each player inside, up to 8, its other bosses 4.5x; XP grows by
-  // the same factor but each extra player adds a tenth less). Where their doors are isn't in the rules.
+  // ---- Raids (22 Oct 2026): the five raids. Where, level and how they work: the game's "Raids" news (22 Oct 2026);
+  // bosses, uniques (one per class) and achievements: its rules (the boss list, the unique items, the raid achievements).
   const RAIDS=[
-    {id:'matriarchs-roost',name:'The Matriarch’s Roost',family:'harpy',bosses:[['The Hollow Oak',null],['The Shrieker','harpy-shrieker'],['The Broodmother','harpy-broodmother'],['The Old Matriarch','harpy-matriarch-elder']],
-      ach:[['Clear it once','The Roost Cleared'],['10 clears','Roostbreaker (title)'],['50 clears','Scourge of the Downs (title)'],['Clear it with no one else inside','Alone on the Crag (title)']]},
-    {id:'ogre-longhouse',name:'The Ogre Longhouse',family:'ogre',bosses:[['Gutrot the Carver','ogre-carver'],['Old Mother Ashka','ogre-firespeaker'],['Kragg the Unmoved','ogre-unmoved'],['Warchief Ruk Gorehand',null]],
-      ach:[['Clear it once','The Longhouse Cleared'],['10 clears','Chiefbreaker (title)']]}];
-  reg({slug:'raids',group:'Combat',title:'Raids',blurb:'The Matriarch’s Roost and the Ogre Longhouse: their bosses, how they scale with your group, and their class uniques.',build:()=>{
-    const GD=globalThis.BXC_GAME_DATA||{},mons=GD.monsters||[],U=GD.uniques||[];
-    const mon=id=>{if(!id)return '';const m=mons.find(x=>x.typeId===id);return m?' <span class="muted">('+monster(id,m.name)+', level '+n(m.baseLevel)+')</span>':''};
+    {id:'redmaws-grotto',name:'Redmaw’s Grotto',lv:15,where:'a smugglers’ sea cave under the wrecked ship at the pirate camp near Plymouth',bosses:['Bosun Grell','Mother Brack, the Sea Witch','Marksman Pell','Captain Corva Redmaw'],
+      ach:[['Clear it','The Grotto Cleared'],['10 clears','Pirate Hunter (title)'],['50 clears','Terror of the Coast (title)'],['Clear it alone','Crew of One (title)']]},
+    {id:'stonegaze-sanctum',name:'The Stonegaze Sanctum',lv:22,where:'a sunken temple in the Wastelands where a desert cult keeps basilisks',bosses:['Hierophant Ysra','The Sculptor','Gorrsa and Vell, the Gazebound','The Mother of Stone'],
+      ach:[['Clear it','The Sanctum Cleared'],['10 clears','Stonebreaker (title)'],['50 clears','Unstilled (title)'],['Clear it alone','Eye to Eye (title)']]},
+    {id:'kragmaws-court',name:'Kragmaw’s Court',lv:28,where:'the red trolls’ caves under the Wastelands flats. Trolls heal unless fire burns them: with no fire of your own, light your weapon or arrows at a brazier',bosses:['Gnashtooth the Pitkeeper','Old Mother Ossk','Bloatjaw','King Kragmaw'],
+      ach:[['Clear it','The Court Dismissed'],['10 clears','Trollburner (title)'],['50 clears','Kingslayer, Thrice (title)'],['Clear it alone','A Court of One (title)']]},
+    {id:'matriarchs-roost',name:'The Matriarch’s Roost',lv:32,where:'a harpy crag on Willow Downs, by the lake east of Wispmeyer',bosses:['The Hollow Oak','The Shrieker','The Broodmother','The Old Matriarch'],
+      ach:[['Clear it','The Roost Cleared'],['10 clears','Roostbreaker (title)'],['50 clears','Scourge of the Downs (title)'],['Clear it alone','Alone on the Crag (title)']]},
+    {id:'ogre-longhouse',name:'The Ogre Longhouse',lv:50,where:'under the Ogre Chief Hall on Ogre Isle',bosses:['Gutrot the Carver','Old Mother Ashka','Kragg the Unmoved','Warchief Ruk Gorehand'],
+      ach:[['Clear it','The Longhouse Cleared'],['10 clears','Chiefbreaker (title)'],['50 clears','Scourge of Ogre Isle (title)'],['Clear it alone','Uninvited Guest (title)']]}];
+  reg({slug:'raids',group:'Combat',title:'Raids',blurb:'The five raids: where they are, their bosses, how they grow with your group, and the unique piece each has for your class.',build:()=>{
+    const U=(globalThis.BXC_GAME_DATA||{}).uniques||[],plain=t=>String(t||'').replace(/^the /i,'').toLowerCase();
     const raid=r=>{
-      const last=r.bosses[r.bosses.length-1][0],uq=U.filter(u=>u.bossName&&u.bossName.replace(/^the /i,'').toLowerCase()===last.replace(/^the /i,'').toLowerCase());
-      return [r.id,r.name,`<ol class="g-list">${r.bosses.map(([b,t],i)=>`<li><b>${esc(b)}</b>${mon(t)}${i===r.bosses.length-1?' <span class="muted">(the last boss)</span>':''}</li>`).join('')}</ol>`
-        +(uq.length?`<h3>Uniques from ${esc(last)}</h3>`+table(['Item','For','Effect','Chance'],uq.map(u=>[item(u.typeId,u.name),u.raidClass?esc(pretty(u.raidClass))+'s':'Everyone',(u.effects||[]).map(esc).join('<br>')||'<span class="muted">—</span>',(u.chance!=null?(Math.round(u.chance*1000)/10)+'%':'?')+(u.bound?' <span class="muted">· bound</span>':'')])):'')
-        +`<h3>Achievements</h3>`+table(['Goal','Achievement'],r.ach.map(([a,b])=>[esc(a),esc(b)]))];
+      const last=r.bosses[r.bosses.length-1],uq=U.filter(u=>u.bossName&&plain(u.bossName)===plain(last.split(',')[0]));
+      return [r.id,r.name+' (around level '+r.lv+')',`<p><b>Where:</b> ${esc(r.where)}.</p><p><b>Bosses</b> (the last one gives the run’s extra rewards):</p><ol class="g-list">${r.bosses.map(b=>`<li>${esc(b)}</li>`).join('')}</ol>`
+        +(uq.length?`<h3>Unique pieces</h3>`+table(['Item','For','Effect'],uq.map(u=>[item(u.typeId,u.name),u.raidClass?esc(pretty(u.raidClass))+'s':'Everyone',(u.effects||[]).map(esc).join('<br>')||'<span class="muted">—</span>'])):'')
+        +`<h3>Achievements</h3>`+table(['Goal','Achievement'],r.ach.map(([x,y])=>[esc(x),esc(y)]))];
     };
-    return {lede:'Raids are runs of several bosses inside a place of their own, made for a group but open to a single player too. The first two opened on 22 Oct 2026.',sections:[
-      ['how','How a raid works',`<ul class="g-list"><li>Each raid has <b>four bosses</b>; the <b>last boss</b>, the hardest, drops the raid’s uniques.</li><li>Bosses <b>scale with your group</b>: the last boss has <b>9 times</b> a normal monster’s hitpoints for every player inside (counting up to 8), the others <b>4.5 times</b>. Their XP grows too, a little less with each extra player.</li><li>Each raid can be cleared <b>solo</b> too, and an achievement marks a clear with no one else inside.</li><li>Parties now hold up to <b>8</b> players; see ${guide('playing-together')}.</li></ul>`],
+    return {lede:'A raid is a dungeon your group gets to itself, built to grow from one player up to a full party of 8. Five opened on 22 Oct 2026.',sections:[
+      ['in','Getting in',`<ul class="g-list"><li>No quest or level needed: click a raid’s entrance. A window says whether you start a new raid, join a partymate’s or go back to your own, and warns you when the raid pays less at your level.</li><li>The first player in opens the raid and party members who follow join it. Everyone who goes in counts toward its size until it closes, so a raid never shrinks.</li><li>There’s <b>no lockout</b>: run a raid as often as you like.</li></ul>`],
+      ['size','Growing with your group',`<ul class="g-list"><li>Bigger groups meet <b>bigger packs</b> and bosses with <b>more health</b>.</li><li>A raid holds <b>one elite for every two players</b>, on any floor (Kragmaw’s honor guard comes on top of that).</li><li>Every raid monster has <b>50% more health</b> than it would outside but pays the usual experience. Monsters hit just as hard whatever your number, and each player near a boss earns the same experience at any group size.</li><li>Squires fight with you but don’t count.</li></ul>`],
+      ['inside','Inside',`<ul class="g-list"><li>The way to the next floor stays shut until <b>every monster on yours is dead</b>. Nothing respawns, and a raid doesn’t reset while it’s open.</li><li>When everything is dead, a ring of light opens on the last floor to take you out.</li><li><b>Dying in a raid drops nothing.</b> You wake outside, and walking back in takes you to the floor you fell on.</li><li>A raid closes after a while (sooner once cleared or empty), and anything still on the ground or in a corpse goes with it, so pick up your loot first. A server restart doesn’t end a raid.</li><li>The Party tab shows the raid you’re in and lets you leave it.</li></ul>`],
+      ['rewards','Rewards',`<ul class="g-list"><li>Monsters on the way pay like any others. Each boss leaves <b>one gold hoard</b> for the group, and its gear goes to <b>one player picked at random</b>.</li><li>The <b>last boss</b> pays extra to everyone who was there for every boss of the run: each raid has its own find, with a chance at a <b>bigger gem than most players ever see</b>.</li><li>Each raid has a <b>unique piece for every class</b>. You only roll the one for your class, it’s <b>bound to your account</b>, and your <b>chance climbs</b> the longer you go without it.</li><li>Some bosses drop trophies for your home.</li><li>Rewards are aimed at the raid’s level: a few levels over it you still get everything, but much higher and your share of the hoards and your chance at the finds shrink to nothing.</li></ul>`],
       ...RAIDS.map(raid),
-      ['source','Where this comes from',note('From the game’s own rules (its boss list, its unique items and its raid scaling) and the 22 Oct 2026 news. Where each raid’s entrance is will show on the map once a player using the Atlas Collector has been inside.')]
+      ['source','Where this comes from',note('The game’s own “Raids” news (22 Oct 2026) and its rules: the boss list, the unique items and the raid achievements. Each raid’s entrance shows on the map once a player using the Atlas Collector has been inside.')]
     ],related:['unique-items','playing-together','combat']};
   }});
   // ---- Reagents (14 Oct 2026): their own page (the Reforging guide keeps its section): every reagent, what it is for and
