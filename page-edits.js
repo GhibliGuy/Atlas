@@ -663,6 +663,20 @@ globalThis.BXC_PAGE_EDITS = {
    "done": true,
    "steps": [],
    "updatedAt": 1792529257012
+  },
+  "quest:witch-swallowed-stones": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792771530449
+  },
+  "quest:witch-dragons-hoard": {
+   "first": "",
+   "notes": "",
+   "done": true,
+   "steps": [],
+   "updatedAt": 1792771530449
   }
  }
 };
