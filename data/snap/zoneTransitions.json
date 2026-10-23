@@ -1,4 +1,8 @@
 [
+{"sessionId":"f820d357","time":1792799857989,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":7761},
+{"sessionId":"f820d357","time":1792799831553,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":7760},
+{"sessionId":"f820d357","time":1792799247528,"fromZ":11001,"toZ":0,"kind":"outdoors","outX":1706.1,"outY":1818.9,"key":7759},
+{"sessionId":"f820d357","time":1792799245462,"fromZ":null,"toZ":11001,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":8,"atY":17,"key":7758},
 {"sessionId":"028eb86f","time":1792779951430,"fromZ":11001,"toZ":0,"kind":"outdoors","outX":1706,"outY":1819,"key":7757},
 {"sessionId":"028eb86f","time":1792779949193,"fromZ":0,"toZ":11001,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":8,"atY":17,"key":7756},
 {"sessionId":"028eb86f","time":1792779859392,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":7755},
@@ -4994,9 +4998,5 @@
 {"sessionId":"3c13d17a","time":1791376966775,"fromZ":-151,"toZ":-150,"zoneName":"Moonfang's Lair","pvpMode":"none","atX":1763,"atY":-5,"key":2765},
 {"sessionId":"3c13d17a","time":1791376959950,"fromZ":-152,"toZ":-151,"zoneName":"Moonfang's Lair","pvpMode":"none","atX":1762,"atY":2,"key":2764},
 {"sessionId":"3c13d17a","time":1791376951373,"fromZ":-153,"toZ":-152,"zoneName":"Moonfang's Lair","pvpMode":"none","atX":1741,"atY":7,"key":2763},
-{"sessionId":"3c13d17a","time":1791376911787,"fromZ":-152,"toZ":-153,"zoneName":"Moonfang's Lair","pvpMode":"none","atX":1760,"atY":-2,"key":2762},
-{"sessionId":"3c13d17a","time":1791376872829,"fromZ":-151,"toZ":-152,"zoneName":"Moonfang's Lair","pvpMode":"none","atX":1747,"atY":-14,"key":2761},
-{"sessionId":"3c13d17a","time":1791376844659,"fromZ":-150,"toZ":-151,"zoneName":"Moonfang's Lair","pvpMode":"none","atX":1741,"atY":-5,"key":2760},
-{"sessionId":"3c13d17a","time":1791376819775,"fromZ":0,"toZ":-150,"zoneName":"Moonfang's Lair","pvpMode":"none","atX":1744,"atY":-13,"key":2759},
-{"sessionId":"3c13d17a","time":1791376356055,"fromZ":-150,"toZ":0,"kind":"outdoors","outX":1738,"outY":-8,"key":2758}
+{"sessionId":"3c13d17a","time":1791376911787,"fromZ":-152,"toZ":-153,"zoneName":"Moonfang's Lair","pvpMode":"none","atX":1760,"atY":-2,"key":2762}
 ]
