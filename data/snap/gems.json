@@ -1,4 +1,8 @@
 [
+{"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"npcName":"Ogre Butcher","time":1792717671009,"sessionId":"a5cda985","key":719},
+{"type":"gem.found","typeId":"gem-iolite","carat":2.5,"dropped":false,"time":1792716348075,"sessionId":"4b64b455","key":718},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1792713366014,"sessionId":"41423701","key":717},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1792713308195,"sessionId":"41423701","key":716},
 {"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"npcName":"Ogre Shaman","time":1792711167735,"sessionId":"4484b319","key":715},
 {"type":"gem.found","typeId":"gem-iolite","carat":1,"dropped":false,"time":1792711105463,"sessionId":"a4c70ca8","key":714},
 {"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"npcName":"Ogre Butcher","time":1792710837956,"sessionId":"4484b319","key":713},
