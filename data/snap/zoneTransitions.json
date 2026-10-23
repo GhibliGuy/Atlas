@@ -1,4 +1,6 @@
 [
+{"sessionId":"ed0d9791","time":1792725313352,"fromZ":11001,"toZ":0,"kind":"outdoors","outX":1706,"outY":1819,"key":7614},
+{"sessionId":"ed0d9791","time":1792725250076,"fromZ":null,"toZ":11001,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":8,"atY":17,"key":7613},
 {"sessionId":"eccc8552","time":1792724927119,"fromZ":null,"toZ":600,"zoneName":"City of Westergarde","pvpMode":"none","atX":1691.3,"atY":1866.9,"key":7612},
 {"sessionId":"1d69305c","time":1792724287215,"fromZ":5404,"toZ":5405,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":527,"atY":-464,"key":7611},
 {"sessionId":"1d69305c","time":1792724120182,"fromZ":5403,"toZ":5404,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":526,"atY":-454,"key":7610},
@@ -4996,7 +4998,5 @@
 {"sessionId":"e794a75f","time":1791341463276,"fromZ":null,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":2618},
 {"sessionId":"802cb1db","time":1791341441881,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":2617},
 {"sessionId":"802cb1db","time":1791341435244,"fromZ":-9,"toZ":0,"kind":"outdoors","outX":42,"outY":5,"key":2616},
-{"sessionId":"802cb1db","time":1791341422953,"fromZ":0,"toZ":-9,"zoneName":"Binxonia","pvpMode":"none","atX":43,"atY":-2,"key":2615},
-{"sessionId":"6c0f6a3c","time":1791338940636,"fromZ":11001,"toZ":0,"kind":"outdoors","outX":124,"outY":-86,"key":2614},
-{"sessionId":"6c0f6a3c","time":1791338915997,"fromZ":null,"toZ":11001,"zoneName":"GhibliGuy's home, Plymouth Wharf","pvpMode":"none","atX":17,"atY":8,"key":2613}
+{"sessionId":"802cb1db","time":1791341422953,"fromZ":0,"toZ":-9,"zoneName":"Binxonia","pvpMode":"none","atX":43,"atY":-2,"key":2615}
 ]
