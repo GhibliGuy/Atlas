@@ -1,4 +1,9 @@
 [
+{"type":"gem.found","typeId":"gem-iolite","carat":1.5,"dropped":false,"time":1792723708544,"sessionId":"ed0d9791","key":724},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1792722934372,"sessionId":"ed0d9791","key":723},
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"npcName":"Ogre Charger","time":1792722909259,"sessionId":"1d69305c","key":722},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1792721278987,"sessionId":"ed0d9791","key":721},
+{"type":"gem.found","typeId":"gem-amber","carat":1,"dropped":false,"time":1792720587595,"sessionId":"ed0d9791","key":720},
 {"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"npcName":"Ogre Butcher","time":1792717671009,"sessionId":"a5cda985","key":719},
 {"type":"gem.found","typeId":"gem-iolite","carat":2.5,"dropped":false,"time":1792716348075,"sessionId":"4b64b455","key":718},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1792713366014,"sessionId":"41423701","key":717},
