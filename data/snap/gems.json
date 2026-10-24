@@ -1,4 +1,11 @@
 [
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"npcName":"Ogre Elder","time":1792807457249,"sessionId":"add856f7","key":751},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1792807263819,"sessionId":"eb279f73","key":750},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1792806786727,"sessionId":"eb279f73","key":749},
+{"type":"gem.found","typeId":"gem-amber","carat":2,"dropped":false,"time":1792804509808,"sessionId":"eb279f73","key":748},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1792803151620,"sessionId":"0c04778c","key":747},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1792802264302,"sessionId":"be4b58b7","key":746},
+{"type":"gem.found","typeId":"gem-iolite","carat":2,"dropped":false,"time":1792800124569,"sessionId":"ee845191","key":745},
 {"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"time":1792799213313,"sessionId":"f820d357","key":744},
 {"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"time":1792798803082,"sessionId":"f820d357","key":743},
 {"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"time":1792798720843,"sessionId":"f820d357","key":742},
