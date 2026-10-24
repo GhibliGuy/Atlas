@@ -609,6 +609,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       ach:[['Clear it','Lights Out'],['10 clears','Lamplighter (title)'],['50 clears','Keeper of the Moonfane (title)'],['Clear it alone','A Moth to the Flame (title)']]},
     {id:'ogre-longhouse',reward:56,shore:[506,-446],name:'The Ogre Longhouse',lv:50,where:'under the Ogre Chief Hall on Ogre Isle',bosses:['Gutrot the Carver','Old Mother Ashka','Kragg the Unmoved','Warchief Ruk Gorehand'],
       ach:[['Clear it','The Longhouse Cleared'],['10 clears','Chiefbreaker (title)'],['50 clears','Scourge of Ogre Isle (title)'],['Clear it alone','Uninvited Guest (title)']]}];
+  globalThis.BXC_RAIDS=RAIDS;   // the map's raid markers (atlas-live.js)
   reg({slug:'raids',group:'Combat',title:'Raids',blurb:'The six raids: where they are, their bosses, how they grow with your group, and the unique piece each has for your class.',build:()=>{
     const U=(globalThis.BXC_GAME_DATA||{}).uniques||[],plain=t=>String(t||'').replace(/^the /i,'').toLowerCase();
     const raid=r=>{

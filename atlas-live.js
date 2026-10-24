@@ -1892,7 +1892,27 @@ function exitLabel(ex,cx,cy){
   const cls=ex.surface?' zexit-out':ex.isParentExit?' zexit-back':'';
   return '<text class="zexit-lbl'+cls+'" x="'+cx+'" y="'+(cy+1.75)+'" text-anchor="middle" font-size="0.5">'+escXml(text)+'</text>';
 }
-function exitMarkup(ex,objs,cx,cy,shadow){
+// A way in or out (door, ladder, hatch, hole, stairs, gate, portal...) as the game draws it: the picture the collector
+// saved from the game ("object:<type>", or "<type>--flip" for one the game draws mirrored) and its box - where the
+// picture sits around the object's position, in tiles, which is the same measure as this map's (one tile = 1 across,
+// 0.5 down). Null when no picture of it has been saved yet.
+const WAY_TYPE_RE=/door|ladder|stair|entrance|exit|portal|hatch|gate|trapdoor|tunnel|hole|shaft|burrow/i,NOT_WAY_TYPE_RE=/firepit|gatehouse-banner|^pit-?trap/i;
+function wayPicture(o){
+  if(!o||!o.typeId||!WAY_TYPE_RE.test(o.typeId)||NOT_WAY_TYPE_RE.test(o.typeId))return null;
+  const idx=state.exactAssetIndex;if(!idx)return null;
+  const key=t=>'object:'+String(t).trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  const flip=!!(o.data&&o.data.sprite&&o.data.sprite.flipX);
+  const a=(flip&&idx.get(key(o.typeId+'--flip')))||(!flip&&idx.get(key(o.typeId)))||null;
+  const url=a&&typeof usableImageUrl==='function'?usableImageUrl(a):null;
+  return url&&a.box?{url,box:a.box}:null;
+}
+// that picture placed on the map: its box around where the object's own position lands (x,y: the map point of the
+// object's position), with the outline filter of the colour asked for
+function wayPictureSvg(pic,x,y,filter,attrs,title){
+  const b=pic.box;
+  return `<image href="${pic.url}" x="${(x+b.dx).toFixed(3)}" y="${(y+b.dy).toFixed(3)}" width="${b.w.toFixed(3)}" height="${b.h.toFixed(3)}" preserveAspectRatio="none" ${filter?`filter="${filter}"`:''} ${attrs||''}>${title||''}</image>`;
+}
+function exitMarkup(ex,objs,cx,cy,shadow,roomZ){
   const from=state.openZone,dg=state.dungeonOfZone,sameDg=!ex.surface&&from!=null&&dg?.has(from)&&dg.get(from)===dg.get(ex.toZ);
   const targetName=ex.surface?'outside':sameDg?roomLabelFor(ex.toZ):placeName(ex.toZ);
   const near=exitObjectNear(ex,objs);
@@ -1904,7 +1924,14 @@ function exitMarkup(ex,objs,cx,cy,shadow){
   // yellow ring: back the way you came; green ring: the way out to the surface
   const ring=ex.isParentExit||ex.surface?`<circle cx="${cx}" cy="${cy}" r="1.15" fill="none" stroke="${ex.surface?'#5fd38a':'#ffd54a'}" stroke-width="0.14" ${shadow}/>`:'';
   const attrs=ex.surface?`${shadow} class="zone-exit-dot zone-exit-out show-on-map" data-map-kind="${ex.place?'place':'zone'}" data-map-id="${escXml(ex.place||String(ex.fromZ))}" style="cursor:pointer"`:`${shadow} class="zone-exit-dot" data-exit-to="${ex.toZ}" style="cursor:pointer"`;
-  if(url)return `${ring}<image href="${url}" x="${cx-.9}" y="${cy-.9}" width="1.8" height="1.8" preserveAspectRatio="xMidYMid meet" ${attrs}>${title}</image>`;
+  const pic=wayPicture(near);
+  if(pic&&roomZ!=null){
+    // the object's own position on the map: the exit's point plus the step to the object (one tile = 1 across, 0.5 down)
+    const ddx=near.position.x-ex.x,ddy=near.position.y-ex.y,ox=cx+(ddx-ddy),oy=cy+(ddx+ddy)*0.5;
+    return wayPictureSvg(pic,ox,oy,`url(#bxcDoor${ex.surface?'Green':'Gold'}-${roomZ})`,attrs.replace(shadow,''),title);
+  }
+  // its own picture, outlined along its shape (no ring: the outline's colour says the same thing)
+  if(url)return `<image href="${url}" x="${cx-.9}" y="${cy-.9}" width="1.8" height="1.8" preserveAspectRatio="xMidYMid meet" ${roomZ!=null?attrs.replace(shadow,`filter="url(#bxcDoor${ex.surface?'Green':'Gold'}-${roomZ})"`):attrs}>${title}</image>`;
   if(kind==='ladder'){
     return `${ring}<g transform="translate(${cx},${cy})" ${attrs}><line x1="-0.5" y1="-0.9" x2="-0.5" y2="0.9" stroke="#c9a15a" stroke-width="0.16"/><line x1="0.5" y1="-0.9" x2="0.5" y2="0.9" stroke="#c9a15a" stroke-width="0.16"/><line x1="-0.5" y1="-0.55" x2="0.5" y2="-0.55" stroke="#c9a15a" stroke-width="0.14"/><line x1="-0.5" y1="-0.05" x2="0.5" y2="-0.05" stroke="#c9a15a" stroke-width="0.14"/><line x1="-0.5" y1="0.45" x2="0.5" y2="0.45" stroke="#c9a15a" stroke-width="0.14"/>${title}</g>`;
   }
@@ -2026,7 +2053,9 @@ function zoneDetailSvg(z){
     tiles.push(`<path d="${diamondPath(cx,cy)}" fill="${tileFill(r.typeId)}" stroke="rgba(0,0,0,.12)" stroke-width="0.02"><title>${escXml(prettyId(r.typeId))}</title></path>`);
   }
   const shadowDef=`<filter id="bxcShadow-${z}" x="-60%" y="-60%" width="220%" height="220%"><feDropShadow dx="0" dy="0.12" stdDeviation="0.15" flood-color="#000" flood-opacity="0.65"/></filter>`;
-  const defs=shadowDef+[...tilePatterns.values()].filter(p=>p.url).map(p=>`<pattern id="tile-${slug(p.typeId)}" width="1" height="1" patternUnits="userSpaceOnUse"><image href="${p.url}" width="1" height="1" preserveAspectRatio="xMidYMid slice"/></pattern>`).join('');
+  // an exit's door outlined along its own shape (24 Oct 2026): gold for a way to another room or back, green for the way out
+  const doorOutlineDef=c=>`<filter id="bxcDoor${c[0]}-${z}" x="-30%" y="-30%" width="160%" height="160%"><feComponentTransfer in="SourceAlpha" result="solid"><feFuncA type="discrete" tableValues="0 1"/></feComponentTransfer><feMorphology in="solid" operator="dilate" radius="0.16" result="rimA"/><feMorphology in="solid" operator="dilate" radius="0.09" result="lineA"/><feFlood flood-color="#140e04" flood-opacity="0.85"/><feComposite in2="rimA" operator="in" result="rim"/><feFlood flood-color="${c[1]}"/><feComposite in2="lineA" operator="in" result="line"/><feMerge><feMergeNode in="rim"/><feMergeNode in="line"/><feMergeNode in="SourceGraphic"/></feMerge></filter>`;
+  const defs=shadowDef+doorOutlineDef(['Gold','#ffd54a'])+doorOutlineDef(['Green','#5fd38a'])+[...tilePatterns.values()].filter(p=>p.url).map(p=>`<pattern id="tile-${slug(p.typeId)}" width="1" height="1" patternUnits="userSpaceOnUse"><image href="${p.url}" width="1" height="1" preserveAspectRatio="xMidYMid slice"/></pattern>`).join('');
   const shadow=`filter="url(#bxcShadow-${z})"`;
   // Walls as raised panels along each merged segment (wallSegments already resolves the game's own 3-tile wall
   // props into runs) rather than minimap.js's per-tile cubes with face-culling - these objects aren't one-per-tile
@@ -2050,7 +2079,10 @@ function zoneDetailSvg(z){
   const itemSvg=items.map(it=>{
     const cx=px(it.x,it.y),cy=py(it.x,it.y);
     if(it.kind==='prop'){
-      const o=it.o,label=escXml(prettyId(o.typeId)),url=objectIconUrl(o.typeId,prettyId(o.typeId));
+      const o=it.o,label=escXml(prettyId(o.typeId)),wpic=wayPicture(o);
+      // a door, ladder, hatch... nobody has gone through yet: the real thing too, outlined in gold (24 Oct 2026)
+      if(wpic)return wayPictureSvg(wpic,cx,cy,`url(#bxcDoorGold-${z})`,'',`<title>${label}</title>`);
+      const url=objectIconUrl(o.typeId,prettyId(o.typeId));
       // Only drawn with its real captured art - a lettered placeholder box looked like clutter, not the room.
       return url?`<image href="${url}" x="${cx-.9}" y="${cy-.9}" width="1.8" height="1.8" preserveAspectRatio="xMidYMid meet" ${shadow}><title>${label}</title></image>`:'';
     }
@@ -2067,7 +2099,7 @@ function zoneDetailSvg(z){
       const lbl=`<text class="zmon-lbl" x="${cx}" y="${cy-1.3}" text-anchor="middle" font-size="0.5">${escXml(nm)}${lv!=null?' · Lv '+lv:''}</text>`;
       return `<g class="zmon" data-zmon-type="${escXml(o.typeId||'')}" data-zmon-name="${escXml(nm)}" data-lv="${lv??''}">${body}${lbl}</g>`;
     }
-    if(it.kind==='exit')return exitMarkup(it.ex,allObjsHere,cx,cy,shadow)+exitLabel(it.ex,cx,cy);
+    if(it.kind==='exit')return exitMarkup(it.ex,allObjsHere,cx,cy,shadow,z)+exitLabel(it.ex,cx,cy);
     return `<circle cx="${cx}" cy="${cy}" r="1.1" fill="#ffd54a" stroke="#3a2c05" stroke-width="0.2" ${shadow}><title>${escXml(it.s.name||'You')}</title></circle>`;
   }).join('');
 
@@ -3580,10 +3612,12 @@ function newsHtml(){
       m.on('click',()=>{if(!state.zoneArea)state.zoneArea=new Map();state.zoneArea.set(ae.z,ae.area);lastRenderedZoneOverlayZ=null;openZoneOverlay(ae.z)});
       m.addTo(zoneLayer);
     }
+    // the raids get their own crests (drawRaidMarkers): their rooms' plain entrance markers and official dots step aside
+    const raidZones=drawRaidMarkers();
     // one marker per official place: Sunken Trove was recorded as two dungeons that both sit on its official spot
     const poiDrawn=new Set();
     for(const [z,ent] of state.zoneEntrances||[]){
-      const meta=state.zones.get(z);if(!meta)continue;
+      const meta=state.zones.get(z);if(!meta||raidZones.has(z))continue;
       const poi=dungeonPoiForZone(z);
       if(poi){if(poiDrawn.has(poi.name))continue;poiDrawn.add(poi.name);}
       if(poi&&typeof poiMarkersByName!=='undefined'){const poiMarker=poiMarkersByName.get(poi.name);if(poiMarker)poiLayer.removeLayer(poiMarker);}
@@ -3628,6 +3662,53 @@ function newsHtml(){
     if(state.selectedResourceType)showResourceSelection(state.selectedResourceType,false)
     if(state.openZone!=null&&zoneOverlayEl&&zoneOverlayEl.style.display!=='none')openZoneOverlay(state.openZone)
     console.timeEnd('drawMap:total');
+  }
+
+  // ---- Raid entrances (24 Oct 2026) ----------------------------------------------------------------------------------
+  // Each raid (BXC_RAIDS, atlas-guides.js) at its way in: a round crest with an icon for what is inside, ringed in the
+  // colour of its level band, and "Name · Raid · Lv N" under it. Hover: a card (level, floors, bosses, how it grows, the
+  // class unique). Click: the layout when a player has been inside, else the Raids guide. Returns the zones of the
+  // raids' rooms, whose plain entrance markers the caller skips.
+  const RAID_BAND=lv=>lv>=45?'#ff6a5a':lv>=35?'#b07cff':lv>=25?'#5aa8ff':'#5fd38a';
+  const RAID_GLYPH={
+    // pirates: skull and crossbones
+    'redmaws-grotto':'<g stroke="#f4e6c4" stroke-width="2.4" stroke-linecap="round"><line x1="12" y1="26" x2="28" y2="31"/><line x1="28" y1="26" x2="12" y2="31"/></g><circle cx="20" cy="17" r="6.5" fill="#f4e6c4"/><rect x="16.5" y="20" width="7" height="5" rx="1.5" fill="#f4e6c4"/><circle cx="17.6" cy="17" r="1.8" fill="#1b120a"/><circle cx="22.4" cy="17" r="1.8" fill="#1b120a"/>',
+    // basilisks that turn you to stone: a slit-pupilled eye
+    'stonegaze-sanctum':'<path d="M8 20 Q20 9 32 20 Q20 31 8 20Z" fill="#f4e6c4"/><ellipse cx="20" cy="20" rx="5" ry="5" fill="#c9a640"/><ellipse cx="20" cy="20" rx="1.4" ry="4.4" fill="#1b120a"/>',
+    // red trolls that only fire stops: a flame
+    'kragmaws-court':'<path d="M20 8 C22 13 28 15 27 22 C27 28 23 31 20 31 C16 31 12.5 28 13 22.5 C13.3 19 15.5 17.5 16.5 15 C17.5 18 18.5 19 19.5 19 C18.5 15 19 11 20 8Z" fill="#ff9a3c"/><path d="M20 19 C21.5 22 24 23 23.5 26.5 C23 29 21.5 30 20 30 C18.3 30 16.8 28.8 17 26.6 C17.2 24.5 19 23 20 19Z" fill="#ffe08a"/>',
+    // harpies: a feather
+    'matriarchs-roost':'<path d="M27.5 9.5 C19 11 12.5 18 12 29 C17 24 25 21 27.5 9.5Z" fill="#f4e6c4"/><path d="M27 10.5 L11 31" stroke="#1b120a" stroke-width="1.3" stroke-linecap="round"/><path d="M15 23.5 l3.5 .3 M17.5 20 l3.5 .2 M20.5 16.5 l3 .1" stroke="#1b120a" stroke-width="1" stroke-linecap="round"/>',
+    // the moon temple and its moths: a crescent moon with a moth
+    'moonfane':'<path d="M22 8.5 A11.5 11.5 0 1 0 31.5 25 A9.5 9.5 0 1 1 22 8.5Z" fill="#f4e6c4"/><g fill="#d9c8ff"><path d="M24 18 C27 14 31 14.5 30.5 18 C30 20 27 20.5 24 19Z"/><path d="M24 19.5 C27 20.5 29.5 22.5 28 24.5 C26.5 25.5 25 23 24 20.5Z"/></g><line x1="23.8" y1="16.5" x2="23.8" y2="22" stroke="#1b120a" stroke-width="1.2" stroke-linecap="round"/>',
+    // ogres: a horned war helm
+    'ogre-longhouse':'<path d="M12 25 V20 Q12 12 20 12 Q28 12 28 20 V25 Z" fill="#f4e6c4"/><path d="M12.5 19 Q7 16 8 9.5 Q10 15 13.5 15.5Z M27.5 19 Q33 16 32 9.5 Q30 15 26.5 15.5Z" fill="#e8d7a6"/><rect x="10.5" y="24.5" width="19" height="3.5" rx="1" fill="#c9a15a"/><rect x="18.8" y="17" width="2.4" height="11" fill="#1b120a" opacity=".55"/>'
+  };
+  // the crossed swords for a raid not listed above (a new one)
+  const RAID_GLYPH_ANY='<g stroke="#f4e6c4" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="12" x2="27" y2="27"/><line x1="28" y1="12" x2="13" y2="27"/></g>';
+  const raidCrest=(r,c)=>`<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="#1b120a" stroke="${c}" stroke-width="3"/><circle cx="20" cy="20" r="13.5" fill="none" stroke="${c}" stroke-opacity=".35"/>${RAID_GLYPH[r.id]||RAID_GLYPH_ANY}</svg>`;
+  const raidKey=s=>String(s||'').toLowerCase().replace(/[’']/g,'').replace(/^the /,'').trim();
+  // the recorded room to open for a raid: its dungeon's first room, else a zone of that name
+  function raidZoneOf(r){const k=raidKey(r.name);
+    for(const g of state.dungeons?.values()||[])if(raidKey(g.name)===k&&g.rooms?.length)return {z:g.rooms[0].z,all:g.rooms.map(x=>x.z)};
+    const m=[...(state.zones?.values()||[])].find(m=>raidKey(m.name)===k);return m?{z:m.z,all:[m.z]}:null}
+  function drawRaidMarkers(){
+    const skip=new Set(),R=globalThis.BXC_RAIDS||[];if(!R.length||typeof zoneLayer==='undefined')return skip;
+    const U=(globalThis.BXC_GAME_DATA||{}).uniques||[],plain=t=>String(t||'').replace(/^the /i,'').toLowerCase();
+    for(const r of R){if(!r.shore)continue;
+      const c=RAID_BAND(r.lv),zz=raidZoneOf(r);if(zz)for(const z of zz.all)skip.add(z);
+      if(typeof poiMarkersByName!=='undefined')for(const [n,cm] of poiMarkersByName)if(raidKey(n)===raidKey(r.name))poiLayer.removeLayer(cm);
+      const last=r.bosses[r.bosses.length-1],uq=U.filter(u=>u.bossName&&(plain(u.bossName)===plain(last)||plain(u.bossName)===plain(last.split(',')[0])));
+      const icon=L.divIcon({className:'bxc-raid',html:`${raidCrest(r,c)}<span class="bxc-raid-lbl" style="border-color:${c}"><b style="color:${c}">${esc(r.name)}</b> · Raid · Lv ${r.lv}</span>`,iconSize:[40,40],iconAnchor:[20,20]});
+      const m=L.marker(latlng({x:r.shore[0],y:r.shore[1]},true),{icon,zIndexOffset:600,title:r.name+' (raid)'});
+      m.bindTooltip(`<div class="bxc-raid-card"><b class="bxc-raid-name">${esc(r.name)}</b><div><span class="bxc-raid-tag">RAID</span>Level ${r.lv} and up · grows with your group to Lv ${r.lv+30}</div>`
+        +`<ul><li>6 floors, 4 bosses: ${r.bosses.slice(0,-1).map(b=>esc(b.split(',')[0])).join(', ')} and <b>${esc(last.split(',')[0])}</b></li><li>From 1 player up to a party of 8 · no lockout</li>`
+        +(uq.length?`<li>Unique for your class: ${uq.length===1?'<b>'+esc(uq[0].name)+'</b>':uq.length+' pieces, one per class'}</li>`:'')+'</ul>'
+        +`<div class="bxc-raid-hint">${zz?'Click for its layout':'Click for the Raids guide'}</div></div>`,{direction:'top',offset:[0,-22],className:'bxc-raid-tip'});
+      m.on('click',ev=>{if(armedPassthrough(ev))return;
+        if(zz){state.zoneArea?.set(zz.z,0);lastRenderedZoneOverlayZ=null;openZoneOverlay(zz.z)}else goRoute('#/guide/raids')});
+      m.addTo(zoneLayer)}
+    return skip;
   }
 
   // Kills come from the game's own kill reports (exp.gain with source {kind:'kill', enemyName}); the

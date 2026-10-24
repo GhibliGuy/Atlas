@@ -1361,3 +1361,15 @@ a.splash-tile,a.splash-tile:hover,a.splash-tile:visited{text-decoration:none;col
 .splash-head-statue .splash-lede{margin:0;max-width:470px}
 @media (max-width:640px){.splash-head-statue{grid-template-columns:1fr;justify-items:center;text-align:center;gap:6px}.splash-head-statue .splash-statue{height:120px}.splash-head-statue .splash-lede{margin:0 auto}}
 @media (prefers-reduced-motion:reduce){.splash-head-statue .splash-statue{animation:none}}
+
+/* Raid entrances on the map (24 Oct 2026): a crest per raid, its name and level under it, a card on hover */
+.bxc-raid{position:relative;cursor:pointer;filter:drop-shadow(0 2px 3px rgba(0,0,0,.55))}
+.bxc-raid svg{display:block}
+.bxc-raid-lbl{position:absolute;left:50%;top:41px;transform:translateX(-50%);padding:1px 8px;border:1px solid;border-radius:10px;background:rgba(14,10,6,.88);color:#efe6d0;font:700 11px/1.45 'Segoe UI',Arial,sans-serif;white-space:nowrap;pointer-events:none}
+.leaflet-tooltip.bxc-raid-tip{padding:0;border:1px solid #6b5326;border-radius:8px;background:rgba(18,14,9,.96);color:#efe6d0;box-shadow:0 6px 18px rgba(0,0,0,.55);white-space:normal}
+.leaflet-tooltip.bxc-raid-tip::before{border-top-color:#6b5326}
+.bxc-raid-card{width:250px;padding:9px 11px;font:12px/1.45 'Segoe UI',Arial,sans-serif}
+.bxc-raid-name{display:block;font:600 15px Georgia,serif;color:#e6c25c}
+.bxc-raid-tag{display:inline-block;margin-right:5px;padding:0 6px;border-radius:8px;background:#5a1d16;color:#ffb3a6;font-weight:700;font-size:10px;letter-spacing:.04em}
+.bxc-raid-card ul{margin:6px 0 4px;padding-left:16px}
+.bxc-raid-hint{color:#a9b2a2;font-size:11px}
