@@ -1,0 +1,1124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1.838899965286255 -0.924900050163269 3.5531999969482424 2.7898998165130617" width="171" height="134"><style><![CDATA[.world-shell {
+  display: grid;
+  gap: 0;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+  padding: 3px;
+}
+
+.toolbar-button,
+.chat-tab,
+.action-button,
+.zoom-button {
+  appearance: none;
+  background: linear-gradient(180deg, #d6d1c3 0%, #9c978c 45%, #736e66 100%);
+  border: 1px solid #2b2a28;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.45),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.45);
+  color: #1c1b18;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.7rem;
+  min-height: 22px;
+  padding: 0 6px;
+}
+
+.toolbar-button {
+  min-width: 44px;
+}
+
+.zoom-button {
+  min-width: 64px;
+}
+
+.zoom-button.is-active {
+  background: linear-gradient(180deg, #f2dd90 0%, #d0aa47 55%, #87641f 100%);
+}
+
+.board-panel {
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+}
+
+.board-overlay {
+  display: flex;
+  justify-content: space-between;
+  left: 10px;
+  pointer-events: none;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 1;
+}
+
+.board-coords {
+  color: #f5f0e3;
+  font-size: 0.8rem;
+  pointer-events: none;
+  text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
+}
+
+/*
+ * The current region's name, centered along the top edge of the board in the
+ * same white-with-black-outline style as .board-coords. Absolutely positioned so
+ * it does not disturb the coords/zoom space-between row; the overlay's symmetric
+ * 10px insets make its horizontal center the board's center.
+ */
+.board-region {
+  color: #f5f0e3;
+  font-size: 0.8rem;
+  left: 50%;
+  pointer-events: none;
+  position: absolute;
+  text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.board-region-pvp {
+  color: #ffd6d6;
+}
+
+.board-controls,
+.zoom-controls {
+  display: flex;
+  gap: 6px;
+  pointer-events: auto;
+}
+
+.board-controls {
+  flex-wrap: wrap;
+}
+
+.board-panel {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.board {
+  background: #09966b;
+  cursor: crosshair;
+  display: block;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  width: 100%;
+}
+
+.board.board-editor {
+  cursor: grab;
+}
+
+.board-void {
+  fill: #0a815f;
+}
+
+.board-void-underground {
+  fill: #050505;
+}
+
+.board-bg {
+  fill: #0f9567;
+}
+
+.board-bg-underground {
+  fill: #101010;
+}
+
+.board-ground-tile {
+  fill: #0f9567;
+  stroke: rgba(5, 78, 56, 0.18);
+  stroke-width: 0.04;
+}
+
+.board-ground-tile-underground {
+  fill: #121212;
+  stroke: rgba(255, 255, 255, 0.03);
+  stroke-width: 0.04;
+}
+
+.board-sand {
+  fill: #b9a55a;
+}
+
+/* Ground tile base classes */
+.board-ground-base {
+  fill: #8b7a49;
+}
+
+.board-ground-splotch {
+  fill: rgba(55, 40, 12, 0.12);
+}
+
+/* ground-dirt: worn dirt road */
+.board-ground-type-ground-dirt .board-ground-base {
+  fill: #8b7a49;
+}
+.board-ground-type-ground-dirt .board-ground-splotch {
+  fill: rgba(55, 40, 12, 0.13);
+}
+
+/* ground-salt-road: packed salt road of the Wastelands */
+.board-ground-type-ground-salt-road .board-ground-base {
+  fill: #b0a279;
+}
+.board-ground-type-ground-salt-road .board-ground-splotch {
+  fill: rgba(125, 116, 84, 0.16);
+}
+
+/* ground-cave: dark stone floor */
+.board-ground-type-ground-cave .board-ground-base {
+  fill: #4a4848;
+}
+.board-ground-type-ground-cave .board-ground-splotch {
+  fill: rgba(0, 0, 0, 0.22);
+}
+
+/* ground-house: warm stone tile floor */
+.board-ground-type-ground-house .board-ground-base {
+  fill: #c8b898;
+}
+.board-ground-type-ground-house .board-ground-splotch {
+  fill: rgba(90, 70, 40, 0.1);
+}
+
+/* ground-wood: wooden planks */
+.board-ground-type-ground-wood .board-ground-base {
+  fill: #9e6a36;
+}
+.board-ground-type-ground-wood .board-ground-splotch {
+  fill: rgba(50, 25, 5, 0.18);
+}
+
+/* ground-cobble: cobblestone street */
+.board-ground-type-ground-cobblestone .board-ground-base {
+  fill: #74786d;
+}
+
+.ground-type-swatch-ground-cobblestone {
+  background: #74786d;
+}
+
+.board-ground-type-ground-cobble .board-ground-base {
+  fill: #8a8278;
+}
+.board-ground-type-ground-cobble .board-ground-splotch {
+  fill: rgba(50, 50, 50, 0.14);
+}
+
+/* ground-sand: sandy ground */
+.board-ground-type-ground-sand .board-ground-base {
+  fill: #d4b86a;
+}
+.board-ground-type-ground-sand .board-ground-splotch {
+  fill: rgba(120, 90, 20, 0.11);
+}
+
+/* ground-grass: trimmed grass path */
+.board-ground-type-ground-grass .board-ground-base {
+  fill: #5a8a3c;
+}
+.board-ground-type-ground-grass .board-ground-splotch {
+  fill: rgba(25, 55, 15, 0.18);
+}
+
+/* Ground type swatches in the editor sidebar */
+.ground-type-swatch {
+  border-left: 4px solid transparent;
+}
+.ground-type-swatch-ground-dirt {
+  border-left-color: #8b7a49;
+}
+.ground-type-swatch-ground-salt-road {
+  border-left-color: #b0a279;
+}
+.ground-type-swatch-ground-cave {
+  border-left-color: #4a4848;
+}
+.ground-type-swatch-ground-house {
+  border-left-color: #c8b898;
+}
+.ground-type-swatch-ground-wood {
+  border-left-color: #9e6a36;
+}
+.ground-type-swatch-ground-cobble {
+  border-left-color: #8a8278;
+}
+.ground-type-swatch-ground-sand {
+  border-left-color: #d4b86a;
+}
+.ground-type-swatch-ground-grass {
+  border-left-color: #5a8a3c;
+}
+.ground-type-swatch-ground-water {
+  border-left-color: #276485;
+}
+.ground-type-swatch-ground-mountain {
+  border-left-color: #8a857b;
+}
+
+.board-ground-type-ground-limestone .board-ground-base {
+  fill: #b2b3a3;
+}
+.ground-type-swatch-ground-limestone {
+  border-left-color: #b2b3a3;
+}
+.board-ground-type-ground-brick .board-ground-base {
+  fill: #8e826d;
+}
+.ground-type-swatch-ground-brick {
+  border-left-color: #8e826d;
+}
+.board-ground-type-ground-slate .board-ground-base {
+  fill: #424f52;
+}
+.ground-type-swatch-ground-slate {
+  border-left-color: #424f52;
+}
+.board-ground-type-ground-marble .board-ground-base {
+  fill: #b3b9ac;
+}
+.ground-type-swatch-ground-marble {
+  border-left-color: #b3b9ac;
+}
+.board-ground-type-ground-gravel .board-ground-base {
+  fill: #8e907c;
+}
+.ground-type-swatch-ground-gravel {
+  border-left-color: #8e907c;
+}
+.board-ground-type-ground-forest .board-ground-base {
+  fill: #59583c;
+}
+.ground-type-swatch-ground-forest {
+  border-left-color: #59583c;
+}
+.board-ground-type-ground-mud .board-ground-base {
+  fill: #887052;
+}
+.ground-type-swatch-ground-mud {
+  border-left-color: #887052;
+}
+.board-ground-type-ground-snow .board-ground-base {
+  fill: #dce7e7;
+}
+.ground-type-swatch-ground-snow {
+  border-left-color: #dce7e7;
+}
+.board-ground-type-ground-wood-weathered .board-ground-base {
+  fill: #626a62;
+}
+.ground-type-swatch-ground-wood-weathered {
+  border-left-color: #626a62;
+}
+.board-ground-type-ground-wood-walnut .board-ground-base {
+  fill: #46382e;
+}
+.ground-type-swatch-ground-wood-walnut {
+  border-left-color: #46382e;
+}
+
+.board-object-shadow {
+  fill: rgba(0, 0, 0, 0.22);
+}
+
+.board-ground-mound {
+  fill: rgba(64, 110, 47, 0.42);
+}
+
+.board-root-base {
+  fill: rgba(74, 53, 32, 0.52);
+}
+
+.board-house-ref-wall-left {
+  fill: #efe2c4;
+  stroke: #918368;
+  stroke-width: 0.08;
+}
+
+.board-house-ref-wall-right {
+  fill: #e6d5b2;
+  stroke: #827359;
+  stroke-width: 0.08;
+}
+
+.board-house-ref-base {
+  fill: #cab996;
+  stroke: #8a7a5e;
+  stroke-width: 0.06;
+}
+
+.board-house-ref-roof-top {
+  fill: #757245;
+  stroke: #3f3d25;
+  stroke-linejoin: round;
+  stroke-width: 0.12;
+}
+
+.board-house-ref-roof-left {
+  fill: #807d4b;
+  stroke: #474527;
+  stroke-width: 0.1;
+}
+
+.board-house-ref-roof-right {
+  fill: #6a673c;
+  stroke: #3a381f;
+  stroke-width: 0.1;
+}
+
+.board-house-ref-trim {
+  fill: none;
+  stroke: rgba(90, 81, 60, 0.72);
+  stroke-linecap: round;
+  stroke-width: 0.07;
+}
+
+.board-house-ref-window {
+  fill: #10294f;
+  stroke: #07101d;
+  stroke-width: 0.08;
+}
+
+.board-house-ref-window-grid {
+  fill: none;
+  stroke: rgba(67, 103, 156, 0.9);
+  stroke-linecap: round;
+  stroke-width: 0.05;
+}
+
+.board-house-ref-door {
+  fill: #a9711d;
+  stroke: #5f3c0f;
+  stroke-width: 0.08;
+}
+
+.board-house-ref-door-plank {
+  fill: none;
+  stroke: rgba(96, 62, 16, 0.78);
+  stroke-linecap: round;
+  stroke-width: 0.05;
+}
+
+.board-house-ref-step {
+  fill: #d8c7a7;
+  stroke: #9a8b72;
+  stroke-width: 0.05;
+}
+
+.board-door-knob {
+  fill: #d8bb63;
+}
+
+.board-house-step {
+  fill: #d3c4a4;
+  stroke: #93856d;
+  stroke-width: 0.06;
+}
+
+.board-sprite-blocker {
+  fill: transparent;
+  stroke: none;
+}
+
+.board-door-hotspot {
+  fill: transparent;
+  stroke: none;
+  cursor: pointer;
+}
+
+.board-door-travel-indicator {
+  pointer-events: none;
+}
+
+.board-door-travel-arrow {
+  fill: none;
+  stroke: #fff2a8;
+  stroke-linecap: round;
+  stroke-width: 0.12;
+}
+
+.board-door-travel-arrowhead {
+  fill: #fff2a8;
+}
+
+.board-stone {
+  fill: #aaa095;
+  stroke: #6d645b;
+  stroke-width: 0.12;
+}
+
+.board-weapon-rack {
+  fill: #4f3521;
+}
+
+.board-hanging-weapon {
+  fill: #c8c4be;
+  stroke: #585650;
+  stroke-linejoin: round;
+  stroke-width: 0.08;
+}
+
+.board-fire {
+  fill: #ff6a1d;
+}
+
+.board-object-label {
+  fill: #ece7d3;
+  font-family: "Trebuchet MS", "Verdana", sans-serif;
+  font-size: 0.42px;
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.75);
+  stroke-width: 0.12px;
+}
+
+.sign-label {
+  fill: #f2e8c8;
+  font-family: "Trebuchet MS", "Verdana", sans-serif;
+  font-size: 0.19px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: rgba(40, 20, 0, 0.75);
+  stroke-width: 0.06px;
+}
+
+.board-cave-shadow {
+  fill: #020202;
+  stroke: #2f2f2f;
+  stroke-width: 0.12;
+}
+
+.board-cave-exit-glow {
+  fill: #c8a84a;
+  opacity: 0.55;
+}
+
+.board-cave-exit-inner {
+  fill: #1c1408;
+}
+
+.board-cave-exit-bright {
+  fill: #ffe8a0;
+}
+
+.board-cave-mouth {
+  fill: #070707;
+}
+
+.board-cave-rim {
+  fill: #726d67;
+  stroke: #4f4b46;
+  stroke-width: 0.1;
+}
+
+.board-trunk,
+.board-trunk-fill,
+.board-post-wood,
+.board-fence-post,
+.board-fence-wood,
+.board-wood-plank,
+.board-log,
+.board-cart-bed,
+.board-cart-rail {
+  fill: #7a5231;
+}
+
+.board-log-end {
+  fill: #9c6a40;
+}
+
+.board-trunk,
+.board-trunk-fill,
+.board-post-wood,
+.board-fence-post,
+.board-fence-wood,
+.board-wood-plank,
+.board-cart-bed,
+.board-cart-rail {
+  stroke: #53341d;
+  stroke-width: 0.08;
+}
+
+.board-bark-line,
+.board-cart-axle,
+.board-cart-shaft,
+.board-stone-crack,
+.board-crate-line,
+.board-statue-line,
+.board-wheat-stalk,
+.board-willow-frond,
+.board-deadwood,
+.board-trunk-side-line {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.board-trunk-side {
+  fill: #654224;
+  stroke: #4d2f19;
+  stroke-width: 0.08;
+}
+
+.board-bark-line {
+  stroke: rgba(65, 38, 20, 0.45);
+  stroke-width: 0.08;
+}
+
+.board-trunk-side-line {
+  stroke: rgba(73, 45, 23, 0.45);
+  stroke-width: 0.08;
+}
+
+.board-canopy-dark {
+  fill: #2c6d33;
+}
+
+.board-canopy-mid {
+  fill: #3f8c46;
+}
+
+.board-canopy-light {
+  fill: #71b664;
+}
+
+.board-pine-dark {
+  fill: #1d5b34;
+}
+
+.board-pine-mid {
+  fill: #2d7644;
+}
+
+.board-pine-light {
+  fill: #49955a;
+}
+
+.board-walnut-dark {
+  fill: #2f4f2a;
+}
+
+.board-walnut-mid {
+  fill: #436b34;
+}
+
+.board-walnut-light {
+  fill: #6c9748;
+}
+
+.board-shagbark-dark {
+  fill: #5a6a25;
+}
+
+.board-shagbark-mid {
+  fill: #7e9234;
+}
+
+.board-shagbark-light {
+  fill: #aec24f;
+}
+
+.board-shagbark-bark {
+  fill: #9c7449;
+  stroke: #6f4f2c;
+  stroke-width: 0.05;
+  stroke-linejoin: round;
+}
+
+.board-willow-frond {
+  stroke: #6ea95d;
+  stroke-width: 0.2;
+}
+
+.board-deadwood-fill {
+  fill: #6b5849;
+  stroke: #403329;
+  stroke-width: 0.08;
+}
+
+.board-deadwood {
+  stroke: #47362a;
+  stroke-width: 0.14;
+}
+
+.board-mushroom-stem {
+  fill: #efe6cf;
+  stroke: #a19379;
+  stroke-width: 0.04;
+}
+
+.board-mushroom-cap-red {
+  fill: #c84b43;
+  stroke: #7d251d;
+  stroke-width: 0.05;
+}
+
+.board-mushroom-cap-gold {
+  fill: #c79a4c;
+  stroke: #7a5622;
+  stroke-width: 0.05;
+}
+
+.board-mushroom-spot {
+  fill: #f5f0e3;
+}
+
+.board-stone-dark {
+  fill: #86827c;
+}
+
+.board-stone-mid {
+  fill: #aba7a1;
+}
+
+.board-stone-light {
+  fill: #d2cfca;
+}
+
+.board-stone-crack {
+  stroke: rgba(86, 84, 81, 0.8);
+  stroke-width: 0.09;
+}
+
+.board-fire-glow {
+  fill: rgba(255, 177, 76, 0.28);
+}
+
+.board-fire-base {
+  fill: #e0481a;
+}
+
+.board-fire-outer {
+  fill: #f56d22;
+}
+
+.board-fire-core {
+  fill: #ffd768;
+}
+
+/* Animated fire. Each flame group flickers from its own base: transform-box
+   keeps the origin on the element's bounding box, so a tongue scales and sways
+   around the point where it leaves the coals. Instances stagger duration and
+   delay inline so no two fires burn in step. Opacity keyframes read the
+   per-instance base opacity from the --fire-o custom property. */
+.board-flame {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: board-flame-flicker 1.8s ease-in-out infinite;
+}
+
+@keyframes board-flame-flicker {
+  0%,
+  100% {
+    transform: scaleX(1) scaleY(1) skewX(0deg);
+  }
+  22% {
+    transform: scaleX(0.95) scaleY(1.08) skewX(1.6deg);
+  }
+  41% {
+    transform: scaleX(1.06) scaleY(0.91) skewX(-2deg);
+  }
+  62% {
+    transform: scaleX(0.96) scaleY(1.11) skewX(2.4deg);
+  }
+  81% {
+    transform: scaleX(1.04) scaleY(0.94) skewX(-1.2deg);
+  }
+}
+
+.board-fire-glow-anim {
+  animation: board-fire-glow-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes board-fire-glow-pulse {
+  0%,
+  100% {
+    opacity: calc(var(--fire-o, 0.16) * 0.75);
+  }
+  50% {
+    opacity: calc(var(--fire-o, 0.16) * 1.2);
+  }
+}
+
+.board-ember {
+  animation: board-ember-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes board-ember-pulse {
+  0%,
+  100% {
+    opacity: calc(var(--fire-o, 0.8) * 0.55);
+  }
+  45% {
+    opacity: var(--fire-o, 0.8);
+  }
+}
+
+.board-smoke {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  opacity: 0;
+  animation: board-smoke-rise 5s linear infinite;
+}
+
+@keyframes board-smoke-rise {
+  0% {
+    transform: translate(0, 0) scale(0.55);
+    opacity: 0;
+  }
+  14% {
+    opacity: var(--fire-o, 0.2);
+  }
+  72% {
+    opacity: calc(var(--fire-o, 0.2) * 0.5);
+  }
+  100% {
+    transform: translate(var(--smoke-drift, 0.2px), var(--smoke-rise, -1.6px))
+      scale(1.6);
+    opacity: 0;
+  }
+}
+
+.board-spark {
+  opacity: 0;
+  animation: board-spark-rise 2s linear infinite;
+}
+
+@keyframes board-spark-rise {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  48% {
+    opacity: 0.45;
+  }
+  70% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(var(--spark-drift, 0.1px), var(--spark-rise, -1.3px));
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board-flame,
+  .board-fire-glow-anim,
+  .board-ember,
+  .board-smoke,
+  .board-spark {
+    animation: none;
+  }
+
+  .board-smoke,
+  .board-spark {
+    opacity: 0.18;
+  }
+}
+
+.board-water {
+  fill: #68c9e5;
+}
+
+.board-water-deep {
+  fill: #2f8db2;
+}
+
+.board-water-foam {
+  fill: rgba(236, 250, 255, 0.92);
+}
+
+.board-crate {
+  fill: #956631;
+  stroke: #553615;
+  stroke-width: 0.08;
+}
+
+.board-crate-line {
+  stroke: rgba(78, 47, 19, 0.75);
+  stroke-width: 0.08;
+}
+
+.board-wheel {
+  fill: #4f3727;
+  stroke: #2c1b10;
+  stroke-width: 0.08;
+}
+
+.board-wheel-hub {
+  fill: #aa7c40;
+}
+
+.board-metal-dark {
+  fill: #4e4d4a;
+}
+
+.board-lantern {
+  fill: #79592d;
+  stroke: #3e2c15;
+  stroke-width: 0.07;
+}
+
+.board-lamp-glow {
+  fill: rgba(250, 226, 126, 0.7);
+}
+
+.board-cart-shaft {
+  stroke: #5a3b21;
+  stroke-width: 0.1;
+}
+
+.board-cart-axle {
+  stroke: #4a2f1a;
+  stroke-width: 0.12;
+}
+
+.board-fence-wood {
+  fill: #8b6139;
+}
+
+.board-wheat-stalk {
+  stroke: #8db55d;
+  stroke-width: 0.1;
+}
+
+.board-wheat-head {
+  fill: #dcb85b;
+  stroke: #9a7a32;
+  stroke-width: 0.04;
+}
+
+.board-fabric-red {
+  fill: #ac3e38;
+  stroke: #69231f;
+  stroke-width: 0.08;
+}
+
+.board-fabric-cream {
+  fill: rgba(243, 229, 191, 0.9);
+}
+
+.board-statue {
+  fill: #c9c6c0;
+  stroke: #83807a;
+  stroke-width: 0.08;
+}
+
+.board-statue-line {
+  stroke: #8c8882;
+  stroke-width: 0.11;
+}
+
+.board-pond-edge {
+  fill: #6da06a;
+}
+
+.board-pond-ripple {
+  fill: none;
+  stroke: rgba(195, 239, 252, 0.62);
+  stroke-width: 0.08;
+}
+
+.board-lily-pad {
+  fill: #7fb356;
+  stroke: #4e7a33;
+  stroke-width: 0.05;
+}
+
+.grid-line {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.07);
+  stroke-width: 0.03;
+}
+
+.grid-line-underground {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.04);
+  stroke-width: 0.03;
+}
+
+.board-object-hit {
+  cursor: grab;
+}
+
+.target-marker {
+  fill: rgba(240, 215, 99, 0.72);
+  stroke: #fff2ad;
+  stroke-width: 0.06;
+}
+
+.health-track {
+  fill: rgba(0, 0, 0, 0.55);
+}
+
+.health-fill {
+  fill: #d92d24;
+}
+
+.player-shadow {
+  fill: rgba(0, 0, 0, 0.24);
+}
+
+.player-leg {
+  fill: #5b4634;
+}
+
+.player-self-body {
+  fill: #f0d355;
+}
+
+.player-self-shoulders {
+  fill: #d0ae30;
+}
+
+.player-self-head {
+  fill: #f3d9bd;
+}
+
+.player-other-body {
+  fill: #7a5533;
+}
+
+.player-other-shoulders {
+  fill: #604227;
+}
+
+.player-other-head {
+  fill: #e2c39b;
+}
+
+.player-arm-line {
+  fill: none;
+  stroke: #3e2d20;
+  stroke-linecap: round;
+  stroke-width: 0.08;
+}
+
+.player-label {
+  fill: #e9e7de;
+  font-size: 0.42px;
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.75);
+  stroke-width: 0.14px;
+}
+
+.npc-friendly-body {
+  fill: #3a7d44;
+}
+
+.npc-friendly-shoulders {
+  fill: #2d6135;
+}
+
+.npc-friendly-head {
+  fill: #f3d9bd;
+}
+
+.npc-hostile-body {
+  fill: #9b2226;
+}
+
+.npc-hostile-shoulders {
+  fill: #7a1a1e;
+}
+
+.npc-hostile-head {
+  fill: #e2c39b;
+}
+
+.npc-label {
+  fill: #b8e0a8;
+  font-size: 0.4px;
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.8);
+  stroke-width: 0.14px;
+}
+
+.npc-action-label {
+  fill: #ffd166;
+  font-size: 0.32px;
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.7);
+  stroke-width: 0.1px;
+}
+
+.npc-selection-ring {
+  fill: none;
+  stroke: #ffd700;
+  stroke-width: 0.07px;
+  opacity: 0.9;
+}
+
+/* The live SVG preview uses the same 32 gem poses as the Pixi texture loop. */
+.board-totem-gem-frame {
+  opacity: 0;
+  animation: board-totem-gem-pose 4.8s steps(1, end) infinite;
+}
+@keyframes board-totem-gem-pose {
+  0% {
+    opacity: 1;
+  }
+  3.125%,
+  100% {
+    opacity: 0;
+  }
+}
+.board-totem-pulse {
+  animation: board-totem-breathe 4.8s ease-in-out infinite;
+}
+@keyframes board-totem-breathe {
+  0%,
+  100% {
+    opacity: 0.58;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+/* The raid exit portal's light breathes in live previews; the game's Pixi
+   renderer bakes the same pulse into its flipbook frames instead. */
+.board-portal-breathe {
+  animation: board-portal-breathe 3.6s ease-in-out infinite;
+}
+@keyframes board-portal-breathe {
+  0%,
+  100% {
+    opacity: 0.62;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-portal-breathe {
+    animation: none;
+    opacity: 0.8;
+  }
+  .board-totem-gem-frame,
+  .board-totem-pulse {
+    animation: none;
+  }
+  .board-totem-gem-frame:first-child {
+    opacity: 1;
+  }
+  .board-totem-pulse {
+    opacity: 0.75;
+  }
+}
+
+:root{background:transparent!important}]]></style><g transform="translate(-2 -0.5)"><g><g data-prop-shadow-cast="home-mine-hatch"><g data-world-shadow-cast="true" fill="#20291d" opacity="0.16"><polygon points="1.76,0.9 1.98,0.79 3.42,1.51 3.438,1.525 3.218,1.635 1.778,0.915"></polygon><polygon points="0.76,1.4 1.76,0.9 1.98,1.01 1.998,1.025 0.998,1.525 0.778,1.415"></polygon><polygon points="1.98,2.01 2.98,1.51 3.2,1.62 3.218,1.635 2.218,2.135 1.998,2.025"></polygon><polygon points="0.54,1.51 0.76,1.4 2.2,2.12 2.218,2.135 1.998,2.245 0.558,1.525"></polygon><polygon points="1.9701,0.979 2.1219,0.9031 3.2419,1.4631 3.3055,1.5161 3.1537,1.592 2.0337,1.032"></polygon><polygon points="2.1145,0.9875 2.2663,0.9116 3.3863,1.4716 3.4499,1.5246 3.2981,1.6005 2.1781,1.0405"></polygon><polygon points="2.2589,0.996 2.4107,0.9201 3.5307,1.4801 3.5943,1.5331 3.4425,1.609 2.3225,1.049"></polygon><polygon points="2.2129,1.1825 2.233,1.1725 2.283,1.1975 2.3514,1.2545 2.3313,1.2645 2.2813,1.2395"></polygon><polygon points="2.6329,1.3925 2.653,1.3825 2.703,1.4075 2.7714,1.4645 2.7513,1.4745 2.7013,1.4495"></polygon></g></g><g data-prop-shadow-art="home-mine-hatch"><g data-home-yard="hatch"><polygon points="2.7432,1.9116 2.3904,2.027 1.9741,2.0921 1.505,2.0833 1.0809,1.9595 0.8605,1.7421 0.8771,1.5133 1.0134,1.3191 1.2006,1.1403 1.5018,0.9801 1.9448,0.9042 2.4136,0.9586 2.776,1.112 2.9996,1.31 3.0833,1.5269 2.9958,1.7398" fill="#6e5a3f" opacity="0.85"></polygon><polygon points="2.7111,1.8955 2.3612,1.998 1.9669,2.0389 1.5674,2.0003 1.2297,1.8852 0.9883,1.7186 0.8592,1.5164 0.9,1.2976 1.1543,1.1172 1.549,1.0303 1.9535,1.0298 2.3266,1.0716 2.6934,1.1533 2.9986,1.3078 3.1119,1.5238 2.989,1.7359" fill="#5c4a33" opacity="0.6"></polygon><g><g><polygon points="3.42,1.51 3.2,1.62 3.2,1.52 3.42,1.41" style="fill:#7a5a36"></polygon><polygon points="3.2,1.62 1.76,0.9 1.76,0.8 3.2,1.52" style="fill:#a98252"></polygon><polygon points="1.98,0.69 3.42,1.41 3.2,1.52 1.76,0.8" style="fill:#c4a273"></polygon></g><g fill="none" stroke="#aa7f49" stroke-width="0.011" stroke-linecap="round" opacity="0.75"><path d="M 1.9349 0.718 Q 2.5235 1.0373 3.1622 1.3316"></path><path d="M 2.1109 0.8543 Q 2.6758 1.1167 3.2007 1.3992"></path><path d="M 2.1041 0.9247 Q 2.6608 1.1838 3.1789 1.4621"></path></g><g fill="none" stroke="#aa7f49" stroke-width="0.011" stroke-linecap="round" opacity="0.75"><path d="M 2.1917 1.0646 Q 2.5978 1.2655 3.0039 1.4707"></path></g><g><polygon points="2.3583,0.9892 2.3406,0.9938 2.3169,0.9934 2.291,0.988 2.2668,0.9786 2.2479,0.9665 2.2373,0.9535 2.2365,0.9417 2.2457,0.9328 2.2634,0.9282 2.2871,0.9286 2.313,0.934 2.3372,0.9434 2.3561,0.9555 2.3667,0.9685 2.3675,0.9803" fill="none" stroke="#8a5e32" stroke-width="0.01" opacity="0.8"></polygon><polygon points="2.3273,0.9737 2.317,0.9769 2.3043,0.9777 2.2914,0.976 2.28,0.972 2.272,0.9663 2.2686,0.9598 2.2702,0.9535 2.2767,0.9484 2.287,0.9451 2.2997,0.9443 2.3126,0.946 2.324,0.95 2.332,0.9557 2.3354,0.9622 2.3338,0.9685" fill="#5a3818"></polygon></g></g><g><g><polygon points="1.98,1.01 0.98,1.51 0.98,1.41 1.98,0.91" style="fill:#7a5a36"></polygon><polygon points="0.98,1.51 0.76,1.4 0.76,1.3 0.98,1.41" style="fill:#a98252"></polygon><polygon points="1.76,0.8 1.98,0.91 0.98,1.41 0.76,1.3" style="fill:#c4a273"></polygon></g><g fill="none" stroke="#aa7f49" stroke-width="0.011" stroke-linecap="round" opacity="0.75"><path d="M 1.7345 0.8522 Q 1.3547 1.0471 0.9648 1.237"></path><path d="M 1.7701 0.9101 Q 1.4116 1.0987 1.0345 1.2779"></path><path d="M 1.6518 1.0422 Q 1.4333 1.1601 1.1975 1.2694"></path></g><g fill="none" stroke="#76512d" stroke-width="0.011" stroke-linecap="round" opacity="0.75"><path d="M 1.799 1.0535 Q 1.4612 1.2278 1.1234 1.3913"></path></g></g><g><polygon points="1.98,0.91 2.98,1.41 1.98,1.91 0.98,1.41" fill="#140f0b"></polygon><g><g><polygon points="1.98,0.91 2.98,1.41 2.98,1.41 2.81,1.495 1.98,1.08" fill="rgb(104,79,49)"></polygon><polygon points="1.98,0.91 2.98,1.41 2.98,1.41 2.966,1.417 1.98,0.924" fill="rgb(52,37,23)"></polygon></g><g><polygon points="1.98,1.08 2.81,1.495 2.64,1.58 1.98,1.25" fill="rgb(88,67,42)"></polygon><polygon points="1.98,1.08 2.81,1.495 2.796,1.502 1.98,1.094" fill="rgb(44,32,20)"></polygon></g><g><polygon points="1.98,1.25 2.64,1.58 2.47,1.665 1.98,1.42" fill="rgb(73,56,35)"></polygon><polygon points="1.98,1.25 2.64,1.58 2.626,1.587 1.98,1.264" fill="rgb(37,26,16)"></polygon></g><g><polygon points="1.98,1.42 2.47,1.665 2.3,1.75 1.98,1.59" fill="rgb(58,44,28)"></polygon><polygon points="1.98,1.42 2.47,1.665 2.456,1.672 1.98,1.434" fill="rgb(29,21,13)"></polygon></g><g><polygon points="1.98,1.59 2.3,1.75 2.13,1.835 1.98,1.76" fill="rgb(43,33,20)"></polygon><polygon points="1.98,1.59 2.3,1.75 2.286,1.757 1.98,1.604" fill="rgb(21,15,9)"></polygon></g><g><polygon points="1.98,1.91 1.98,1.76 2.13,1.835" fill="rgb(27,21,13)"></polygon><polygon points="1.98,1.76 2.13,1.835 2.116,1.842 1.98,1.774" fill="rgb(14,10,6)"></polygon></g></g><g><g><polygon points="1.98,0.91 0.98,1.41 0.98,1.41 1.15,1.495 1.98,1.08" fill="rgb(77,57,35)"></polygon><polygon points="1.98,0.91 0.98,1.41 0.98,1.41 0.994,1.417 1.98,0.924" fill="rgb(39,29,19)"></polygon></g><g><polygon points="1.98,1.08 1.15,1.495 1.32,1.58 1.98,1.25" fill="rgb(65,49,30)"></polygon><polygon points="1.98,1.08 1.15,1.495 1.164,1.502 1.98,1.094" fill="rgb(33,25,16)"></polygon></g><g><polygon points="1.98,1.25 1.32,1.58 1.49,1.665 1.98,1.42" fill="rgb(54,40,25)"></polygon><polygon points="1.98,1.25 1.32,1.58 1.334,1.587 1.98,1.264" fill="rgb(28,20,13)"></polygon></g><g><polygon points="1.98,1.42 1.49,1.665 1.66,1.75 1.98,1.59" fill="rgb(43,32,19)"></polygon><polygon points="1.98,1.42 1.49,1.665 1.504,1.672 1.98,1.434" fill="rgb(22,16,10)"></polygon></g><g><polygon points="1.98,1.59 1.66,1.75 1.83,1.835 1.98,1.76" fill="rgb(31,23,14)"></polygon><polygon points="1.98,1.59 1.66,1.75 1.674,1.757 1.98,1.604" fill="rgb(16,12,8)"></polygon></g><g><polygon points="1.98,1.91 1.98,1.91 1.98,1.76 1.83,1.835" fill="rgb(20,15,9)"></polygon><polygon points="1.98,1.76 1.83,1.835 1.844,1.842 1.98,1.774" fill="rgb(10,8,5)"></polygon></g></g><polygon points="2.2081,1.796 2.2449,1.0813 2.1949,1.0788 2.1567,1.8217" fill="#4a3826"></polygon><polygon points="2.6503,1.5749 2.6649,1.2913 2.6149,1.2888 2.5989,1.6006" fill="#4a3826"></polygon><polygon points="2.2004,1.3032 2.6204,1.5132 2.6383,1.4774 2.2183,1.2674" fill="rgb(113,85,53)"></polygon><polygon points="2.1877,1.5496 2.4443,1.6779 2.489,1.6555 2.2056,1.5138" fill="rgb(90,68,42)"></polygon><polygon points="2.175,1.7959 2.1916,1.8042 2.2363,1.7818 2.1929,1.7601" fill="rgb(68,51,32)"></polygon></g><g><g><polygon points="3.2,1.62 2.2,2.12 2.2,2.02 3.2,1.52" style="fill:#7a5a36"></polygon><polygon points="2.2,2.12 1.98,2.01 1.98,1.91 2.2,2.02" style="fill:#a98252"></polygon><polygon points="2.98,1.41 3.2,1.52 2.2,2.02 1.98,1.91" style="fill:#c4a273"></polygon></g><g fill="none" stroke="#aa7f49" stroke-width="0.011" stroke-linecap="round" opacity="0.75"><path d="M 2.9063 1.4894 Q 2.58 1.6633 2.2323 1.8264"></path><path d="M 2.8052 1.597 Q 2.5436 1.7091 2.3194 1.8399"></path><path d="M 2.9363 1.6196 Q 2.6763 1.7574 2.4007 1.8874"></path></g><g fill="none" stroke="#76512d" stroke-width="0.011" stroke-linecap="round" opacity="0.75"><path d="M 3.1059 1.6134 Q 2.7358 1.7918 2.3656 1.9835"></path></g></g><g><g><polygon points="2.2,2.12 1.98,2.23 1.98,2.13 2.2,2.02" style="fill:#7a5a36"></polygon><polygon points="1.98,2.23 0.54,1.51 0.54,1.41 1.98,2.13" style="fill:#a98252"></polygon><polygon points="0.76,1.3 2.2,2.02 1.98,2.13 0.54,1.41" style="fill:#c4a273"></polygon></g><g fill="none" stroke="#aa7f49" stroke-width="0.011" stroke-linecap="round" opacity="0.75"><path d="M 1.0665 1.5024 Q 1.509 1.746 1.9962 1.9672"></path><path d="M 1.0771 1.5666 Q 1.4675 1.7584 1.851 1.9536"></path><path d="M 0.9448 1.5796 Q 1.405 1.8166 1.879 2.0467"></path></g><g fill="none" stroke="#aa7f49" stroke-width="0.011" stroke-linecap="round" opacity="0.75"><path d="M 0.7943 1.5717 Q 1.2857 1.7896 1.7771 2.0631"></path></g><g><polygon points="1.5941,1.987 1.5906,1.9743 1.5806,1.9599 1.5656,1.9462 1.548,1.9352 1.5304,1.9286 1.5154,1.9273 1.5054,1.9317 1.5019,1.941 1.5054,1.9537 1.5154,1.9681 1.5304,1.9818 1.548,1.9928 1.5656,1.9994 1.5806,2.0007 1.5906,1.9963" fill="none" stroke="#8a5e32" stroke-width="0.01" opacity="0.8"></polygon><polygon points="1.5687,1.9744 1.5671,1.9667 1.5626,1.9586 1.5559,1.9513 1.548,1.946 1.5401,1.9434 1.5334,1.944 1.5289,1.9475 1.5273,1.9536 1.5289,1.9613 1.5334,1.9694 1.5401,1.9767 1.548,1.982 1.5559,1.9846 1.5626,1.984 1.5671,1.9805" fill="#5a3818"></polygon></g></g><polygon points="0.76,1.299 0.92,1.379 0.7,1.489 0.54,1.409" fill="#595650" opacity="0.9"></polygon><polygon points="2.04,1.939 2.2,2.019 1.98,2.129 1.82,2.049" fill="#595650" opacity="0.9"></polygon><g><polygon points="2.2716,-0.3049 3.3916,0.2551 3.3237,0.2721 2.2037,-0.2879" fill="#c4a273"></polygon><polygon points="3.14,1.39 3.3916,0.2551 3.3237,0.2721 3.0721,1.407" fill="#7a5a36"></polygon><polygon points="1.9521,0.847 3.0721,1.407 3.3237,0.2721 2.2037,-0.2879" fill="#a98252"></polygon><g fill="none" stroke="#76512d" stroke-width="0.011" stroke-linecap="round" opacity="0.75"><path d="M 2.0181 0.8396 Q 2.1261 0.3464 2.2365 -0.1456"></path><path d="M 2.1364 0.6055 Q 2.1693 0.2943 2.2671 0.0156"></path><path d="M 2.2227 0.7369 Q 2.3207 0.3744 2.387 -0.0039"></path><path d="M 2.2658 0.8103 Q 2.3143 0.4564 2.4167 0.1294"></path><path d="M 2.3383 0.8904 Q 2.419 0.4287 2.5387 -0.0135"></path><path d="M 2.4691 0.7492 Q 2.5534 0.3836 2.6319 0.015"></path><path d="M 2.505 1.0018 Q 2.6054 0.6146 2.6796 0.2143"></path><path d="M 2.5927 0.9628 Q 2.6883 0.5422 2.7796 0.1194"></path><path d="M 2.6687 0.9519 Q 2.7355 0.5629 2.8373 0.1914"></path><path d="M 2.7694 1.0171 Q 2.8887 0.6307 2.9474 0.214"></path><path d="M 2.8195 1.0571 Q 2.8806 0.7157 2.9679 0.3873"></path><path d="M 2.9014 1.1143 Q 2.9843 0.747 3.0645 0.3783"></path><path d="M 2.9485 1.2424 Q 3.0227 0.8322 3.127 0.4371"></path><path d="M 3.046 1.3262 Q 3.1741 0.919 3.2341 0.4777"></path></g><path d="M 2.2245 0.9711 L 2.4713 -0.142" stroke="#6a4726" stroke-width="0.016"></path><path d="M 2.5045 1.1111 L 2.7513 -0.002" stroke="#6a4726" stroke-width="0.016"></path><path d="M 2.7945 1.2561 L 3.0413 0.143" stroke="#6a4726" stroke-width="0.016"></path><g><polygon points="2.3338,0.1273 2.3451,0.1376 2.3528,0.155 2.3557,0.1765 2.3534,0.1991 2.3462,0.2193 2.3353,0.234 2.3222,0.2409 2.309,0.239 2.2977,0.2286 2.29,0.2113 2.2871,0.1897 2.2894,0.1671 2.2966,0.147 2.3076,0.1323 2.3206,0.1254" fill="none" stroke="#8a5e32" stroke-width="0.01" opacity="0.8"></polygon><polygon points="2.327,0.158 2.3342,0.1638 2.3395,0.1725 2.342,0.1828 2.3414,0.1931 2.3378,0.202 2.3316,0.208 2.3239,0.2102 2.3159,0.2082 2.3086,0.2025 2.3033,0.1938 2.3008,0.1835 2.3014,0.1731 2.3051,0.1643 2.3112,0.1583 2.3189,0.1561" fill="#5a3818"></polygon></g><g><polygon points="2.0647,0.5396 3.1047,1.0596 3.061,1.0706 2.021,0.5506" fill="#c4a273"></polygon><polygon points="1.9871,0.7034 3.0271,1.2234 3.061,1.0706 2.021,0.5506" fill="#a98252"></polygon><polygon points="3.0708,1.2124 3.1047,1.0596 3.061,1.0706 3.0271,1.2234" fill="#7a5a36"></polygon><circle cx="2.0841" cy="0.667" r="0.014" fill="#7b776d"></circle><circle cx="2.3841" cy="0.817" r="0.014" fill="#7b776d"></circle><circle cx="2.6641" cy="0.957" r="0.014" fill="#7b776d"></circle><circle cx="2.9641" cy="1.107" r="0.014" fill="#7b776d"></circle></g><polygon points="2.0955,0.5769 2.2355,0.6469 3.122,0.5568 2.982,0.4868" fill="#a98252" stroke="#6a4726" stroke-width="0.01"></polygon><g><polygon points="2.205,-0.0933 3.245,0.4267 3.2013,0.4377 2.1613,-0.0823" fill="#c4a273"></polygon><polygon points="2.1274,0.0704 3.1674,0.5904 3.2013,0.4377 2.1613,-0.0823" fill="#a98252"></polygon><polygon points="3.2111,0.5795 3.245,0.4267 3.2013,0.4377 3.1674,0.5904" fill="#7a5a36"></polygon><circle cx="2.2244" cy="0.0341" r="0.014" fill="#7b776d"></circle><circle cx="2.5244" cy="0.1841" r="0.014" fill="#7b776d"></circle><circle cx="2.8044" cy="0.3241" r="0.014" fill="#7b776d"></circle><circle cx="3.1044" cy="0.4741" r="0.014" fill="#7b776d"></circle></g><path d="M 2.2037 -0.2879 L 3.3237 0.2721" stroke="#d9bd8f" stroke-width="0.014" opacity="0.7"></path></g><g><polygon points="2.06,0.9 2.2,0.97 2.17,0.905 2.03,0.835" fill="#3d3b36"></polygon><polygon points="2.03,0.835 2.17,0.905 2.23,0.855 2.09,0.785" fill="#595650"></polygon></g><g><polygon points="2.86,1.3 3,1.37 2.97,1.305 2.83,1.235" fill="#3d3b36"></polygon><polygon points="2.83,1.235 2.97,1.305 3.03,1.255 2.89,1.185" fill="#595650"></polygon></g><line x1="2.96" y1="1.54" x2="3.2609" y2="0.7619" stroke="#2c2a26" stroke-width="0.032" stroke-linecap="round" opacity="1"></line><line x1="2.96" y1="1.54" x2="3.2609" y2="0.7619" stroke="#77736a" stroke-width="0.01" stroke-linecap="round" opacity="0.8"></line><circle cx="2.96" cy="1.54" r="0.025" fill="#3d3b36"></circle><circle cx="3.2609" cy="0.7619" r="0.025" fill="#3d3b36"></circle><g><line x1="2.2199" y1="1.08" x2="2.24" y2="0.69" stroke="#6f5233" stroke-width="0.05" stroke-linecap="round" opacity="1"></line><line x1="2.2079" y1="1.074" x2="2.228" y2="0.704" stroke="#b08752" stroke-width="0.016" stroke-linecap="round" opacity="0.9"></line></g><g><line x1="2.6399" y1="1.29" x2="2.66" y2="0.9" stroke="#6f5233" stroke-width="0.05" stroke-linecap="round" opacity="1"></line><line x1="2.6279" y1="1.284" x2="2.648" y2="0.914" stroke="#b08752" stroke-width="0.016" stroke-linecap="round" opacity="0.9"></line></g><line x1="2.2305" y1="0.8748" x2="2.6505" y2="1.0848" stroke="#8d6a42" stroke-width="0.04" stroke-linecap="round" opacity="1"></line><g stroke-linejoin="round"><polygon points="1.9081,2.0129 1.9135,1.9736 1.921,1.9438 1.949,1.9257 1.9772,1.9207 2.0142,1.9272 2.0543,1.9467 2.0726,1.9882 2.081,2.0287 2.0131,2.0454 1.9383,2.0511" fill="#69655e"></polygon><polygon points="1.9135,1.9736 1.921,1.9438 1.949,1.9257 1.9454,1.9403" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="1.949,1.9257 1.9772,1.9207 1.9771,1.9324 1.974,1.9329" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="1.9772,1.9207 2.0142,1.9272 1.9813,1.9331 1.9771,1.9324" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="2.0543,1.9467 2.0726,1.9882 2.0232,1.9474 2.0142,1.9272" fill="#69655e" stroke="#69655e" stroke-width="0.012"></polygon><polygon points="1.9454,1.9403 1.949,1.9257 1.974,1.9329 1.9736,1.9345" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="2.0142,1.9272 2.0232,1.9474 1.9822,1.9353 1.9813,1.9331" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="1.9383,2.0511 1.9081,2.0129 1.9135,1.9736 1.9413,2.0088" fill="#8b877e" stroke="#8b877e" stroke-width="0.012"></polygon><polygon points="1.959,1.9575 1.9454,1.9403 1.9736,1.9345 1.9751,1.9365" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="2.081,2.0287 2.0131,2.0454 2.0102,2.0035 2.0726,1.9882" fill="#55524c" stroke="#55524c" stroke-width="0.012"></polygon><polygon points="2.0232,1.9474 1.9927,1.9549 1.9789,1.9362 1.9822,1.9353" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="1.9927,1.9549 1.959,1.9575 1.9751,1.9365 1.9789,1.9362" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="1.9413,2.0088 1.9135,1.9736 1.9454,1.9403 1.959,1.9575" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="2.0726,1.9882 2.0102,2.0035 1.9927,1.9549 2.0232,1.9474" fill="#8b877e" stroke="#8b877e" stroke-width="0.012"></polygon><polygon points="2.0131,2.0454 1.9383,2.0511 1.9413,2.0088 2.0102,2.0035" fill="#69655e" stroke="#69655e" stroke-width="0.012"></polygon><polygon points="2.0102,2.0035 1.9413,2.0088 1.959,1.9575 1.9927,1.9549" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="1.9081,2.0129 1.9135,1.9736 1.921,1.9438 1.949,1.9257 1.9772,1.9207 2.0142,1.9272 2.0543,1.9467 2.0726,1.9882 2.081,2.0287 2.0131,2.0454 1.9383,2.0511" fill="none" stroke="#3f3d39" stroke-width="0.012" opacity="0.85"></polygon></g><g stroke-linejoin="round"><polygon points="1.2024,1.1312 1.2068,1.1048 1.2323,1.0905 1.2514,1.0825 1.2787,1.0884 1.3015,1.1003 1.3255,1.1278 1.3315,1.1563 1.3093,1.1854 1.2462,1.1769 1.2068,1.1579" fill="#69655e"></polygon><polygon points="1.2068,1.1579 1.2024,1.1312 1.2068,1.1048 1.2108,1.1293" fill="#8b877e" stroke="#8b877e" stroke-width="0.012"></polygon><polygon points="1.3015,1.1003 1.3255,1.1278 1.2904,1.1018 1.2787,1.0884" fill="#69655e" stroke="#69655e" stroke-width="0.012"></polygon><polygon points="1.2514,1.0825 1.2787,1.0884 1.2601,1.0944 1.257,1.0938" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="1.2108,1.1293 1.2068,1.1048 1.2323,1.0905 1.2343,1.1025" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="1.2323,1.0905 1.2514,1.0825 1.257,1.0938 1.2549,1.0947" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="1.2787,1.0884 1.2904,1.1018 1.2614,1.0959 1.2601,1.0944" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="1.2343,1.1025 1.2323,1.0905 1.2549,1.0947 1.2551,1.096" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="1.2462,1.1769 1.2068,1.1579 1.2108,1.1293 1.2471,1.1468" fill="#8b877e" stroke="#8b877e" stroke-width="0.012"></polygon><polygon points="1.252,1.1111 1.2343,1.1025 1.2551,1.096 1.2571,1.0969" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="1.2904,1.1018 1.2804,1.1149 1.2603,1.0974 1.2614,1.0959" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="1.3315,1.1563 1.3093,1.1854 1.3051,1.1546 1.3255,1.1278" fill="#55524c" stroke="#55524c" stroke-width="0.012"></polygon><polygon points="1.2804,1.1149 1.252,1.1111 1.2571,1.0969 1.2603,1.0974" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="1.2471,1.1468 1.2108,1.1293 1.2343,1.1025 1.252,1.1111" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="1.3255,1.1278 1.3051,1.1546 1.2804,1.1149 1.2904,1.1018" fill="#69655e" stroke="#69655e" stroke-width="0.012"></polygon><polygon points="1.3093,1.1854 1.2462,1.1769 1.2471,1.1468 1.3051,1.1546" fill="#8b877e" stroke="#8b877e" stroke-width="0.012"></polygon><polygon points="1.3051,1.1546 1.2471,1.1468 1.252,1.1111 1.2804,1.1149" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="1.2024,1.1312 1.2068,1.1048 1.2323,1.0905 1.2514,1.0825 1.2787,1.0884 1.3015,1.1003 1.3255,1.1278 1.3315,1.1563 1.3093,1.1854 1.2462,1.1769 1.2068,1.1579" fill="none" stroke="#3f3d39" stroke-width="0.012" opacity="0.85"></polygon></g><g stroke-linejoin="round"><polygon points="0.2811,1.5085 0.2887,1.4695 0.3162,1.4356 0.3464,1.4212 0.3813,1.4181 0.4086,1.4308 0.4434,1.4553 0.4727,1.4934 0.4811,1.5345 0.4104,1.5527 0.3237,1.5517" fill="#69655e"></polygon><polygon points="0.2887,1.4695 0.3162,1.4356 0.3464,1.4212 0.3329,1.4377" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="0.3464,1.4212 0.3813,1.4181 0.3772,1.4313 0.3733,1.4317" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="0.3813,1.4181 0.4086,1.4308 0.3803,1.4328 0.3772,1.4313" fill="#8b877e" stroke="#8b877e" stroke-width="0.012"></polygon><polygon points="0.3329,1.4377 0.3464,1.4212 0.3733,1.4317 0.3719,1.4335" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="0.4434,1.4553 0.4727,1.4934 0.4229,1.4494 0.4086,1.4308" fill="#55524c" stroke="#55524c" stroke-width="0.012"></polygon><polygon points="0.3237,1.5517 0.2811,1.5085 0.2887,1.4695 0.3279,1.5092" fill="#8b877e" stroke="#8b877e" stroke-width="0.012"></polygon><polygon points="0.4086,1.4308 0.4229,1.4494 0.3819,1.4348 0.3803,1.4328" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="0.3521,1.4571 0.3329,1.4377 0.3719,1.4335 0.374,1.4357" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="0.4229,1.4494 0.3911,1.4576 0.3783,1.4357 0.3819,1.4348" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="0.3279,1.5092 0.2887,1.4695 0.3329,1.4377 0.3521,1.4571" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="0.3911,1.4576 0.3521,1.4571 0.374,1.4357 0.3783,1.4357" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="0.4811,1.5345 0.4104,1.5527 0.4076,1.5101 0.4727,1.4934" fill="#69655e" stroke="#69655e" stroke-width="0.012"></polygon><polygon points="0.4727,1.4934 0.4076,1.5101 0.3911,1.4576 0.4229,1.4494" fill="#8b877e" stroke="#8b877e" stroke-width="0.012"></polygon><polygon points="0.4104,1.5527 0.3237,1.5517 0.3279,1.5092 0.4076,1.5101" fill="#69655e" stroke="#69655e" stroke-width="0.012"></polygon><polygon points="0.4076,1.5101 0.3279,1.5092 0.3521,1.4571 0.3911,1.4576" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="0.2811,1.5085 0.2887,1.4695 0.3162,1.4356 0.3464,1.4212 0.3813,1.4181 0.4086,1.4308 0.4434,1.4553 0.4727,1.4934 0.4811,1.5345 0.4104,1.5527 0.3237,1.5517" fill="none" stroke="#3f3d39" stroke-width="0.012" opacity="0.85"></polygon></g><g stroke-linejoin="round"><polygon points="0.3551,1.6092 0.3601,1.5877 0.3894,1.5743 0.4082,1.569 0.4269,1.57 0.4445,1.5776 0.4728,1.5945 0.4776,1.6166 0.4687,1.6411 0.423,1.6491 0.3762,1.6356" fill="#69655e"></polygon><polygon points="0.3762,1.6356 0.3551,1.6092 0.3601,1.5877 0.3796,1.612" fill="#8b877e" stroke="#8b877e" stroke-width="0.012"></polygon><polygon points="0.4082,1.569 0.4269,1.57 0.4191,1.5754 0.4171,1.5753" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="0.3894,1.5743 0.4082,1.569 0.4171,1.5753 0.415,1.5759" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="0.4269,1.57 0.4445,1.5776 0.4211,1.5762 0.4191,1.5754" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="0.4776,1.6166 0.4687,1.6411 0.4646,1.6171 0.4728,1.5945" fill="#55524c" stroke="#55524c" stroke-width="0.012"></polygon><polygon points="0.3796,1.612 0.3601,1.5877 0.3894,1.5743 0.3989,1.5861" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="0.3989,1.5861 0.3894,1.5743 0.415,1.5759 0.416,1.5772" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="0.4445,1.5776 0.4405,1.5886 0.4206,1.5775 0.4211,1.5762" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="0.4728,1.5945 0.4646,1.6171 0.4405,1.5886 0.4445,1.5776" fill="#69655e" stroke="#69655e" stroke-width="0.012"></polygon><polygon points="0.4199,1.5922 0.3989,1.5861 0.416,1.5772 0.4184,1.5779" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="0.4405,1.5886 0.4199,1.5922 0.4184,1.5779 0.4206,1.5775" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="0.423,1.6491 0.3762,1.6356 0.3796,1.612 0.4226,1.6244" fill="#8b877e" stroke="#8b877e" stroke-width="0.012"></polygon><polygon points="0.4226,1.6244 0.3796,1.612 0.3989,1.5861 0.4199,1.5922" fill="#a8a49b" stroke="#a8a49b" stroke-width="0.012"></polygon><polygon points="0.4687,1.6411 0.423,1.6491 0.4226,1.6244 0.4646,1.6171" fill="#69655e" stroke="#69655e" stroke-width="0.012"></polygon><polygon points="0.4646,1.6171 0.4226,1.6244 0.4199,1.5922 0.4405,1.5886" fill="#8b877e" stroke="#8b877e" stroke-width="0.012"></polygon><polygon points="0.3551,1.6092 0.3601,1.5877 0.3894,1.5743 0.4082,1.569 0.4269,1.57 0.4445,1.5776 0.4728,1.5945 0.4776,1.6166 0.4687,1.6411 0.423,1.6491 0.3762,1.6356" fill="none" stroke="#3f3d39" stroke-width="0.012" opacity="0.85"></polygon></g></g></g></g></g></svg>
