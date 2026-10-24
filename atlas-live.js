@@ -1970,7 +1970,18 @@ function zoneDetailSvg(z){
     if(!p||!here(p))continue;
     npcFirstById.set(String(n.id),{...n,position:p,time:num(n.firstSeen)||num(n.lastSeen)||0});
   }
-  const npcsHere=[...npcFirstById.values()];
+  // one per spot (24 Oct 2026): a raid spawns new monsters (new ids) every run, so each run piled another full set on
+  // the same spots - keep the newest of each kind within 1.5 tiles of one already kept
+  // a raid room: only its newest run - monsters first met within 10 minutes of the newest one (every run places its own)
+  let npcPool=[...npcFirstById.values()];
+  {const dk=state.dungeonOfZone?.get(z),dn=dk!=null?state.dungeons?.get(dk)?.name:state.zones.get(z)?.name,rk=s=>String(s||"").toLowerCase().replace(/[’']/g,"").replace(/^the /,"").trim();
+   if(dn&&(globalThis.BXC_RAIDS||[]).some(r=>rk(r.name)===rk(dn))){const newest=Math.max(0,...npcPool.map(o=>num(o.time)||0));if(newest)npcPool=npcPool.filter(o=>(num(o.time)||0)>=newest-600000)}}
+  const npcsHere=[],keptAt=new Map(),cell=v=>Math.floor(v/1.5);
+  for(const o of npcPool.sort((a,b)=>(num(b.time)||0)-(num(a.time)||0))){
+    const x=num(o.position?.x),y=num(o.position?.y),k=o.typeId||o.name||"";if(!Number.isFinite(x)||!Number.isFinite(y))continue;
+    let near=false;for(let i=-1;i<=1&&!near;i++)for(let j=-1;j<=1&&!near;j++)for(const p of keptAt.get(k+"|"+(cell(x)+i)+"|"+(cell(y)+j))||[])if(Math.hypot(p[0]-x,p[1]-y)<1.5){near=true;break}
+    if(near)continue;const key=k+"|"+cell(x)+"|"+cell(y);if(!keptAt.has(key))keptAt.set(key,[]);keptAt.get(key).push([x,y]);npcsHere.push(o);
+  }
   const ownParentZ=state.zoneParent?.get(z);
   const autoExits=(state.zoneInternalExits?.get(z)||[]).filter(ex=>ex.toZ!==ownParentZ);
   const manualExits=[...state.zones.values()].filter(m=>state.zoneParent?.get(m.z)===z&&m.z!==ownParentZ&&m.entranceOverride&&Number.isFinite(m.entranceOverride.x)&&Number.isFinite(m.entranceOverride.y)&&!autoExits.some(ex=>ex.toZ===m.z)).map(m=>({toZ:m.z,x:m.entranceOverride.x,y:m.entranceOverride.y,samples:0,lastSeen:m.lastSeen||0}));
