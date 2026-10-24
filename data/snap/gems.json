@@ -1,4 +1,6 @@
 [
+{"type":"gem.found","typeId":"gem-iolite","carat":1,"dropped":false,"time":1792816858699,"sessionId":"d6c8f096","key":760},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1792816252670,"sessionId":"d6c8f096","key":759},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1792815298042,"sessionId":"1d6e5fd1","key":758},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1792815000226,"sessionId":"1d6e5fd1","key":757},
 {"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"npcName":"Mountain Ogre","time":1792813417179,"sessionId":"30ae29c5","key":756},
