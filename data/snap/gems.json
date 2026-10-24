@@ -1,4 +1,6 @@
 [
+{"type":"gem.found","typeId":"gem-amber","carat":1.5,"dropped":false,"time":1792812178113,"sessionId":"7c2e7061","key":753},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1792808391194,"sessionId":"16b160f1","key":752},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"npcName":"Ogre Elder","time":1792807457249,"sessionId":"add856f7","key":751},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1792807263819,"sessionId":"eb279f73","key":750},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1792806786727,"sessionId":"eb279f73","key":749},
