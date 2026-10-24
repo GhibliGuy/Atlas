@@ -1,4 +1,9 @@
 [
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1792815298042,"sessionId":"1d6e5fd1","key":758},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1792815000226,"sessionId":"1d6e5fd1","key":757},
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"npcName":"Mountain Ogre","time":1792813417179,"sessionId":"30ae29c5","key":756},
+{"type":"gem.found","typeId":"gem-amber","carat":1,"dropped":false,"time":1792813018341,"sessionId":"7c2e7061","key":755},
+{"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"npcName":"Ogre Charger","time":1792812921676,"sessionId":"30ae29c5","key":754},
 {"type":"gem.found","typeId":"gem-amber","carat":1.5,"dropped":false,"time":1792812178113,"sessionId":"7c2e7061","key":753},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1792808391194,"sessionId":"16b160f1","key":752},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"npcName":"Ogre Elder","time":1792807457249,"sessionId":"add856f7","key":751},
