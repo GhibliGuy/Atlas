@@ -5465,19 +5465,19 @@ function newsHtml(){
     return `<h2>Inside caves and mines</h2><ul class="wp-list">${caves.slice(0,8).map(c=>`<li><b>${esc(c.name)}</b> <span class="muted">· ${fmt(c.count)}</span> <button type="button" class="open-zone" data-zone="${esc(c.z)}">Layout</button></li>`).join('')}</ul>`;
   }
   // Inset map (wiki redesign, Oct 2026): a small still picture of the world map around where a monster lives most,
-  // made from the same local map tiles as the big map (tiles/<level>/<col>/<row>.png) with a dot per sighting. Plain
+  // made from the same local map tiles as the big map (wtiles/<level>/<col>/<row>.png, the game's world grid) with a dot per sighting. Plain
   // images, no second map: cheap to draw and safe to redraw. "Show on map" below it still opens the real map.
   function insetMapHtml(pts,area){
-    if(!area||!pts.length||typeof project!=='function'||typeof T==='undefined'||typeof grid!=='function')return '';
+    if(!area||!pts.length||typeof project!=='function'||typeof T==='undefined'||typeof wgrid!=='function')return '';
     const W=440,H=250,TS=T.tileSize;
     const near=pts.filter(p=>Math.hypot(p.x-area.x,p.y-area.y)<=160);
     const full=near.map(p=>project(p,true)),c=project({x:area.x,y:area.y},true);
     const spanX=Math.max(1,...full.map(q=>Math.abs(q.x-c.x)))*2,spanY=Math.max(1,...full.map(q=>Math.abs(q.y-c.y)))*2;
-    let level=T.maxLevel-1;while(level>T.maxLevel-4&&(spanX*2**(level-T.maxLevel)>W*0.8||spanY*2**(level-T.maxLevel)>H*0.8))level--;
-    const k=2**(level-T.maxLevel),g=grid(level),off=g.rows*TS-T.heightPx*k,at=q=>({x:q.x*k,y:q.y*k+off}),cc=at(c);
+    let level=1;while(level<4&&(spanX/2**level>W*0.8||spanY/2**level>H*0.8))level++;   // how far zoomed out (0 = full detail)
+    const k=2**-level,g=wgrid(level),at=q=>({x:(q.x+TILE_OX)*k,y:(q.y+TILE_OY)*k}),cc=at(c);
     const tiles=[];
     for(let col=Math.floor((cc.x-W/2)/TS);col<=Math.floor((cc.x+W/2)/TS);col++)for(let row=Math.floor((cc.y-H/2)/TS);row<=Math.floor((cc.y+H/2)/TS);row++)
-      if(col>=0&&row>=0&&col<g.cols&&row<g.rows)tiles.push(`<img src="tiles/${level}/${col}/${row}.png" alt="" style="left:${col*TS}px;top:${row*TS}px">`);
+      if(col>=g.minCol&&row>=g.minRow&&col<=g.maxCol&&row<=g.maxRow)tiles.push(`<img src="wtiles/${level}/${col}/${row}.png" alt="" style="left:${col*TS}px;top:${row*TS}px">`);
     const seen=new Set(),dots=full.map(at).filter(d=>{const key=Math.round(d.x/9)+','+Math.round(d.y/9);return !seen.has(key)&&seen.add(key)}).slice(0,160).map(d=>`<i style="left:${d.x.toFixed(1)}px;top:${d.y.toFixed(1)}px"></i>`).join('');   // one dot per ~9px, so a busy area reads as a patch, not a blob
     const name=area.poi?area.poi.name:'';
     return `<figure class="wp-inset" aria-hidden="true"><div class="wp-inset-map" style="transform:translate(${(-cc.x).toFixed(1)}px,${(-cc.y).toFixed(1)}px)">${tiles.join('')}${dots}</div>${name?`<figcaption>${esc(name)}</figcaption>`:''}</figure>`;

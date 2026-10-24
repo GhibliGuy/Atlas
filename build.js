@@ -32,6 +32,9 @@ for (const f of VENDOR_FILES) { fs.mkdirSync(path.dirname(path.join(OUT, f)), { 
 // binxonia.com, at the game dev's own request. Static once downloaded, so this is a plain recursive copy, not
 // something build-snapshot.js needs to touch.
 fs.cpSync(path.join(SRC, 'tiles'), path.join(OUT, 'tiles'), { recursive: true });
+// 23 Oct 2026: the game's map moved to a 'world' tile grid (see the app's map-tiles.js); the Atlas draws wtiles/ now.
+// tiles/ (the old layout) stays until the app's own updater writes the new grid, so nothing on the live site breaks.
+fs.cpSync(path.join(SRC, 'wtiles'), path.join(OUT, 'wtiles'), { recursive: true });
 // Pictures the guides use (img/events: the game's rifts, fallen giants and blooms, drawn by its own code).
 fs.cpSync(path.join(SRC, 'img'), path.join(OUT, 'img'), { recursive: true });
 // monster-art.json: each monster's picture on the site (typeId -> data/img/<file>), small, for the app's in-game minimap
