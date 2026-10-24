@@ -3699,9 +3699,9 @@ function newsHtml(){
       const c=RAID_BAND(r.lv),zz=raidZoneOf(r);if(zz)for(const z of zz.all)skip.add(z);
       if(typeof poiMarkersByName!=='undefined')for(const [n,cm] of poiMarkersByName)if(raidKey(n)===raidKey(r.name))poiLayer.removeLayer(cm);
       const last=r.bosses[r.bosses.length-1],uq=U.filter(u=>u.bossName&&(plain(u.bossName)===plain(last)||plain(u.bossName)===plain(last.split(',')[0])));
-      const icon=L.divIcon({className:'bxc-raid',html:`${raidCrest(r,c)}<span class="bxc-raid-lbl" style="border-color:${c}"><b style="color:${c}">${esc(r.name)}</b> · Raid · Lv ${r.lv}</span>`,iconSize:[40,40],iconAnchor:[20,20]});
+      const icon=L.divIcon({className:'bxc-raid',html:`${raidCrest(r,c)}<span class="bxc-raid-lbl" style="border-color:${c}"><b style="color:${c}">${esc(r.name)}</b> · Raid · Lv ${r.lv}–${r.lv+30}</span>`,iconSize:[40,40],iconAnchor:[20,20]});
       const m=L.marker(latlng({x:at[0],y:at[1]},true),{icon,zIndexOffset:600,title:r.name+' (raid)'});
-      m.bindTooltip(`<div class="bxc-raid-card"><b class="bxc-raid-name">${esc(r.name)}</b><div><span class="bxc-raid-tag">RAID</span>Level ${r.lv} and up · grows with your group to Lv ${r.lv+30}</div>`
+      m.bindTooltip(`<div class="bxc-raid-card"><b class="bxc-raid-name">${esc(r.name)}</b><div><span class="bxc-raid-tag">RAID</span>Level ${r.lv}–${r.lv+30} · scales with your level up to ${r.lv+30}</div>`
         +`<ul><li>6 floors, 4 bosses: ${r.bosses.slice(0,-1).map(b=>esc(b.split(',')[0])).join(', ')} and <b>${esc(last.split(',')[0])}</b></li><li>From 1 player up to a party of 8 · no lockout</li>`
         +(uq.length?`<li>Unique for your class: ${uq.length===1?'<b>'+esc(uq[0].name)+'</b>':uq.length+' pieces, one per class'}</li>`:'')+'</ul>'
         +`<div class="bxc-raid-hint">${zz?'Click for its layout':'Click for the Raids guide'}</div></div>`,{direction:'top',offset:[0,-22],className:'bxc-raid-tip'});
