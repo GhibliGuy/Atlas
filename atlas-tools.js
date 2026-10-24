@@ -555,7 +555,8 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
   const STAFF_STEPS=[0,1,4,7,12],STAFF_WOODS=['Wand','Pine staff','Oak staff','Black walnut staff','Shagbark staff'];
   const STAFF_ENCH={fire:'of Fire',ice:'of Frost',shock:'of Lightning',acid:'of Acid'};
   const SCHOOL_ELEM={fire:'burn',ice:'freeze',shock:'shock',acid:'corrode'};
-  const SPELL_SCHOOL_REQ={1:0,2:5,3:15,4:25};
+  // the school level each spell level needs (the game's rules since 24 Oct 2026; atlas-guides shares BXC_SPELL_GATE)
+  const SPELL_SCHOOL_REQ=globalThis.BXC_SPELL_GATE||{1:0,2:10,3:20,4:30,5:45,6:60};
   const isSpell=w=>String(w||'').startsWith('spell:');
   const wLabel=w=>isSpell(w)?pretty(w.slice(6))+' spells':pretty(w);
   function spellHit(school,v){
@@ -563,7 +564,8 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
     const st=Math.max(0,Math.min(4,+v.staff||0)),steps=STAFF_STEPS[st],qm=1+((QUALITIES.find(x=>x[0]===v.squal)||[0,0])[1]||0);
     const bound=st>0&&+v.sc>0,intBonus=bound?Math.floor(INT/10):0,slvEff=slv+(bound?+v.sc:0),magSteps=Math.floor(Math.max(0,MAG-10)/10);
     const ringC=b=>(v.rings||[]).filter(r=>r&&r.bonus===b).reduce((a,r)=>a+ringPct(b,r.carat),0),adept=(1+ringC('adept'))*(1+ringC('reaper')*.3);   // Reaper: its bonus on the last 30% of health, as for weapons
-    const known=(G.spells||[]).filter(sp=>sp.school===school&&sp.effect==='damage'&&(v.only?v.only.includes(sp.id):INT>=(sp.intRequirement||10*sp.level)&&slvEff>=(SPELL_SCHOOL_REQ[sp.level]||0)))
+    // the spells a rotation can count: one hit on the target (spells that only lay a zone - Wall of Fire, Tempest - are left out)
+    const known=(G.spells||[]).filter(sp=>sp.school===school&&sp.effect==='damage'&&!sp.zoneOnly&&(v.only?v.only.includes(sp.id):INT>=(sp.intRequirement||10*sp.level)&&slvEff>=(SPELL_SCHOOL_REQ[sp.level]||0)))
       .map(sp=>({...sp,avg:((((sp.baseDamageMin+sp.baseDamageMax)/2+sp.magScale*steps)*qm+sp.magScale*magSteps)+intBonus)*adept}));
     if(!known.length)return null;
     const GCD=2400,ready={};let t=0,dmg=0,casts=0,mana=0;const used=new Map();
@@ -657,7 +659,7 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
         <label class="mage-f"><span id="cmbSEnchLabel">School enchant carats</span><input id="cmbSC" type="number" min="0" step="1" value="${Number(saved.sc)||0}" title="The staff's own school enchant (three gems, up to 3 carats each by the wood): +1 to the school per carat, and a point of damage per full 10 INT" max="12"></label>
         <label class="mage-f">INT<input id="cmbInt" type="number" min="0" max="999" value="${Number(saved.int)||10}" title="10 per spell level to learn and cast it; a staff adds a little per full 10"></label>
         <label class="mage-f">MAG<input id="cmbMag" type="number" min="0" max="999" value="${Number(saved.mag)||10}" title="Every full 10 above 10 raises every spell"></label>
-        <label class="mage-f">School level<input id="cmbSlv" type="number" min="0" max="100" value="${Number(saved.slv)||1}" title="Spells of level 2, 3 and 4 need 5, 15 and 25 in their school"></label>
+        <label class="mage-f">School level<input id="cmbSlv" type="number" min="0" max="100" value="${Number(saved.slv)||1}" title="Spells of level 2 to 6 need 10, 20, 30, 45 and 60 in their school"></label>
         <label>Material<select id="cmbTier"></select></label>
         <label>Quality<select id="cmbQual">${QUALITIES.map(([k])=>`<option value="${k}"${k===(saved.qual||'ordinary')?' selected':''}>${pretty(k)}</option>`).join('')}</select></label>
         <label>Enchant<select id="cmbEnch">${ELEMENTS.map(([k,l])=>`<option value="${k}"${k===(saved.ench||'')?' selected':''}>${esc(l)}</option>`).join('')}</select></label>
@@ -1093,7 +1095,7 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
         <label class="gp-m">Staff<select id="gpStaff">${opt(STAFF_WOODS.map((l,i)=>[i,l]),saved.staff||0)}</select></label>
         <label class="gp-m">Staff quality<select id="gpSQual">${opt(QUALITIES.map(([k])=>[k,pretty(k)]),saved.squal||'ordinary')}</select></label>
         ${num('gpSC','School carats',saved.sc,12,"The staff's school enchant: +1 to the school per carat, 3 per wood tier").replace('<label','<label class="gp-m"')}
-        ${num('gpSlv','School level',saved.slv||1,100,'Spells of level 2, 3 and 4 need 5, 15 and 25 in their school').replace('<label','<label class="gp-m"')}
+        ${num('gpSlv','School level',saved.slv||1,100,'Spells of level 2 to 6 need 10, 20, 30, 45 and 60 in their school').replace('<label','<label class="gp-m"')}
       </div></section>
       <section class="gp-m" id="gpSpellSec"><h2>Spells</h2><div id="gpSpells"></div></section>
       <section><h2>Armor, rings and pendant</h2><div class="tool-form gp-row"><label title="Plate adds max health, pelt max stamina, knick max mana - more at each tier">Armor type<select id="gpAKind">${opt(ARMOR_KINDS.map(([k,l])=>[k,l]),saved.akind||({warrior:'metal',archer:'pelt',mage:'knick'})[cls])}</select></label></div><div class="g-scroll"><table class="g-table gp-armor"><thead><tr><th>Slot</th><th>Material</th><th>Enchant</th><th>Carats</th></tr></thead><tbody>
@@ -1147,7 +1149,7 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
       if(mage){el('gpSpells').innerHTML=spellsHtml(s.school,v,wh);if(!v.only)bestUsed=wh&&wh.spell?(G.spells||[]).filter(sp=>sp.school===s.school&&wh.spell.used.includes(sp.name)).map(sp=>sp.id):[]}
       const pe=(G.pendants||[]).find(p=>p.gem===s.pend),pc=Math.max(0,Math.min(4,Math.round(s.pendC)));
       el('gpPendNote').textContent=pe?(pc&&pe.text&&pe.text[pc]?pe.text[pc]+' - defence only, no damage.':'A pendant needs a gem of 1 carat or more.'):'';
-      if(!wh){el('gpOut').innerHTML=`<p class="muted">${mage?'No damage spell of this school is open to you: every spell needs 10 INT per spell level, and levels 2-4 need 5, 15 and 25 in the school.':'Pick a weapon.'}</p>`;el('gpTotals').innerHTML='';el('gpAdvice').innerHTML='';return}
+      if(!wh){el('gpOut').innerHTML=`<p class="muted">${mage?'No damage spell of this school is open to you: every spell needs 10 INT per spell level, and levels 2-6 need 10, 20, 30, 45 and 60 in the school.':'Pick a weapon.'}</p>`;el('gpTotals').innerHTML='';el('gpAdvice').innerHTML='';return}
       const hitC=Math.min(.95,Math.max(0,s.hit/100)+(wh.seeking||0)),critX=1+wh.crit*(wh.critMult-1);
       const dps=(pm,em)=>hitC*(wh.phys*pm+(wh.elemType?wh.elem*em:0))*critX/wh.swing,f=x=>x.toFixed(1);
       const M=[['Weak',1.3],['Neutral',1],['Resists',.7]],lbl=(l,t)=>l==='Resists'?'Resists '+esc(t):l+' to '+esc(t),cell=(pm,em)=>`<b>${f(dps(pm,em))}</b>`;
