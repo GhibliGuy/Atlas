@@ -1,4 +1,6 @@
 [
+{"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"npcName":"Ogre Elder","time":1792894747138,"sessionId":"d7b73dd4","key":771},
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"npcName":"Mountain Ogre","time":1792892873172,"sessionId":"d7b73dd4","key":770},
 {"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"npcName":"Mountain Ogre","time":1792889404823,"sessionId":"f8465b12","key":769},
 {"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"npcName":"Ogre Butcher","time":1792888562398,"sessionId":"f8465b12","key":768},
 {"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"npcName":"Ogre Charger","time":1792884573020,"sessionId":"9d461d63","key":767},
