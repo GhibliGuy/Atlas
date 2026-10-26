@@ -1,0 +1,1148 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-2.8600000095367433 0.5303517627716064 2.749999990463257 1.817648401260376" width="132" height="87"><style><![CDATA[.world-shell {
+  display: grid;
+  gap: 0;
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+  padding: 3px;
+}
+
+.toolbar-button,
+.chat-tab,
+.action-button,
+.zoom-button {
+  appearance: none;
+  background: linear-gradient(180deg, #d6d1c3 0%, #9c978c 45%, #736e66 100%);
+  border: 1px solid #2b2a28;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.45),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.45);
+  color: #1c1b18;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.7rem;
+  min-height: 22px;
+  padding: 0 6px;
+}
+
+.toolbar-button {
+  min-width: 44px;
+}
+
+.zoom-button {
+  min-width: 64px;
+}
+
+.zoom-button.is-active {
+  background: linear-gradient(180deg, #f2dd90 0%, #d0aa47 55%, #87641f 100%);
+}
+
+.board-panel {
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+}
+
+.board-overlay {
+  display: flex;
+  justify-content: space-between;
+  left: 10px;
+  pointer-events: none;
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  z-index: 1;
+}
+
+.board-coords {
+  color: #f5f0e3;
+  font-size: 0.8rem;
+  pointer-events: none;
+  text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
+}
+
+/*
+ * The current region's name, centered along the top edge of the board in the
+ * same white-with-black-outline style as .board-coords. Absolutely positioned so
+ * it does not disturb the coords/zoom space-between row; the overlay's symmetric
+ * 10px insets make its horizontal center the board's center.
+ */
+.board-region {
+  color: #f5f0e3;
+  font-size: 0.8rem;
+  left: 50%;
+  pointer-events: none;
+  position: absolute;
+  text-shadow:
+    -1px -1px 0 #000,
+    1px -1px 0 #000,
+    -1px 1px 0 #000,
+    1px 1px 0 #000;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.board-region-pvp {
+  color: #ffd6d6;
+}
+
+.board-controls,
+.zoom-controls {
+  display: flex;
+  gap: 6px;
+  pointer-events: auto;
+}
+
+.board-controls {
+  flex-wrap: wrap;
+}
+
+.board-panel {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.board {
+  background: #09966b;
+  cursor: crosshair;
+  display: block;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  width: 100%;
+}
+
+.board.board-editor {
+  cursor: grab;
+}
+
+.board-void {
+  fill: #0a815f;
+}
+
+.board-void-underground {
+  fill: #050505;
+}
+
+.board-bg {
+  fill: #0f9567;
+}
+
+.board-bg-underground {
+  fill: #101010;
+}
+
+.board-ground-tile {
+  fill: #0f9567;
+  stroke: rgba(5, 78, 56, 0.18);
+  stroke-width: 0.04;
+}
+
+.board-ground-tile-underground {
+  fill: #121212;
+  stroke: rgba(255, 255, 255, 0.03);
+  stroke-width: 0.04;
+}
+
+.board-sand {
+  fill: #b9a55a;
+}
+
+/* Ground tile base classes */
+.board-ground-base {
+  fill: #8b7a49;
+}
+
+.board-ground-splotch {
+  fill: rgba(55, 40, 12, 0.12);
+}
+
+/* ground-dirt: worn dirt road */
+.board-ground-type-ground-dirt .board-ground-base {
+  fill: #8b7a49;
+}
+.board-ground-type-ground-dirt .board-ground-splotch {
+  fill: rgba(55, 40, 12, 0.13);
+}
+
+/* ground-salt-road: packed salt road of the Wastelands */
+.board-ground-type-ground-salt-road .board-ground-base {
+  fill: #b0a279;
+}
+.board-ground-type-ground-salt-road .board-ground-splotch {
+  fill: rgba(125, 116, 84, 0.16);
+}
+
+/* ground-cave: dark stone floor */
+.board-ground-type-ground-cave .board-ground-base {
+  fill: #4a4848;
+}
+.board-ground-type-ground-cave .board-ground-splotch {
+  fill: rgba(0, 0, 0, 0.22);
+}
+
+/* ground-house: warm stone tile floor */
+.board-ground-type-ground-house .board-ground-base {
+  fill: #c8b898;
+}
+.board-ground-type-ground-house .board-ground-splotch {
+  fill: rgba(90, 70, 40, 0.1);
+}
+
+/* ground-wood: wooden planks */
+.board-ground-type-ground-wood .board-ground-base {
+  fill: #9e6a36;
+}
+.board-ground-type-ground-wood .board-ground-splotch {
+  fill: rgba(50, 25, 5, 0.18);
+}
+
+/* ground-cobble: cobblestone street */
+.board-ground-type-ground-cobblestone .board-ground-base {
+  fill: #74786d;
+}
+
+.ground-type-swatch-ground-cobblestone {
+  background: #74786d;
+}
+
+.board-ground-type-ground-cobble .board-ground-base {
+  fill: #8a8278;
+}
+.board-ground-type-ground-cobble .board-ground-splotch {
+  fill: rgba(50, 50, 50, 0.14);
+}
+
+/* ground-sand: sandy ground */
+.board-ground-type-ground-sand .board-ground-base {
+  fill: #d4b86a;
+}
+.board-ground-type-ground-sand .board-ground-splotch {
+  fill: rgba(120, 90, 20, 0.11);
+}
+
+/* ground-grass: trimmed grass path */
+.board-ground-type-ground-grass .board-ground-base {
+  fill: #5a8a3c;
+}
+.board-ground-type-ground-grass .board-ground-splotch {
+  fill: rgba(25, 55, 15, 0.18);
+}
+
+/* Ground type swatches in the editor sidebar */
+.ground-type-swatch {
+  border-left: 4px solid transparent;
+}
+.ground-type-swatch-ground-dirt {
+  border-left-color: #8b7a49;
+}
+.ground-type-swatch-ground-salt-road {
+  border-left-color: #b0a279;
+}
+.ground-type-swatch-ground-cave {
+  border-left-color: #4a4848;
+}
+.ground-type-swatch-ground-house {
+  border-left-color: #c8b898;
+}
+.ground-type-swatch-ground-wood {
+  border-left-color: #9e6a36;
+}
+.ground-type-swatch-ground-cobble {
+  border-left-color: #8a8278;
+}
+.ground-type-swatch-ground-sand {
+  border-left-color: #d4b86a;
+}
+.ground-type-swatch-ground-grass {
+  border-left-color: #5a8a3c;
+}
+.ground-type-swatch-ground-water {
+  border-left-color: #276485;
+}
+.ground-type-swatch-ground-mountain {
+  border-left-color: #8a857b;
+}
+
+.board-ground-type-ground-limestone .board-ground-base {
+  fill: #b2b3a3;
+}
+.ground-type-swatch-ground-limestone {
+  border-left-color: #b2b3a3;
+}
+.board-ground-type-ground-brick .board-ground-base {
+  fill: #8e826d;
+}
+.ground-type-swatch-ground-brick {
+  border-left-color: #8e826d;
+}
+.board-ground-type-ground-slate .board-ground-base {
+  fill: #424f52;
+}
+.ground-type-swatch-ground-slate {
+  border-left-color: #424f52;
+}
+.board-ground-type-ground-marble .board-ground-base {
+  fill: #b3b9ac;
+}
+.ground-type-swatch-ground-marble {
+  border-left-color: #b3b9ac;
+}
+.board-ground-type-ground-gravel .board-ground-base {
+  fill: #8e907c;
+}
+.ground-type-swatch-ground-gravel {
+  border-left-color: #8e907c;
+}
+.board-ground-type-ground-forest .board-ground-base {
+  fill: #59583c;
+}
+.ground-type-swatch-ground-forest {
+  border-left-color: #59583c;
+}
+.board-ground-type-ground-mud .board-ground-base {
+  fill: #887052;
+}
+.ground-type-swatch-ground-mud {
+  border-left-color: #887052;
+}
+.board-ground-type-ground-snow .board-ground-base {
+  fill: #dce7e7;
+}
+.ground-type-swatch-ground-snow {
+  border-left-color: #dce7e7;
+}
+.board-ground-type-ground-packed-snow .board-ground-base {
+  fill: #c9d0cc;
+}
+.ground-type-swatch-ground-packed-snow {
+  border-left-color: #c9d0cc;
+}
+.board-ground-type-ground-ice .board-ground-base {
+  fill: #b7d3dc;
+}
+.ground-type-swatch-ground-ice {
+  border-left-color: #b7d3dc;
+}
+.board-ground-type-ground-tundra .board-ground-base {
+  fill: #9a9a82;
+}
+.ground-type-swatch-ground-tundra {
+  border-left-color: #9a9a82;
+}
+.board-ground-type-ground-frozen-scree .board-ground-base {
+  fill: #8f979a;
+}
+.ground-type-swatch-ground-frozen-scree {
+  border-left-color: #8f979a;
+}
+.board-ground-type-ground-wood-weathered .board-ground-base {
+  fill: #626a62;
+}
+.ground-type-swatch-ground-wood-weathered {
+  border-left-color: #626a62;
+}
+.board-ground-type-ground-wood-walnut .board-ground-base {
+  fill: #46382e;
+}
+.ground-type-swatch-ground-wood-walnut {
+  border-left-color: #46382e;
+}
+
+.board-object-shadow {
+  fill: rgba(0, 0, 0, 0.22);
+}
+
+.board-ground-mound {
+  fill: rgba(64, 110, 47, 0.42);
+}
+
+.board-root-base {
+  fill: rgba(74, 53, 32, 0.52);
+}
+
+.board-house-ref-wall-left {
+  fill: #efe2c4;
+  stroke: #918368;
+  stroke-width: 0.08;
+}
+
+.board-house-ref-wall-right {
+  fill: #e6d5b2;
+  stroke: #827359;
+  stroke-width: 0.08;
+}
+
+.board-house-ref-base {
+  fill: #cab996;
+  stroke: #8a7a5e;
+  stroke-width: 0.06;
+}
+
+.board-house-ref-roof-top {
+  fill: #757245;
+  stroke: #3f3d25;
+  stroke-linejoin: round;
+  stroke-width: 0.12;
+}
+
+.board-house-ref-roof-left {
+  fill: #807d4b;
+  stroke: #474527;
+  stroke-width: 0.1;
+}
+
+.board-house-ref-roof-right {
+  fill: #6a673c;
+  stroke: #3a381f;
+  stroke-width: 0.1;
+}
+
+.board-house-ref-trim {
+  fill: none;
+  stroke: rgba(90, 81, 60, 0.72);
+  stroke-linecap: round;
+  stroke-width: 0.07;
+}
+
+.board-house-ref-window {
+  fill: #10294f;
+  stroke: #07101d;
+  stroke-width: 0.08;
+}
+
+.board-house-ref-window-grid {
+  fill: none;
+  stroke: rgba(67, 103, 156, 0.9);
+  stroke-linecap: round;
+  stroke-width: 0.05;
+}
+
+.board-house-ref-door {
+  fill: #a9711d;
+  stroke: #5f3c0f;
+  stroke-width: 0.08;
+}
+
+.board-house-ref-door-plank {
+  fill: none;
+  stroke: rgba(96, 62, 16, 0.78);
+  stroke-linecap: round;
+  stroke-width: 0.05;
+}
+
+.board-house-ref-step {
+  fill: #d8c7a7;
+  stroke: #9a8b72;
+  stroke-width: 0.05;
+}
+
+.board-door-knob {
+  fill: #d8bb63;
+}
+
+.board-house-step {
+  fill: #d3c4a4;
+  stroke: #93856d;
+  stroke-width: 0.06;
+}
+
+.board-sprite-blocker {
+  fill: transparent;
+  stroke: none;
+}
+
+.board-door-hotspot {
+  fill: transparent;
+  stroke: none;
+  cursor: pointer;
+}
+
+.board-door-travel-indicator {
+  pointer-events: none;
+}
+
+.board-door-travel-arrow {
+  fill: none;
+  stroke: #fff2a8;
+  stroke-linecap: round;
+  stroke-width: 0.12;
+}
+
+.board-door-travel-arrowhead {
+  fill: #fff2a8;
+}
+
+.board-stone {
+  fill: #aaa095;
+  stroke: #6d645b;
+  stroke-width: 0.12;
+}
+
+.board-weapon-rack {
+  fill: #4f3521;
+}
+
+.board-hanging-weapon {
+  fill: #c8c4be;
+  stroke: #585650;
+  stroke-linejoin: round;
+  stroke-width: 0.08;
+}
+
+.board-fire {
+  fill: #ff6a1d;
+}
+
+.board-object-label {
+  fill: #ece7d3;
+  font-family: "Trebuchet MS", "Verdana", sans-serif;
+  font-size: 0.42px;
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.75);
+  stroke-width: 0.12px;
+}
+
+.sign-label {
+  fill: #f2e8c8;
+  font-family: "Trebuchet MS", "Verdana", sans-serif;
+  font-size: 0.19px;
+  font-weight: 700;
+  paint-order: stroke;
+  stroke: rgba(40, 20, 0, 0.75);
+  stroke-width: 0.06px;
+}
+
+.board-cave-shadow {
+  fill: #020202;
+  stroke: #2f2f2f;
+  stroke-width: 0.12;
+}
+
+.board-cave-exit-glow {
+  fill: #c8a84a;
+  opacity: 0.55;
+}
+
+.board-cave-exit-inner {
+  fill: #1c1408;
+}
+
+.board-cave-exit-bright {
+  fill: #ffe8a0;
+}
+
+.board-cave-mouth {
+  fill: #070707;
+}
+
+.board-cave-rim {
+  fill: #726d67;
+  stroke: #4f4b46;
+  stroke-width: 0.1;
+}
+
+.board-trunk,
+.board-trunk-fill,
+.board-post-wood,
+.board-fence-post,
+.board-fence-wood,
+.board-wood-plank,
+.board-log,
+.board-cart-bed,
+.board-cart-rail {
+  fill: #7a5231;
+}
+
+.board-log-end {
+  fill: #9c6a40;
+}
+
+.board-trunk,
+.board-trunk-fill,
+.board-post-wood,
+.board-fence-post,
+.board-fence-wood,
+.board-wood-plank,
+.board-cart-bed,
+.board-cart-rail {
+  stroke: #53341d;
+  stroke-width: 0.08;
+}
+
+.board-bark-line,
+.board-cart-axle,
+.board-cart-shaft,
+.board-stone-crack,
+.board-crate-line,
+.board-statue-line,
+.board-wheat-stalk,
+.board-willow-frond,
+.board-deadwood,
+.board-trunk-side-line {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.board-trunk-side {
+  fill: #654224;
+  stroke: #4d2f19;
+  stroke-width: 0.08;
+}
+
+.board-bark-line {
+  stroke: rgba(65, 38, 20, 0.45);
+  stroke-width: 0.08;
+}
+
+.board-trunk-side-line {
+  stroke: rgba(73, 45, 23, 0.45);
+  stroke-width: 0.08;
+}
+
+.board-canopy-dark {
+  fill: #2c6d33;
+}
+
+.board-canopy-mid {
+  fill: #3f8c46;
+}
+
+.board-canopy-light {
+  fill: #71b664;
+}
+
+.board-pine-dark {
+  fill: #1d5b34;
+}
+
+.board-pine-mid {
+  fill: #2d7644;
+}
+
+.board-pine-light {
+  fill: #49955a;
+}
+
+.board-walnut-dark {
+  fill: #2f4f2a;
+}
+
+.board-walnut-mid {
+  fill: #436b34;
+}
+
+.board-walnut-light {
+  fill: #6c9748;
+}
+
+.board-shagbark-dark {
+  fill: #5a6a25;
+}
+
+.board-shagbark-mid {
+  fill: #7e9234;
+}
+
+.board-shagbark-light {
+  fill: #aec24f;
+}
+
+.board-shagbark-bark {
+  fill: #9c7449;
+  stroke: #6f4f2c;
+  stroke-width: 0.05;
+  stroke-linejoin: round;
+}
+
+.board-willow-frond {
+  stroke: #6ea95d;
+  stroke-width: 0.2;
+}
+
+.board-deadwood-fill {
+  fill: #6b5849;
+  stroke: #403329;
+  stroke-width: 0.08;
+}
+
+.board-deadwood {
+  stroke: #47362a;
+  stroke-width: 0.14;
+}
+
+.board-mushroom-stem {
+  fill: #efe6cf;
+  stroke: #a19379;
+  stroke-width: 0.04;
+}
+
+.board-mushroom-cap-red {
+  fill: #c84b43;
+  stroke: #7d251d;
+  stroke-width: 0.05;
+}
+
+.board-mushroom-cap-gold {
+  fill: #c79a4c;
+  stroke: #7a5622;
+  stroke-width: 0.05;
+}
+
+.board-mushroom-spot {
+  fill: #f5f0e3;
+}
+
+.board-stone-dark {
+  fill: #86827c;
+}
+
+.board-stone-mid {
+  fill: #aba7a1;
+}
+
+.board-stone-light {
+  fill: #d2cfca;
+}
+
+.board-stone-crack {
+  stroke: rgba(86, 84, 81, 0.8);
+  stroke-width: 0.09;
+}
+
+.board-fire-glow {
+  fill: rgba(255, 177, 76, 0.28);
+}
+
+.board-fire-base {
+  fill: #e0481a;
+}
+
+.board-fire-outer {
+  fill: #f56d22;
+}
+
+.board-fire-core {
+  fill: #ffd768;
+}
+
+/* Animated fire. Each flame group flickers from its own base: transform-box
+   keeps the origin on the element's bounding box, so a tongue scales and sways
+   around the point where it leaves the coals. Instances stagger duration and
+   delay inline so no two fires burn in step. Opacity keyframes read the
+   per-instance base opacity from the --fire-o custom property. */
+.board-flame {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: board-flame-flicker 1.8s ease-in-out infinite;
+}
+
+@keyframes board-flame-flicker {
+  0%,
+  100% {
+    transform: scaleX(1) scaleY(1) skewX(0deg);
+  }
+  22% {
+    transform: scaleX(0.95) scaleY(1.08) skewX(1.6deg);
+  }
+  41% {
+    transform: scaleX(1.06) scaleY(0.91) skewX(-2deg);
+  }
+  62% {
+    transform: scaleX(0.96) scaleY(1.11) skewX(2.4deg);
+  }
+  81% {
+    transform: scaleX(1.04) scaleY(0.94) skewX(-1.2deg);
+  }
+}
+
+.board-fire-glow-anim {
+  animation: board-fire-glow-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes board-fire-glow-pulse {
+  0%,
+  100% {
+    opacity: calc(var(--fire-o, 0.16) * 0.75);
+  }
+  50% {
+    opacity: calc(var(--fire-o, 0.16) * 1.2);
+  }
+}
+
+.board-ember {
+  animation: board-ember-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes board-ember-pulse {
+  0%,
+  100% {
+    opacity: calc(var(--fire-o, 0.8) * 0.55);
+  }
+  45% {
+    opacity: var(--fire-o, 0.8);
+  }
+}
+
+.board-smoke {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  opacity: 0;
+  animation: board-smoke-rise 5s linear infinite;
+}
+
+@keyframes board-smoke-rise {
+  0% {
+    transform: translate(0, 0) scale(0.55);
+    opacity: 0;
+  }
+  14% {
+    opacity: var(--fire-o, 0.2);
+  }
+  72% {
+    opacity: calc(var(--fire-o, 0.2) * 0.5);
+  }
+  100% {
+    transform: translate(var(--smoke-drift, 0.2px), var(--smoke-rise, -1.6px))
+      scale(1.6);
+    opacity: 0;
+  }
+}
+
+.board-spark {
+  opacity: 0;
+  animation: board-spark-rise 2s linear infinite;
+}
+
+@keyframes board-spark-rise {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.9;
+  }
+  48% {
+    opacity: 0.45;
+  }
+  70% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(var(--spark-drift, 0.1px), var(--spark-rise, -1.3px));
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board-flame,
+  .board-fire-glow-anim,
+  .board-ember,
+  .board-smoke,
+  .board-spark {
+    animation: none;
+  }
+
+  .board-smoke,
+  .board-spark {
+    opacity: 0.18;
+  }
+}
+
+.board-water {
+  fill: #68c9e5;
+}
+
+.board-water-deep {
+  fill: #2f8db2;
+}
+
+.board-water-foam {
+  fill: rgba(236, 250, 255, 0.92);
+}
+
+.board-crate {
+  fill: #956631;
+  stroke: #553615;
+  stroke-width: 0.08;
+}
+
+.board-crate-line {
+  stroke: rgba(78, 47, 19, 0.75);
+  stroke-width: 0.08;
+}
+
+.board-wheel {
+  fill: #4f3727;
+  stroke: #2c1b10;
+  stroke-width: 0.08;
+}
+
+.board-wheel-hub {
+  fill: #aa7c40;
+}
+
+.board-metal-dark {
+  fill: #4e4d4a;
+}
+
+.board-lantern {
+  fill: #79592d;
+  stroke: #3e2c15;
+  stroke-width: 0.07;
+}
+
+.board-lamp-glow {
+  fill: rgba(250, 226, 126, 0.7);
+}
+
+.board-cart-shaft {
+  stroke: #5a3b21;
+  stroke-width: 0.1;
+}
+
+.board-cart-axle {
+  stroke: #4a2f1a;
+  stroke-width: 0.12;
+}
+
+.board-fence-wood {
+  fill: #8b6139;
+}
+
+.board-wheat-stalk {
+  stroke: #8db55d;
+  stroke-width: 0.1;
+}
+
+.board-wheat-head {
+  fill: #dcb85b;
+  stroke: #9a7a32;
+  stroke-width: 0.04;
+}
+
+.board-fabric-red {
+  fill: #ac3e38;
+  stroke: #69231f;
+  stroke-width: 0.08;
+}
+
+.board-fabric-cream {
+  fill: rgba(243, 229, 191, 0.9);
+}
+
+.board-statue {
+  fill: #c9c6c0;
+  stroke: #83807a;
+  stroke-width: 0.08;
+}
+
+.board-statue-line {
+  stroke: #8c8882;
+  stroke-width: 0.11;
+}
+
+.board-pond-edge {
+  fill: #6da06a;
+}
+
+.board-pond-ripple {
+  fill: none;
+  stroke: rgba(195, 239, 252, 0.62);
+  stroke-width: 0.08;
+}
+
+.board-lily-pad {
+  fill: #7fb356;
+  stroke: #4e7a33;
+  stroke-width: 0.05;
+}
+
+.grid-line {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.07);
+  stroke-width: 0.03;
+}
+
+.grid-line-underground {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.04);
+  stroke-width: 0.03;
+}
+
+.board-object-hit {
+  cursor: grab;
+}
+
+.target-marker {
+  fill: rgba(240, 215, 99, 0.72);
+  stroke: #fff2ad;
+  stroke-width: 0.06;
+}
+
+.health-track {
+  fill: rgba(0, 0, 0, 0.55);
+}
+
+.health-fill {
+  fill: #d92d24;
+}
+
+.player-shadow {
+  fill: rgba(0, 0, 0, 0.24);
+}
+
+.player-leg {
+  fill: #5b4634;
+}
+
+.player-self-body {
+  fill: #f0d355;
+}
+
+.player-self-shoulders {
+  fill: #d0ae30;
+}
+
+.player-self-head {
+  fill: #f3d9bd;
+}
+
+.player-other-body {
+  fill: #7a5533;
+}
+
+.player-other-shoulders {
+  fill: #604227;
+}
+
+.player-other-head {
+  fill: #e2c39b;
+}
+
+.player-arm-line {
+  fill: none;
+  stroke: #3e2d20;
+  stroke-linecap: round;
+  stroke-width: 0.08;
+}
+
+.player-label {
+  fill: #e9e7de;
+  font-size: 0.42px;
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.75);
+  stroke-width: 0.14px;
+}
+
+.npc-friendly-body {
+  fill: #3a7d44;
+}
+
+.npc-friendly-shoulders {
+  fill: #2d6135;
+}
+
+.npc-friendly-head {
+  fill: #f3d9bd;
+}
+
+.npc-hostile-body {
+  fill: #9b2226;
+}
+
+.npc-hostile-shoulders {
+  fill: #7a1a1e;
+}
+
+.npc-hostile-head {
+  fill: #e2c39b;
+}
+
+.npc-label {
+  fill: #b8e0a8;
+  font-size: 0.4px;
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.8);
+  stroke-width: 0.14px;
+}
+
+.npc-action-label {
+  fill: #ffd166;
+  font-size: 0.32px;
+  paint-order: stroke;
+  stroke: rgba(0, 0, 0, 0.7);
+  stroke-width: 0.1px;
+}
+
+.npc-selection-ring {
+  fill: none;
+  stroke: #ffd700;
+  stroke-width: 0.07px;
+  opacity: 0.9;
+}
+
+/* The live SVG preview uses the same 32 gem poses as the Pixi texture loop. */
+.board-totem-gem-frame {
+  opacity: 0;
+  animation: board-totem-gem-pose 4.8s steps(1, end) infinite;
+}
+@keyframes board-totem-gem-pose {
+  0% {
+    opacity: 1;
+  }
+  3.125%,
+  100% {
+    opacity: 0;
+  }
+}
+.board-totem-pulse {
+  animation: board-totem-breathe 4.8s ease-in-out infinite;
+}
+@keyframes board-totem-breathe {
+  0%,
+  100% {
+    opacity: 0.58;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+/* The raid exit portal's light breathes in live previews; the game's Pixi
+   renderer bakes the same pulse into its flipbook frames instead. */
+.board-portal-breathe {
+  animation: board-portal-breathe 3.6s ease-in-out infinite;
+}
+@keyframes board-portal-breathe {
+  0%,
+  100% {
+    opacity: 0.62;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .board-portal-breathe {
+    animation: none;
+    opacity: 0.8;
+  }
+  .board-totem-gem-frame,
+  .board-totem-pulse {
+    animation: none;
+  }
+  .board-totem-gem-frame:first-child {
+    opacity: 1;
+  }
+  .board-totem-pulse {
+    opacity: 0.75;
+  }
+}
+
+:root{background:transparent!important}]]></style><g transform="translate(-3 -0.75)"><g><g data-prop-shadow-cast="snake-burrow"><g data-world-shadow-cast="true" fill="#20291d" opacity="0.13"><polygon points="0.295,2.6175 0.3144,2.5437 0.3714,2.475 0.4619,2.416 0.58,2.3707 0.7175,2.3422 0.865,2.3325 1.0125,2.3422 1.15,2.3707 1.2681,2.416 1.3586,2.475 1.4156,2.5437 1.435,2.6175 1.4156,2.6913 1.3586,2.76 1.2681,2.819 1.15,2.8643 1.0125,2.8928 0.865,2.9025 0.7175,2.8928 0.58,2.8643 0.4619,2.819 0.3714,2.76 0.3144,2.6913"></polygon><polygon points="0.9056,2.643 0.9284,2.5563 0.9954,2.4755 1.1018,2.4061 1.2406,2.3529 1.4022,2.3194 1.5756,2.308 1.749,2.3194 1.9106,2.3529 2.0494,2.4061 2.1558,2.4755 2.2228,2.5563 2.2456,2.643 2.2228,2.7297 2.1558,2.8105 2.0494,2.8799 1.9106,2.9331 1.749,2.9666 1.5756,2.978 1.4022,2.9666 1.2406,2.9331 1.1018,2.8799 0.9954,2.8105 0.9284,2.7297"></polygon><polygon points="1.595,2.6175 1.6144,2.5437 1.6714,2.475 1.7619,2.416 1.88,2.3707 2.0175,2.3422 2.165,2.3325 2.3125,2.3422 2.45,2.3707 2.5681,2.416 2.6586,2.475 2.7156,2.5437 2.735,2.6175 2.7156,2.6913 2.6586,2.76 2.5681,2.819 2.45,2.8643 2.3125,2.8928 2.165,2.9025 2.0175,2.8928 1.88,2.8643 1.7619,2.819 1.6714,2.76 1.6144,2.6913"></polygon><polygon points="1.294,2.69 1.318,2.69 1.3281,2.6999 1.3071,2.6999"></polygon><polygon points="1.3071,2.6999 1.3281,2.6999 1.3393,2.7101 1.3213,2.7101"></polygon><polygon points="1.3213,2.7101 1.3393,2.7101 1.3508,2.7201 1.3358,2.7201"></polygon><polygon points="1.3358,2.7201 1.3508,2.7201 1.3616,2.7291 1.3496,2.7291"></polygon><polygon points="1.3496,2.7291 1.3616,2.7291 1.371,2.7365 1.362,2.7365"></polygon><polygon points="1.362,2.7365 1.371,2.7365 1.3781,2.7416 1.3721,2.7416"></polygon><polygon points="1.3721,2.7416 1.3781,2.7416 1.3821,2.7439 1.3791,2.7439"></polygon><polygon points="1.3791,2.7439 1.382,2.7425 1.3821,2.7439"></polygon></g></g><g data-prop-shadow-art="snake-burrow"><g transform="translate(1.5 2.6)"><path d="M -1.24 .035 Q -1.11 -.11 -.91 -.1 L -.71 -.047 .37 -.044 Q .94 -.078 1.27 .081 L 1.11 .179 .69 .181 .48 .23 .07 .2 -.13 .27 -.63 .224 -.78 .155 -1.1 .153Z" fill="#705634"></path><path d="M -1.14 .055 Q -1.19 -.292 -.89 -.541 L -.76 -.704 -.5 -.834 Q -.23 -1.01 .1 -.928 L .43 -.91 Q .67 -.821 .813 -.603 L .918 -.407 Q 1.16 -.263 1.207 .062 L .935 .146 .56 .104 .334 .157 -.37 .117 -.802 .154Z" fill="#9d7b48"></path><path d="M -1.14 .055 Q -1.19 -.292 -.89 -.541 L -.76 -.704 -.5 -.834 Q -.23 -1.01 .1 -.928 L .43 -.91 .556 -.8 Q .126 -.78 -.117 -.69 L -.28 -.53 -.615 -.438 -.837 -.137Z" fill="#bd9a60"></path><path d="M .43 -.91 Q .67 -.821 .813 -.603 L .918 -.407 Q 1.16 -.263 1.207 .062 L .935 .146 .56 .104 .334 .157 .226 -.024 .481 -.232 .487 -.49 .328 -.635Z" fill="#80623c"></path><path d="M -.75 -.69 -.47 -.84 -.1 -.892 .09 -.845 -.18 -.794 -.345 -.687 -.54 -.597Z" fill="#ceb078"></path><path d="M -.946 -.247 Q -.71 -.392 -.592 -.457 Q -.251 -.674 .096 -.43 L .224 -.225 .23 .034 Q -.06 .17 -.392 .105 L -.849 .103Z" fill="#6a482b"></path><path d="M -.825 .061 Q -.852 -.174 -.635 -.352 Q -.414 -.514 -.165 -.442 Q .065 -.352 .098 -.101 L .13 .04 Q -.303 .135 -.825 .061Z" fill="#39281b"></path><path d="M -.758 .029 Q -.758 -.188 -.567 -.325 Q -.359 -.44 -.191 -.337 Q -.06 -.221 -.052 -.014Z" fill="#191a12"></path><path d="M -.825 .061 -.664 -.025 Q -.301 -.035 -.052 -.014 L .13 .04 Q -.276 .184 -.825 .061Z" fill="#514028"></path><path d="M -.851 .106 -.744 .049 -.437 .089 -.091 .041 .168 -.025 .23 .034 .146 .13 -.211 .196 -.579 .18Z" fill="#ad8750"></path><path d="M -.744 .098 -.473 .145 -.127 .124 .052 .079" fill="none" stroke="#d0ad6c" stroke-width="0.021"></path><path d="M -.886 -.225 Q -.725 -.35 -.629 -.424 Q -.345 -.62 -.067 -.454 L .112 -.278" fill="none" stroke="#c4a06a" stroke-width="0.044"></path><path d="M -.86 -.253 Q -.68 -.364 -.602 -.419 M -.324 -.519 Q -.208 -.522 -.088 -.45" fill="none" stroke="#e1bd82" stroke-width="0.013"></path><path d="M .083 -.775 Q -.13 -.683 -.322 -.601 Q -.59 -.519 -.758 -.401 M -.317 -.606 Q -.341 -.512 -.263 -.455 M -.613 -.499 -.66 -.372 -.613 -.28 M -.184 -.67 -.081 -.591 .023 -.59 M .564 -.54 Q .639 -.364 .86 -.234 L 1.017 -.127 M .775 -.299 .73 -.113 .79 .003" fill="none" stroke="#654b2d" stroke-width="0.027" stroke-linecap="round"></path><path d="M .078 -.785 Q -.14 -.702 -.332 -.624 Q -.609 -.54 -.756 -.418 M .568 -.553 Q .635 -.389 .866 -.251" fill="none" stroke="#cfb17a" stroke-width="0.011"></path><path d="M -.874 -.081 -.939 .017 M -.99 -.401 -.897 -.466 M .298 -.696 .388 -.72 M .561 -.103 .723 -.049 .865 -.062 M .832 -.421 .898 -.361 M .34 .077 .429 .045" fill="none" stroke="#604c30" stroke-width="0.018"></path><path d="M -0.4 -0.82 l 0.015 0.006" stroke="#e0bd7b" stroke-width="0.013"></path><path d="M -0.03 -0.78 l 0.024 -0.009" stroke="#967440" stroke-width="0.013"></path><path d="M -0.33 -0.74 l 0.033 0.006" stroke="#967440" stroke-width="0.013"></path><path d="M 0.04 -0.7 l 0.015 -0.009" stroke="#e0bd7b" stroke-width="0.013"></path><path d="M -0.26 -0.79 l 0.024 0.006" stroke="#967440" stroke-width="0.013"></path><path d="M 0.11 -0.75 l 0.033 -0.009" stroke="#967440" stroke-width="0.013"></path><path d="M -0.19 -0.71 l 0.015 0.006" stroke="#e0bd7b" stroke-width="0.013"></path><path d="M 0.18 -0.8 l 0.024 -0.009" stroke="#967440" stroke-width="0.013"></path><path d="M -0.12 -0.76 l 0.033 0.006" stroke="#967440" stroke-width="0.013"></path><path d="M 0.25 -0.72 l 0.015 -0.009" stroke="#e0bd7b" stroke-width="0.013"></path><path d="M -0.05 -0.81 l 0.024 0.006" stroke="#967440" stroke-width="0.013"></path><path d="M -0.35 -0.77 l 0.033 -0.009" stroke="#967440" stroke-width="0.013"></path><path d="M 0.02 -0.73 l 0.015 0.006" stroke="#e0bd7b" stroke-width="0.013"></path><path d="M -0.28 -0.82 l 0.024 -0.009" stroke="#967440" stroke-width="0.013"></path><path d="M 0.09 -0.78 l 0.033 0.006" stroke="#967440" stroke-width="0.013"></path><path d="M -0.21 -0.74 l 0.015 -0.009" stroke="#e0bd7b" stroke-width="0.013"></path><path d="M 0.16 -0.7 l 0.024 0.006" stroke="#967440" stroke-width="0.013"></path><path d="M -0.14 -0.79 l 0.033 -0.009" stroke="#967440" stroke-width="0.013"></path><path d="M 0.23 -0.75 l 0.015 0.006" stroke="#e0bd7b" stroke-width="0.013"></path><path d="M -0.07 -0.71 l 0.024 -0.009" stroke="#967440" stroke-width="0.013"></path><path d="M -0.37 -0.8 l 0.033 0.006" stroke="#967440" stroke-width="0.013"></path><path d="M 0 -0.76 l 0.015 -0.009" stroke="#e0bd7b" stroke-width="0.013"></path><path d="M -0.3 -0.72 l 0.024 0.006" stroke="#967440" stroke-width="0.013"></path><path d="M 0.07 -0.81 l 0.033 -0.009" stroke="#967440" stroke-width="0.013"></path><path d="M -0.23 -0.77 l 0.015 0.006" stroke="#e0bd7b" stroke-width="0.013"></path><path d="M 0.14 -0.73 l 0.024 -0.009" stroke="#967440" stroke-width="0.013"></path><path d="M -0.16 -0.82 l 0.033 0.006" stroke="#967440" stroke-width="0.013"></path><path d="M 0.21 -0.78 l 0.015 -0.009" stroke="#e0bd7b" stroke-width="0.013"></path><g transform="translate(0.516 -0.641) scale(0.97)"><path d="M -.12 .018 -.097 -.082 .022 -.115 .139 -.052 .16 .025 .055 .088 -.083 .068Z" fill="#8d825f"></path><path d="M -.097 -.082 .022 -.115 .139 -.052 .04 -.005 -.12 .018Z" fill="#b7ad80"></path><path d="M .04 -.005 .139 -.052 .16 .025 .055 .088 -.017 .05Z" fill="#6b684d"></path><path d="M -.062 -.055 .013 -.075 .06 -.048" stroke="#d3c799" stroke-width="0.012" fill="none"></path></g><g transform="translate(0.919 -0.032) scale(0.76)"><path d="M -.12 .018 -.097 -.082 .022 -.115 .139 -.052 .16 .025 .055 .088 -.083 .068Z" fill="#8d825f"></path><path d="M -.097 -.082 .022 -.115 .139 -.052 .04 -.005 -.12 .018Z" fill="#b7ad80"></path><path d="M .04 -.005 .139 -.052 .16 .025 .055 .088 -.017 .05Z" fill="#6b684d"></path><path d="M -.062 -.055 .013 -.075 .06 -.048" stroke="#d3c799" stroke-width="0.012" fill="none"></path></g><g transform="translate(-0.977 0.046) scale(0.55)"><path d="M -.12 .018 -.097 -.082 .022 -.115 .139 -.052 .16 .025 .055 .088 -.083 .068Z" fill="#8d825f"></path><path d="M -.097 -.082 .022 -.115 .139 -.052 .04 -.005 -.12 .018Z" fill="#b7ad80"></path><path d="M .04 -.005 .139 -.052 .16 .025 .055 .088 -.017 .05Z" fill="#6b684d"></path><path d="M -.062 -.055 .013 -.075 .06 -.048" stroke="#d3c799" stroke-width="0.012" fill="none"></path></g><g transform="translate(0.46 0.193) scale(0.4)"><path d="M -.12 .018 -.097 -.082 .022 -.115 .139 -.052 .16 .025 .055 .088 -.083 .068Z" fill="#8d825f"></path><path d="M -.097 -.082 .022 -.115 .139 -.052 .04 -.005 -.12 .018Z" fill="#b7ad80"></path><path d="M .04 -.005 .139 -.052 .16 .025 .055 .088 -.017 .05Z" fill="#6b684d"></path><path d="M -.062 -.055 .013 -.075 .06 -.048" stroke="#d3c799" stroke-width="0.012" fill="none"></path></g><path d="M -.65 .269 -.567 .236 -.495 .266 -.542 .292Z M -.155 .239 -.102 .211 -.04 .239 -.083 .265Z M .648 .236 .733 .199 .783 .23 .724 .261Z" fill="#8b6a3b"></path><path d="M -.592 .25 -.545 .245 M .673 .228 .723 .216" fill="none" stroke="#c5a166" stroke-width="0.012"></path><g><path d="M -0.39 -0.831 C -0.412 -0.9462 -0.5 -1.136 -0.61 -1.071 C -0.5088 -1.106 -0.399 -0.939 -0.366 -0.816 Z" fill="#526735"></path><path d="M -0.39 -0.831 C -0.412 -0.9462 -0.5 -1.136 -0.61 -1.071" fill="none" stroke="#b0b77a" stroke-width="0.009"></path></g><g><path d="M -0.35 -0.839 C -0.3475 -1.007 -0.3375 -1.254 -0.325 -1.189 C -0.3365 -1.224 -0.3222 -0.9965 -0.326 -0.824 Z" fill="#637d3e"></path><path d="M -0.35 -0.839 C -0.3475 -1.007 -0.3375 -1.254 -0.325 -1.189" fill="none" stroke="#b0b77a" stroke-width="0.009"></path></g><g><path d="M -0.3 -0.825 C -0.285 -0.9498 -0.225 -1.15 -0.15 -1.085 C -0.219 -1.12 -0.2535 -0.942 -0.276 -0.81 Z" fill="#526735"></path><path d="M -0.3 -0.825 C -0.285 -0.9498 -0.225 -1.15 -0.15 -1.085" fill="none" stroke="#b0b77a" stroke-width="0.009"></path></g><g><path d="M 0.225 -0.861 C 0.2165 -0.957 0.1825 -1.126 0.14 -1.061 C 0.1791 -1.096 0.2362 -0.951 0.249 -0.846 Z" fill="#637d3e"></path><path d="M 0.225 -0.861 C 0.2165 -0.957 0.1825 -1.126 0.14 -1.061" fill="none" stroke="#b0b77a" stroke-width="0.009"></path></g><g><path d="M 0.258 -0.852 C 0.273 -0.9336 0.333 -1.087 0.408 -1.022 C 0.339 -1.057 0.3045 -0.9285 0.282 -0.837 Z" fill="#526735"></path><path d="M 0.258 -0.852 C 0.273 -0.9336 0.333 -1.087 0.408 -1.022" fill="none" stroke="#b0b77a" stroke-width="0.009"></path></g><g><path d="M 0.95 0.027 C 0.964 -0.1026 1.02 -0.308 1.09 -0.243 C 1.0256 -0.278 0.995 -0.0945 0.974 0.042 Z" fill="#637d3e"></path><path d="M 0.95 0.027 C 0.964 -0.1026 1.02 -0.308 1.09 -0.243" fill="none" stroke="#b0b77a" stroke-width="0.009"></path></g><g><path d="M 0.991 0.037 C 1.013 -0.035 1.101 -0.178 1.211 -0.113 C 1.1098 -0.148 1.048 -0.0305 1.015 0.052 Z" fill="#526735"></path><path d="M 0.991 0.037 C 1.013 -0.035 1.101 -0.178 1.211 -0.113" fill="none" stroke="#b0b77a" stroke-width="0.009"></path></g></g></g></g></g></svg>

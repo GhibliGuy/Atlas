@@ -1,4 +1,15 @@
 [
+{"sessionId":"51ea9b0a","time":1793043602421,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":8610},
+{"sessionId":"51ea9b0a","time":1793043593818,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":8609},
+{"sessionId":"51ea9b0a","time":1793043540474,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":8608},
+{"sessionId":"51ea9b0a","time":1793043433081,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":8607},
+{"sessionId":"c24488c6","time":1793043431858,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":null,"atY":null,"key":8606},
+{"sessionId":"51ea9b0a","time":1793043408378,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":8605},
+{"sessionId":"51ea9b0a","time":1793043396930,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":8604},
+{"sessionId":"51ea9b0a","time":1793043394235,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":8603},
+{"sessionId":"51ea9b0a","time":1793043345938,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":8602},
+{"sessionId":"6687b1a5","time":1793042723946,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":8601},
+{"sessionId":"6687b1a5","time":1793042711534,"fromZ":null,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":8600},
 {"sessionId":"69dae9df","time":1793032904340,"fromZ":11076,"toZ":0,"kind":"outdoors","outX":-55,"outY":197,"key":8599},
 {"sessionId":"69dae9df","time":1793032890265,"fromZ":0,"toZ":11076,"zoneName":"GhibFish's home, Wispmeyer","pvpMode":"none","atX":11,"atY":5,"key":8598},
 {"sessionId":"69dae9df","time":1793032768724,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":8597},
@@ -4987,16 +4998,5 @@
 {"sessionId":"f8147510","time":1791661048939,"fromZ":11000,"toZ":0,"kind":"outdoors","outX":124,"outY":-88,"key":3614},
 {"sessionId":"f8147510","time":1791660639923,"fromZ":null,"toZ":11000,"zoneName":"GhibliGuy's home, Plymouth Wharf","pvpMode":"none","atX":-12,"atY":4,"key":3613},
 {"sessionId":"31c48938","time":1791660434152,"fromZ":null,"toZ":11000,"zoneName":"GhibliGuy's home, Plymouth Wharf","pvpMode":"none","atX":-12,"atY":5,"key":3612},
-{"sessionId":"5dc2c7b8","time":1791660435016,"fromZ":null,"toZ":-160,"zoneName":"Titanium Mine","pvpMode":"lawless","atX":2250,"atY":470,"key":3611},
-{"sessionId":"fae4f944","time":1791659886291,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Plymouth Wharf","pvpMode":"none","atX":7,"atY":2,"key":3610},
-{"sessionId":"fae4f944","time":1791659881911,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":3609},
-{"sessionId":"fae4f944","time":1791659827520,"fromZ":0,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":3608},
-{"sessionId":"fae4f944","time":1791659821591,"fromZ":11000,"toZ":0,"kind":"outdoors","outX":124,"outY":-88,"key":3607},
-{"sessionId":"fae4f944","time":1791659647724,"fromZ":null,"toZ":11000,"zoneName":"GhibliGuy's home, Plymouth Wharf","pvpMode":"none","atX":-12,"atY":5,"key":3606},
-{"sessionId":"e243e8d6","time":1791659647334,"fromZ":null,"toZ":-160,"zoneName":"Titanium Mine","pvpMode":"lawless","atX":2244.8,"atY":479.7,"key":3605},
-{"sessionId":"a3dbc1c5","time":1791659588913,"fromZ":0,"toZ":-160,"zoneName":"Titanium Mine","pvpMode":"lawless","atX":2301,"atY":596,"key":3604},
-{"sessionId":"a3dbc1c5","time":1791659027495,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":3603},
-{"sessionId":"a3dbc1c5","time":1791659018019,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":3602},
-{"sessionId":"a3dbc1c5","time":1791659009165,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":3601},
-{"sessionId":"a3dbc1c5","time":1791658960286,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":3600}
+{"sessionId":"5dc2c7b8","time":1791660435016,"fromZ":null,"toZ":-160,"zoneName":"Titanium Mine","pvpMode":"lawless","atX":2250,"atY":470,"key":3611}
 ]
