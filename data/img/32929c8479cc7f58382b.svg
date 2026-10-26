@@ -318,6 +318,30 @@
 .ground-type-swatch-ground-snow {
   border-left-color: #dce7e7;
 }
+.board-ground-type-ground-packed-snow .board-ground-base {
+  fill: #c9d0cc;
+}
+.ground-type-swatch-ground-packed-snow {
+  border-left-color: #c9d0cc;
+}
+.board-ground-type-ground-ice .board-ground-base {
+  fill: #b7d3dc;
+}
+.ground-type-swatch-ground-ice {
+  border-left-color: #b7d3dc;
+}
+.board-ground-type-ground-tundra .board-ground-base {
+  fill: #9a9a82;
+}
+.ground-type-swatch-ground-tundra {
+  border-left-color: #9a9a82;
+}
+.board-ground-type-ground-frozen-scree .board-ground-base {
+  fill: #8f979a;
+}
+.ground-type-swatch-ground-frozen-scree {
+  border-left-color: #8f979a;
+}
 .board-ground-type-ground-wood-weathered .board-ground-base {
   fill: #626a62;
 }
@@ -1121,4 +1145,4 @@
   }
 }
 
-:root{background:transparent!important}]]></style><g transform="translate(-3.7 -0.85)"><g><polygon points="1.25,2.975 3.45,4.075 2.7,4.45 0.5,3.35" style="fill:#8b919b;stroke:#5b606a;stroke-width:0.05;stroke-linejoin:round"></polygon><path d="M 1.25 2.975 L 1.25 0.675 Q 2.35 0.325 3.45 1.775 L 3.45 4.075" style="fill:none;stroke:#cbd5e1;stroke-width:0.05;stroke-linejoin:round;stroke-linecap:round"></path></g></g></svg>
+:root{background:transparent!important}]]></style><g transform="translate(-3.7 -0.85)"><g><polygon points="1.25,2.975 3.45,4.075 2.7,4.45 0.5,3.35" style="fill:#8b919b;stroke:#5b606a;stroke-width:0.05;stroke-linejoin:round"></polygon><path d="M 1.25 2.975 L 1.25 0.675 Q 2.35 0.325 3.45 1.775 L 3.45 4.075 Z" style="fill:#0b0b10;stroke:none"></path><path d="M 1.25 2.975 L 1.25 0.675 Q 2.35 0.325 3.45 1.775 L 3.45 4.075" style="fill:none;stroke:#cbd5e1;stroke-width:0.05;stroke-linejoin:round;stroke-linecap:round"></path></g></g></svg>
