@@ -1,4 +1,11 @@
 [
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1792980185325,"sessionId":"453b0c60","key":802},
+{"type":"gem.found","typeId":"gem-amber","carat":2,"dropped":false,"time":1792979983211,"sessionId":"453b0c60","key":801},
+{"type":"gem.found","typeId":"gem-onyx","carat":1.5,"dropped":false,"npcName":"Gutrot the Carver","time":1792978803395,"sessionId":"14b234da","key":800},
+{"type":"gem.found","typeId":"gem-iolite","carat":1,"dropped":false,"time":1792977666246,"sessionId":"453b0c60","key":799},
+{"type":"gem.found","typeId":"gem-iolite","carat":3,"dropped":false,"time":1792977352932,"sessionId":"716857cc","key":798},
+{"type":"gem.found","typeId":"gem-amber","carat":1.5,"dropped":false,"time":1792975560055,"sessionId":"716857cc","key":797},
+{"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"time":1792973876229,"sessionId":"050adbcd","key":796},
 {"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"time":1792973405973,"sessionId":"050adbcd","key":795},
 {"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"time":1792973370402,"sessionId":"050adbcd","key":794},
 {"type":"gem.found","typeId":"gem-ruby","carat":1,"dropped":false,"time":1792973020811,"sessionId":"050adbcd","key":793},
