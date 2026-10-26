@@ -506,7 +506,7 @@ function dataFetch(u){return fetch(u,{cache:'no-cache'})}
     const map=new Map();
     for(const o of snapshot?.worldObjects||[]){
       if(!o.position||num(o.position.x)===null||num(o.position.y)===null)continue;
-      if(/^(iron|silver|gold|titanium)-rift$|^fallen-(pine|oak|black-walnut|shagbark)$|-bloom$/.test(String(o.typeId||'')))continue;   // special events: minutes, not a place
+      if(/^(iron|silver|gold|titanium)-rift$|^fallen-(pine|oak|black-walnut|shagbark|snow-pine)$|-bloom$/.test(String(o.typeId||'')))continue;   // special events: minutes, not a place
       const skill=state.objectSkillByType?.get(o.typeId);
       if(!skill)continue;
       const yieldItem=state.resourceYieldByObjectId?.get(o.id)||null;
