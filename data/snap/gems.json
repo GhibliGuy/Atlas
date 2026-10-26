@@ -1,4 +1,7 @@
 [
+{"type":"gem.found","typeId":"gem-topaz","carat":3,"dropped":false,"time":1793040110294,"sessionId":"825445c8","key":830},
+{"type":"gem.found","typeId":"gem-topaz","carat":1.5,"dropped":false,"time":1793037723462,"sessionId":"825445c8","key":829},
+{"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"time":1793031190957,"sessionId":"69dae9df","key":828},
 {"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"time":1793027534727,"sessionId":"8ad70d67","key":827},
 {"type":"gem.found","typeId":"gem-amber","carat":1.5,"dropped":false,"time":1793026065408,"sessionId":"aff76c47","key":826},
 {"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"time":1793024415378,"sessionId":"8ad70d67","key":825},
