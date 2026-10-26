@@ -1,4 +1,11 @@
 [
+{"type":"gem.found","typeId":"gem-topaz","carat":1.5,"dropped":false,"time":1793022447056,"sessionId":"8ad70d67","key":820},
+{"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"time":1793022183655,"sessionId":"8ad70d67","key":819},
+{"type":"gem.found","typeId":"gem-topaz","carat":2.5,"dropped":false,"time":1793021320782,"sessionId":"8ad70d67","key":818},
+{"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"time":1793020547793,"sessionId":"8ad70d67","key":817},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1793019595564,"sessionId":"8ad70d67","key":816},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1793018705811,"sessionId":"579663af","key":815},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1793017748375,"sessionId":"5ad84877","key":814},
 {"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"npcName":"Ogre Charger","time":1793016998986,"sessionId":"8ad70d67","key":813},
 {"type":"gem.found","typeId":"gem-amber","carat":1,"dropped":false,"time":1793016735958,"sessionId":"5ad84877","key":812},
 {"type":"gem.found","typeId":"gem-iolite","carat":1.5,"dropped":false,"time":1793016532313,"sessionId":"5ad84877","key":811},
