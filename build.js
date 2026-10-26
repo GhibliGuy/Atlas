@@ -41,7 +41,16 @@ fs.cpSync(path.join(SRC, 'img'), path.join(OUT, 'img'), { recursive: true });
 // overlay (it shows the monster's portrait over its dot; 22 Oct 2026) - so it never has to download the whole asset list.
 try {
   const A = JSON.parse(fs.readFileSync(path.join(OUT, 'data', 'snap', 'assets.json'), 'utf8')), rows = Array.isArray(A) ? A : (A.assets || Object.values(A)), art = {};
-  for (const a of rows) if (a && a.entityKind === 'monster' && a.kind === 'monster-render' && !a.variant && a.file && a.entityId) art[a.entityId] = a.file;
+  // best picture per monster (25 Oct 2026): its own plain render, else its own render saved with a class/faction, else
+  // one of its "look" renders (warrior or classless first) - many monsters only have the latter two, and were left out
+  const rank = {};
+  for (const a of rows) {
+    if (!a || a.entityKind !== 'monster' || a.kind !== 'monster-render' || !a.file || !a.entityId) continue;
+    const v = a.variant, look = v && v.look, id = look ? look.typeId : a.entityId;
+    if (!id || (v && v.name)) continue;   // a named NPC's own render is not the monster kind's
+    const r = !v ? 0 : !look ? 1 : (!look.npcClass || look.npcClass === 'warrior') ? 2 : 3;
+    if (rank[id] == null || r < rank[id]) { rank[id] = r; art[id] = a.file; }
+  }
   fs.writeFileSync(path.join(OUT, 'monster-art.json'), JSON.stringify(art));
 } catch (e) { console.warn('monster-art.json not written:', e.message); }
 
