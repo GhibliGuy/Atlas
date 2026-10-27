@@ -1,4 +1,11 @@
 [
+{"sessionId":"cf90f084","time":1793119126619,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":8906},
+{"sessionId":"cf90f084","time":1793119114195,"fromZ":600,"toZ":0,"kind":"outdoors","outX":1688,"outY":1869,"key":8905},
+{"sessionId":"cf90f084","time":1793119103352,"fromZ":0,"toZ":600,"zoneName":"City of Westergarde","pvpMode":"none","atX":1690,"atY":1871,"key":8904},
+{"sessionId":"cf90f084","time":1793119063023,"fromZ":11000,"toZ":0,"kind":"outdoors","outX":1706,"outY":1818,"key":8903},
+{"sessionId":"cf90f084","time":1793117327563,"fromZ":null,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":-17,"atY":24,"key":8902},
+{"sessionId":"d68ebf03","time":1793116849902,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":8901},
+{"sessionId":"d68ebf03","time":1793116824029,"fromZ":11000,"toZ":0,"kind":"outdoors","outX":1706,"outY":1818,"key":8900},
 {"sessionId":"d68ebf03","time":1793115549732,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":8899},
 {"sessionId":"d68ebf03","time":1793115523754,"fromZ":11000,"toZ":0,"kind":"outdoors","outX":1706,"outY":1818,"key":8898},
 {"sessionId":"d68ebf03","time":1793114118103,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":8897},
@@ -4991,12 +4998,5 @@
 {"sessionId":"6076e7ff","time":1791759546689,"fromZ":0,"toZ":-30,"zoneName":"Smoldering Den","pvpMode":"none","atX":2.12,"atY":-127.08,"key":3910},
 {"sessionId":"6076e7ff","time":1791759514210,"fromZ":-6,"toZ":0,"kind":"outdoors","outX":58.54,"outY":50.34,"key":3909},
 {"sessionId":"6076e7ff","time":1791759510409,"fromZ":-7,"toZ":-6,"zoneName":"Imp Tree","pvpMode":"none","atX":48,"atY":46,"key":3908},
-{"sessionId":"6076e7ff","time":1791759503679,"fromZ":-8,"toZ":-7,"zoneName":"Binxonia","pvpMode":"none","atX":44,"atY":52,"key":3907},
-{"sessionId":"6076e7ff","time":1791759492479,"fromZ":-7,"toZ":-8,"zoneName":"Binxonia","pvpMode":"none","atX":45,"atY":48,"key":3906},
-{"sessionId":"6076e7ff","time":1791759484428,"fromZ":-6,"toZ":-7,"zoneName":"Binxonia","pvpMode":"none","atX":47.12,"atY":37.1,"key":3905},
-{"sessionId":"6076e7ff","time":1791759479775,"fromZ":0,"toZ":-6,"zoneName":"Imp Tree","pvpMode":"none","atX":47,"atY":34,"key":3904},
-{"sessionId":"6076e7ff","time":1791759468626,"fromZ":-20,"toZ":0,"kind":"outdoors","outX":65,"outY":94,"key":3903},
-{"sessionId":"6076e7ff","time":1791759457549,"fromZ":-21,"toZ":-20,"zoneName":"Binx Crypt","pvpMode":"none","atX":42.89,"atY":70.39,"key":3902},
-{"sessionId":"6076e7ff","time":1791759440614,"fromZ":-22,"toZ":-21,"zoneName":"Binx Crypt","pvpMode":"none","atX":4.16,"atY":91.96,"key":3901},
-{"sessionId":"6076e7ff","time":1791759417711,"fromZ":-21,"toZ":-22,"zoneName":"Binx Crypt","pvpMode":"none","atX":6,"atY":88,"key":3900}
+{"sessionId":"6076e7ff","time":1791759503679,"fromZ":-8,"toZ":-7,"zoneName":"Binxonia","pvpMode":"none","atX":44,"atY":52,"key":3907}
 ]
