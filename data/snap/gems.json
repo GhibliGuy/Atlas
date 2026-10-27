@@ -1,4 +1,10 @@
 [
+{"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"time":1793114954261,"sessionId":"d68ebf03","key":872},
+{"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"time":1793114749527,"sessionId":"d68ebf03","key":871},
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"time":1793113220029,"sessionId":"d68ebf03","key":870},
+{"type":"gem.found","typeId":"gem-ruby","carat":2,"dropped":false,"time":1793111995507,"sessionId":"d68ebf03","key":869},
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"time":1793111923940,"sessionId":"d68ebf03","key":868},
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"time":1793110075420,"sessionId":"98c9f006","key":867},
 {"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"time":1793106024374,"sessionId":"44acba9a","key":866},
 {"type":"gem.found","typeId":"gem-diamond","carat":1.5,"dropped":false,"time":1793105901826,"sessionId":"44acba9a","key":865},
 {"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"npcName":"Mountain Ogre","time":1793105293753,"sessionId":"bb38b502","key":864},
