@@ -1,4 +1,9 @@
 [
+{"sessionId":"ca3e63fb","time":1793130258360,"fromZ":-250,"toZ":0,"kind":"outdoors","outX":1001,"outY":255,"key":8911},
+{"sessionId":"ca3e63fb","time":1793130256353,"fromZ":null,"toZ":-250,"zoneName":"Grumm's Hollow","pvpMode":"lawless","atX":1000,"atY":230,"key":8910},
+{"sessionId":"d85981ee","time":1793124259836,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":8909},
+{"sessionId":"d85981ee","time":1793124235442,"fromZ":11000,"toZ":0,"kind":"outdoors","outX":1706,"outY":1818,"key":8908},
+{"sessionId":"d85981ee","time":1793124227830,"fromZ":null,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":12,"atY":23,"key":8907},
 {"sessionId":"cf90f084","time":1793119126619,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":8906},
 {"sessionId":"cf90f084","time":1793119114195,"fromZ":600,"toZ":0,"kind":"outdoors","outX":1688,"outY":1869,"key":8905},
 {"sessionId":"cf90f084","time":1793119103352,"fromZ":0,"toZ":600,"zoneName":"City of Westergarde","pvpMode":"none","atX":1690,"atY":1871,"key":8904},
@@ -4993,10 +4998,5 @@
 {"sessionId":"6076e7ff","time":1791759607227,"fromZ":-34,"toZ":-33,"zoneName":"Smoldering Den","pvpMode":"none","atX":-2,"atY":-137,"key":3915},
 {"sessionId":"6076e7ff","time":1791759590108,"fromZ":-33,"toZ":-34,"zoneName":"Smoldering Den","pvpMode":"none","atX":6.42,"atY":-144.08,"key":3914},
 {"sessionId":"6076e7ff","time":1791759576935,"fromZ":-32,"toZ":-33,"zoneName":"Smoldering Den","pvpMode":"none","atX":10.75,"atY":-131.45,"key":3913},
-{"sessionId":"6076e7ff","time":1791759563259,"fromZ":-31,"toZ":-32,"zoneName":"Smoldering Den","pvpMode":"none","atX":14,"atY":-132,"key":3912},
-{"sessionId":"6076e7ff","time":1791759552230,"fromZ":-30,"toZ":-31,"zoneName":"Smoldering Den","pvpMode":"none","atX":13,"atY":-121,"key":3911},
-{"sessionId":"6076e7ff","time":1791759546689,"fromZ":0,"toZ":-30,"zoneName":"Smoldering Den","pvpMode":"none","atX":2.12,"atY":-127.08,"key":3910},
-{"sessionId":"6076e7ff","time":1791759514210,"fromZ":-6,"toZ":0,"kind":"outdoors","outX":58.54,"outY":50.34,"key":3909},
-{"sessionId":"6076e7ff","time":1791759510409,"fromZ":-7,"toZ":-6,"zoneName":"Imp Tree","pvpMode":"none","atX":48,"atY":46,"key":3908},
-{"sessionId":"6076e7ff","time":1791759503679,"fromZ":-8,"toZ":-7,"zoneName":"Binxonia","pvpMode":"none","atX":44,"atY":52,"key":3907}
+{"sessionId":"6076e7ff","time":1791759563259,"fromZ":-31,"toZ":-32,"zoneName":"Smoldering Den","pvpMode":"none","atX":14,"atY":-132,"key":3912}
 ]
