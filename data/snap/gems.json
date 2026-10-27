@@ -1,4 +1,7 @@
 [
+{"type":"gem.found","typeId":"gem-pearl","carat":1,"dropped":false,"time":1793063581258,"sessionId":"701b8cd3","key":850},
+{"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"time":1793062226508,"sessionId":"0f754302","key":849},
+{"type":"gem.found","typeId":"gem-onyx","carat":1,"dropped":false,"time":1793062084458,"sessionId":"0f754302","key":848},
 {"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"time":1793061321211,"sessionId":"ab8db180","key":847},
 {"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"time":1793061272306,"sessionId":"0f754302","key":846},
 {"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"time":1793061128299,"sessionId":"0f754302","key":845},
