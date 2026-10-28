@@ -160,7 +160,7 @@
 {"z":-14,"name":"Underleaf","pvpMode":"safe","firstSeen":1790641249480,"lastSeen":1790641249480,"nameOverride":false,"entranceOverride":null,"exitOverride":null},
 {"z":-12,"name":"Underleaf","pvpMode":"safe","firstSeen":1791254962959,"lastSeen":1791254962959,"nameOverride":false,"entranceOverride":null,"exitOverride":null},
 {"z":-11,"name":"Underleaf","pvpMode":"safe","firstSeen":1790447735240,"lastSeen":1790898000200,"nameOverride":false,"entranceOverride":null,"exitOverride":null},
-{"z":-10,"name":"Binxonia Bank","pvpMode":"none","firstSeen":1789865468960,"lastSeen":1793144127229,"nameOverride":false,"entranceOverride":{"x":12.605746254067725,"y":-11.635497600032664},"exitOverride":null,"gameName":"Binxonia Bank"},
+{"z":-10,"name":"Binxonia Bank","pvpMode":"none","firstSeen":1789865468960,"lastSeen":1793220528168,"nameOverride":false,"entranceOverride":{"x":12.605746254067725,"y":-11.635497600032664},"exitOverride":null,"gameName":"Binxonia Bank"},
 {"z":-9,"name":"Binxonia - Guild Hall","pvpMode":"none","firstSeen":1789932016903,"lastSeen":1792353966083,"nameOverride":true,"entranceOverride":{"x":39.70648438003698,"y":3.9802584530232537},"exitOverride":null},
 {"z":-8,"name":"Binxonia - Church","pvpMode":"none","firstSeen":1790704267764,"lastSeen":1791835651604,"nameOverride":true,"entranceOverride":{"x":6.690554313050512,"y":-33.901459498341666},"exitOverride":null},
 {"z":-7,"name":"Binxonia - Weapon Store","pvpMode":"none","firstSeen":1790704304238,"lastSeen":1791835626175,"nameOverride":true,"entranceOverride":{"x":26.274780329205953,"y":12.887861164268202},"exitOverride":null},

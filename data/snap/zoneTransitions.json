@@ -1,4 +1,9 @@
 [
+{"sessionId":"fb5c5248","time":1793220528168,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":11.2,"atY":-10.4,"key":8951},
+{"sessionId":"570c1164","time":1793219252315,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":8950},
+{"sessionId":"570c1164","time":1793219156008,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":8949},
+{"sessionId":"648b8a2d","time":1793219124118,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":505.7,"atY":-445.4,"key":8948},
+{"sessionId":"570c1164","time":1793219098485,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":null,"atY":null,"key":8947},
 {"sessionId":"5e24f35c","time":1793144174165,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":156,"outY":-56,"key":8946},
 {"sessionId":"5e24f35c","time":1793144127229,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":8945},
 {"sessionId":"5e24f35c","time":1793144068719,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":8944},
@@ -4993,10 +4998,5 @@
 {"sessionId":"c8eff038","time":1791761746255,"fromZ":11001,"toZ":0,"kind":"outdoors","outX":124,"outY":-86,"key":3955},
 {"sessionId":"c8eff038","time":1791761730681,"fromZ":null,"toZ":11001,"zoneName":"GhibliGuy's home, Plymouth Wharf","pvpMode":"none","atX":17,"atY":8,"key":3954},
 {"sessionId":"6076e7ff","time":1791761646277,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":-26,"outY":20,"key":3953},
-{"sessionId":"6076e7ff","time":1791761639148,"fromZ":0,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":3952},
-{"sessionId":"6076e7ff","time":1791761636232,"fromZ":11001,"toZ":0,"kind":"outdoors","outX":124,"outY":-86,"key":3951},
-{"sessionId":"6076e7ff","time":1791761613778,"fromZ":0,"toZ":11001,"zoneName":"GhibliGuy's home, Plymouth Wharf","pvpMode":"none","atX":17,"atY":8,"key":3950},
-{"sessionId":"6076e7ff","time":1791761549756,"fromZ":-6,"toZ":0,"kind":"outdoors","outX":8.58,"outY":18.64,"key":3949},
-{"sessionId":"6076e7ff","time":1791761371736,"fromZ":0,"toZ":-6,"zoneName":"Binxonia","pvpMode":"none","atX":11,"atY":17,"key":3948},
-{"sessionId":"6076e7ff","time":1791761361049,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":3947}
+{"sessionId":"6076e7ff","time":1791761639148,"fromZ":0,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":3952}
 ]
