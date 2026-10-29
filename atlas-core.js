@@ -694,14 +694,14 @@ function calcGather(){
 
 // ---- Infusing planner (5 Oct 2026; at the Enchanter's Table since 28 Oct 2026) -------------------------------
 // From a carat to another: each step's chance, fee and smallest gem come from the game's rules (bxcReforge, set by
-// atlas-guides.js). A failure costs the reagent and the fee but keeps the gem (22 Oct 2026) and never harms the piece,
-// so the expected cost of a step is (fee + reagent) / chance + one gem, and on average 1 / chance reagents go into it.
+// atlas-guides.js). A failure costs the reagent, the gem and the fee (the user saw it in game, 29 Oct 2026; the game's
+// guide agrees) but never harms the piece, so a step costs (fee + reagent + gem) / chance, 1 / chance of each on average.
 function renderInfusePlanner(){
  const R=globalThis.bxcReforge,pane=document.getElementById('enchantPane');if(!R||!pane||pane.querySelector('#infPlan'))return;
  const opts=(a,b,sel)=>Array.from({length:b-a+1},(_,i)=>a+i).map(v=>`<option value="${v}"${v===sel?' selected':''}>${v}c</option>`).join('');
  const box=document.createElement('div');box.id='infPlan';box.className='calcbox';
  box.innerHTML=`<div class="name">Infusing cost</div>
-  <p class="muted" style="margin:4px 0 10px">Raise an enchant one carat at a time at an Enchanter’s Table. A failed try uses the reagent and the fee but gives the gem back, and never harms the piece. Gear holds 3 carats per metal tier (12 for titanium), capes 7, rings and pendants 6.</p>
+  <p class="muted" style="margin:4px 0 10px">Raise an enchant one carat at a time at an Enchanter’s Table. A failed try uses up the reagent, the gem and the fee, but never harms the piece. Gear holds 3 carats per metal tier (12 for titanium), capes 7, rings and pendants 6.</p>
   <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
    <label>From <select id="infFrom">${opts(1,11,1)}</select></label><label>to <select id="infTo">${opts(2,12,4)}</select></label>
    <label>Reagent price <input id="infReag" type="number" min="0" step="100" value="0" style="width:110px"></label>
@@ -713,10 +713,10 @@ function renderInfusePlanner(){
   let from=+box.querySelector('#infFrom').value,to=+box.querySelector('#infTo').value;const reag=Math.max(0,+box.querySelector('#infReag').value||0),gem=Math.max(0,+box.querySelector('#infGem').value||0);
   const out=box.querySelector('#infOut');if(to<=from){out.innerHTML='<p class="muted">Pick a target above the starting carat.</p>';return}
   let gold=0,tries=0,allFirst=1;const rows=[];
-  for(let c=from;c<to;c++){const ch=R.chance[c-1]||0;if(!ch)break;const t=1/ch,cost=(R.fee(c)+reag)*t+gem;gold+=cost;tries+=t;allFirst*=ch;
+  for(let c=from;c<to;c++){const ch=R.chance[c-1]||0;if(!ch)break;const t=1/ch,cost=(R.fee(c)+reag+gem)*t;gold+=cost;tries+=t;allFirst*=ch;
    rows.push(`<tr><td>${c}c → ${c+1}c</td><td>${Math.round(ch*100)}%</td><td>${fmtN(R.fee(c))}</td><td>${R.gem(c)}c+</td><td>${t.toFixed(2)}</td><td>${fmtN(cost)}</td></tr>`)}
   out.innerHTML=`<div style="overflow-x:auto"><table class="research-table"><thead><tr><th>Step</th><th>Chance</th><th>Fee</th><th>Gem</th><th>Tries (avg)</th><th>Cost (avg)</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
-   <p style="margin-top:8px"><b>${fmtN(gold)} gold</b> on average, using about <b>${tries.toFixed(1)} reagents</b> and <b>${to-from} gem${to-from===1?'':'s'}</b> (a gem is only used up when the step works). The chance every step works first time is ${(allFirst*100).toFixed(1)}%.</p>`;
+   <p style="margin-top:8px"><b>${fmtN(gold)} gold</b> on average, using about <b>${tries.toFixed(1)} reagents</b> and as many gems (a failed try uses up both). The chance every step works first time is ${(allFirst*100).toFixed(1)}%.</p>`;
  };
  box.addEventListener('input',run);box.addEventListener('change',run);run();
 }
