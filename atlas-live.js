@@ -5181,7 +5181,7 @@ function newsHtml(){
       ${recipe?`<p><b>Crafting</b> (${esc(recipe.skill)} ${recipe.level}): the higher above ${recipe.level} you are, the better the odds, up to +30. <a href="#/calc-quality" data-qe="${esc(id)}">Plan it on Quality &amp; enchanting</a></p>
         <div class="g-scroll"><table class="g-table"><thead><tr><th>Your level</th>${QUALITY_TIERS.map(q=>`<th><span class="q-name q-${q}">${esc(prettyId(q))}</span></th>`).join('')}</tr></thead><tbody>${oddsRows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}
       ${craftedLine}
-      <p><b>Monster drops</b>: ordinary monsters and chests give at most Excellent; elites give only Excellent, Superior or Flawless (official guide).</p>
+      <p><b>Monster drops</b>: ordinary monsters and chests give at most Excellent; elites and bosses give Excellent or Superior. Since 27 Oct 2026 nothing drops Flawless: it is crafted only.</p>
       ${monRows.length?`<div class="g-scroll"><table class="g-table"><thead><tr><th>Dropped by</th><th>Qualities recorded</th></tr></thead><tbody>${monRows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</tbody></table></div>`:`<p class="muted">${pick==='all'?'No drops of it recorded yet.':'No '+esc(qLabel(pick))+' drops of it recorded yet.'}</p>`}
       ${mons.length?`<button type="button" class="show-on-map" data-map-kind="item" data-map-id="${esc(id)}"${pick!=='all'?` data-map-quality="${pick}"`:''}>Show ${pick==='all'?'where it drops':'where it drops '+esc(qLabel(pick))} on the map</button>`:''}`;
   }
@@ -5586,7 +5586,7 @@ function newsHtml(){
       <p class="s muted">A weakness adds 30% damage and a resistance takes 30% off (the game's own rule).</p>
       ${m?.eliteObserved?`<p class="s good">⭐ Seen as an elite ${esc(m.eliteObserved)} times (${(m.eliteRate*100).toFixed(1)}% of sightings). Elites have 3× HP, hit 1.4× harder, give 3× XP and 2.5× loot.</p>`:''}
       ${m?.mechanics?`<p class="s">Special: ${m.mechanics}</p>`:''}
-      ${(()=>{const rs=m&&globalThis.bxcReagentsByFamily?globalThis.bxcReagentsByFamily(m.family):[];if(!rs.length)return '';return `<p class="s"><b>Reagent:</b> ${rs.map(r=>`<a href="${pageHref('item',r.id)}">${esc(prettyId(r.id))}</a> <span class="muted">(${r.onlyClass?esc(r.onlyClass)+'s only; ':''}${r.kind==='enchant'?'infuses an enchant':'rerolls quality'})</span>`).join(', ')}. About 1 kill in 500, 1 in 50 from an elite. <a href="#/guide/reforging">Reforging</a></p>`})()}
+      ${(()=>{const rs=m&&globalThis.bxcReagentsByFamily?globalThis.bxcReagentsByFamily(m.family):[];if(!rs.length)return '';return `<p class="s"><b>Reagent:</b> ${rs.map(r=>`<a href="${pageHref('item',r.id)}">${esc(prettyId(r.id))}</a> <span class="muted">(${r.onlyClass?esc(r.onlyClass)+'s only; ':''}${r.kind==='enchant'?'infuses an enchant':'crafting catalyst'})</span>`).join(', ')}. About 1 kill in 500, 1 in 50 from an elite. <a href="#/guide/reforging">Enchanter’s Table</a></p>`})()}
       ${monsterLevelsHtml(id,pageNow&&pageNow.kind==='monster'&&pageNow.id===id?pageNow.lv:null)}
       ${looksHtml(id,pl)}
       ${bossLootHtml(name)}

@@ -28,7 +28,7 @@
     ['[data-tab="zones"]','Zones & caves','Dungeons, mines and buildings, mapped from the inside','Explore','zones'],
     ['[data-tab="resources"]','Resources','Ore, trees, fishing spots and herbs on the map','Gathering','resources'],
     ['[data-tab="gems"]','Gems','Where each gem comes from, what each carat does, and building bigger ones','Gathering','gems'],
-    ['[data-gpage="reagents"]','Reagents','Rare monster drops for reforging: what each one is for and which monsters drop it','Gathering','reagents'],
+    ['[data-gpage="reagents"]','Reagents','Rare monster drops for infusing and as crafting catalysts: what each one is for and which monsters drop it','Gathering','reagents'],
     ['[data-calc="crafting"]','Crafting XP','Your training path, tools and upgrades for every trade','Calculators','crafting'],
     ['[data-calc="combat"]','Combat calculator','The best monster and gear for your level, and when to move on','Calculators','combat'],
     ['[data-calc="quality"]','Quality & enchanting','Can you make it, enchant it, and what quality to expect','Calculators','quality'],

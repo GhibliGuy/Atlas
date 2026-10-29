@@ -195,10 +195,11 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
     // under 10% is very rare - excellent, superior and flawless - so it is not what to plan on
     // the odds come from the best smith's Tool Smithing over the tool's recipe (unknown: assume 10 levels over)
     const sm=smithLevel(smithIn),over=t=>{const rl=toolRecipeLevel(skill,t);return rl==null?10:sm?sm.lv-rl:10};
-    // an Artisan gem is set while the tool is forged, by a smith 15 levels past that tool's recipe (the game's own
-    // rule) - the same rule as any other enchant. Unknown smith: assumed able.
-    const artisanOk=t=>{const rl=toolRecipeLevel(skill,t);return !sm||rl==null||sm.lv>=rl+(typeof ENCHANT_OVER!=='undefined'?ENCHANT_OVER:15)};
-    const noArtisan=t=>{const rl=toolRecipeLevel(skill,t);return `no smith can set a gem in it yet: needs Tool Smithing ${rl+(typeof ENCHANT_OVER!=='undefined'?ENCHANT_OVER:15)}, 15 past the tool; best is ${sm.lv}`};
+    // an Artisan gem is set at the Enchanter's Table (28 Oct 2026), by someone with the Tool Smithing level the tool's
+    // metal opens at (1/16/31/46; t is 0 for iron) - the same rule as any other enchant. Unknown smith: assumed able.
+    const gemAt=t=>typeof enchantLevelForTier==='function'?enchantLevelForTier(t+1):[1,16,31,46][t]||1;
+    const artisanOk=t=>!sm||sm.lv>=gemAt(t);
+    const noArtisan=t=>`no smith can set a gem in it yet: needs Tool Smithing ${gemAt(t)}; best is ${sm.lv}`;
     const qOdds=(q,t=ti)=>{if(typeof interpolateCraftQuality!=='function')return null;const o=over(t);return o<0?0:(interpolateCraftQuality(Math.min(30,o))[q]||0)};
     const qRare=(q,t=ti)=>{const o=qOdds(q,t);return o!=null&&QUALITIES.findIndex(x=>x[0]===q)>3&&o<.10};
     const oddsTxt=o=>o<.005?'almost never':'about '+(o*100).toFixed(o<.1?1:0)+'%';

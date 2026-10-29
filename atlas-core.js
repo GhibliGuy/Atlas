@@ -109,10 +109,15 @@ function slugId(v){return String(v||'').trim().toLowerCase().replace(/[^a-z0-9]+
 // 14 levels over). Cooking: a burn chance that falls to nothing at the level it stops, never below 5%. Grinding never fails.
 const CRAFT_BASE=globalThis.BXC_GAME_RECIPES?.craftChance?.base??.6,CRAFT_SPAN=globalThis.BXC_GAME_RECIPES?.craftChance?.span??15,CRAFT_CAP=.95;
 const craftSureAt=r=>r.chance==='always'?r.level:r.chance==='cooking'?r.stop:r.level+Math.ceil((CRAFT_CAP-CRAFT_BASE)/(1-CRAFT_BASE)*CRAFT_SPAN);
-// Two separate levels: crafting reaches 95% success at +14 (craftSureAt), and you can enchant an item from +15
-// (craftEnchantAt) - the game's own rule (game-rules `ue=15`: the same piece one metal up, else the recipe + 15).
-const ENCHANT_OVER=15;
-const craftEnchantAt=r=>r.level+ENCHANT_OVER;
+// Enchanting at the Enchanter's Table (game update 28 Oct 2026, its rules): any plain piece, from the trade level its
+// metal opens at - 1 iron, 16 silver, 31 gold, 46 titanium (no metal: 1) - for 1,000 gold a carat. A superior or
+// flawless piece can crack one quality: flawless 1x / superior 0.85x of 90% up to 14 levels over the metal's level,
+// down to 50% at 44 over, then 4% less a level to at least 30%.
+const ENCHANT_FEE=1000;
+const enchantLevelForTier=t=>{t=Math.max(1,Number(t)||1);return t<=1?1:1+15*(t-1)};
+const craftEnchantAt=r=>enchantLevelForTier(enchantInfo(r).tier);
+const ENCHANT_CRACK={flawless:1,superior:.85};
+const enchantCrackChance=(q,over)=>{const m=ENCHANT_CRACK[q];if(!m)return 0;const o=Math.max(0,over);return m*(o<=14?.9:o<=44?.9-.4*(o-14)/30:Math.max(.3,.5-.04*(o-44)))};
 function craftChance(r,level){
  if(r.chance==='cooking'){
    if(level>=r.stop)return .95;
@@ -457,17 +462,17 @@ function calcGather(){
  }
  // Mastery is a different system from craft quality: it is the chance the craft succeeds at all (60% at the
  // recipe's level, capped at 95% fourteen levels over - the same curve the Crafting XP calculator uses), not what
- // quality tier it lands on. Enchanting opens one level later, fifteen over (craftEnchantAt). Shown only for
+ // quality tier it lands on. Enchanting needs the level the item's metal opens at (craftEnchantAt). Shown only for
  // enchantable items.
  function masteryChartHtml(rec,lvl){
    const chance=craftChance(rec,lvl),enchLevel=craftEnchantAt(rec),sureLevel=craftSureAt(rec),short=lvl<rec.level;
    const pct=v=>(v*100).toFixed(1)+'%';
    const status=short
      ?`<div class="note" style="border-color:#b5574b"><b>You are ${rec.level-lvl} level${rec.level-lvl===1?'':'s'} short.</b> ${rec.item} needs ${rec.skill} level ${rec.level} before you can attempt this craft at all.</div>`
-     :lvl>=enchLevel?`<div class="note muted">Success is at its best, 95%, and you can enchant it (from level ${enchLevel}).</div>`:lvl>=sureLevel?`<div class="note muted">Success is at its best, 95%. One more level (${enchLevel}) and you can enchant it.</div>`:'';
+     :lvl>=sureLevel?`<div class="note muted">Success is at its best, 95%.</div>`:'';
    const color=chance>=.95?'#5fae6f':chance>=.75?'#d9b878':'#b5574b';
    return `${status}
-   <div class="qualitygrid"><div class="qualitymetric"><b>${pct(chance)}</b>chance to succeed at Lv ${lvl}</div><div class="qualitymetric"><b>${sureLevel}</b>95% success from (+14)</div><div class="qualitymetric"><b>${enchLevel}</b>enchant from (+15)</div></div>
+   <div class="qualitygrid"><div class="qualitymetric"><b>${pct(chance)}</b>chance to succeed at Lv ${lvl}</div><div class="qualitymetric"><b>${sureLevel}</b>95% success from (+14)</div><div class="qualitymetric"><b>${enchLevel}</b>enchant from (its metal’s level)</div></div>
    <div class="qualitybar" style="height:14px"><span style="width:${(chance*100).toFixed(2)}%;background:${color}"></span></div>`;
  }
  // ---- Craft quality & enchanting: tradeskill -> item -> the quality odds above, plus (if it can be enchanted)
@@ -557,9 +562,7 @@ function calcGather(){
    const e=enchantInfo(r),opts=enchOptions(r),sel=opts[Number(q('enEnchant').value)||0]||opts[0];
    const tool=e.kind==='tool'?enchToolNeed(r):null;
    const masteryRec=r;
-   // Every enchant needs 15 levels past the item's recipe (the game's own rule; craftEnchantAt) - a tool too: 15 past
-   // that tool's own recipe (the gem is set as it is forged).
-   const toolUp=false;
+   // Enchanting needs the level the item's metal opens at (the game's own rule; craftEnchantAt), tools included.
    const masteryLevel=craftEnchantAt(masteryRec),sureLevel=craftSureAt(masteryRec),chance=craftChance(masteryRec,lvl);
    const per=(e.kind==='tool'||e.kind==='ring')?1:3,maxC=e.tier?per*e.tier:null;
    const pickC=maxC?Math.max(1,Math.min(maxC,enCaratPick||Math.min(maxC,2*per))):0;
@@ -588,15 +591,17 @@ function calcGather(){
    let s2;
    if(!e.kind)s2=step(2,'Can you enchant it?',`<div class="craft-answer">No - this item can't take an enchant. Ammunition never can; everything else you hold or wear can.</div>`,'dim');
    else{
-     const mastered=lvl>=masteryLevel,left=masteryLevel-lvl,prog=Math.max(0,Math.min(1,(lvl-(toolUp?r.level:masteryRec.level))/Math.max(1,masteryLevel-(toolUp?r.level:masteryRec.level))));
-     const over=masteryLevel-masteryRec.level;
-     const need=[`Level: ${masteryRec.skill} <b>${masteryLevel}</b> (${over} levels past ${e.kind==='tool'?`the ${r.item}`:`the item's own level`})`];
+     const mastered=lvl>=masteryLevel,left=masteryLevel-lvl,prog=masteryLevel<=1?1:Math.max(0,Math.min(1,lvl/masteryLevel));
+     const metal=e.material?String(e.material).toLowerCase():'';
+     const need=[`Level: ${masteryRec.skill} <b>${masteryLevel}</b>${metal?` (the level ${metal} opens at)`:''}`];
      if(maxC)need.push(e.kind==='tool'?`Gem: one stone, up to <b>${maxC} carat${maxC===1?'':'s'}</b>`:`Gems: ${per===1?'one stone':'three stones'}, up to <b>${maxC} carat${maxC===1?'':'s'}</b> in total`);
+     if(maxC)need.push(`Gold: <b>${ENCHANT_FEE.toLocaleString('en-US')}</b> per carat (${(ENCHANT_FEE*maxC).toLocaleString('en-US')} for the full ${maxC}c)`);
      if(maxC&&e.kind!=='tool')need.push(`Intellect: <b>${5*maxC}</b> to wear it at full strength (5 per carat)`);
-     s2=step(2,'Can you enchant it?',`<div class="craft-answer ${mastered?'ok':'no'}">${mastered?(e.kind==='tool'?`Yes - you're level ${lvl}, so you can set a gem while forging it (from ${masteryLevel}).`:`Yes - you're level ${lvl}, and enchanting it needs ${masteryLevel}.`):`Not yet - enchanting it needs <b>${masteryRec.skill} level ${masteryLevel}</b>, 15 levels past the item. You're level ${lvl}: ${left} to go.`}</div>
+     const crackOver=Math.max(0,lvl-masteryLevel),pc=v=>Math.round(v*1000)/10+'%';
+     s2=step(2,'Can you enchant it?',`<div class="craft-answer ${mastered?'ok':'no'}">${mastered?`Yes - you're level ${lvl}, and enchanting it needs ${masteryLevel}. Take it to an Enchanter’s Table.`:`Not yet - enchanting it needs <b>${masteryRec.skill} level ${masteryLevel}</b>. You're level ${lvl}: ${left} to go.`}</div>
        <div class="craft-progress" title="Progress to enchanting"><span style="width:${(prog*100).toFixed(1)}%"></span></div>
        <div class="muted" style="margin-top:4px">What it takes:</div><ul class="craft-needs">${need.map(x=>'<li>'+x+'</li>').join('')}</ul>
-       <details class="craft-more"><summary>More detail</summary><div class="muted" style="margin:6px 0">Success to craft it: ${(chance*100).toFixed(0)}% at your level now, 95% (the most anything ever gets) from level ${sureLevel}. Enchanting opens one level after that, at ${masteryLevel}.${e.kind==='tool'?' A tool\'s gem is set while it is being forged, so it can\'t be added to a tool you already have, and an enchanted tool needs no Intellect.':''}</div></details>`);
+       <details class="craft-more"><summary>More detail</summary><div class="muted" style="margin:6px 0">Enchanting happens at an <b>Enchanter’s Table</b> (Binxonia Wizard Tower or Westergarde), on any plain piece: made, bought or looted. Nothing is rolled: the gems’ carats add up, and gems past the cap are turned away before anything is spent. A piece takes one enchant for good; infusing makes it stronger.${e.kind==='tool'?' A tool comes off the anvil plain and the table sets its gem; an enchanted tool needs no Intellect.':''}</div><div class="muted" style="margin:6px 0"><b>The crack:</b> enchanting a superior or flawless piece can drop it one quality (the enchant still lands). At level ${Math.max(lvl,masteryLevel)}: flawless <b>${pc(enchantCrackChance('flawless',crackOver))}</b>, superior <b>${pc(enchantCrackChance('superior',crackOver))}</b>. Excellent and lower never crack.</div><div class="muted">Success to craft it: ${(chance*100).toFixed(0)}% at your level now, 95% (the most anything ever gets) from level ${sureLevel}.</div></details>`);
    }
    // quality: step 4 when there is an enchant to pick first, else step 3
    const s3=step(e.kind?4:3,'What quality will you get?',qualityChartHtml(r,lvl));
@@ -687,7 +692,7 @@ function calcGather(){
  if(intro){if(calcGroup==='quality'){intro.remove();q('enchantPane')?.querySelector(':scope>.name')?.remove();}else intro.innerHTML=introText[calcGroup]||introText.crafting;}
 }
 
-// ---- Infusing planner (Reforge, 5 Oct 2026) -------------------------------------------------------------------
+// ---- Infusing planner (5 Oct 2026; at the Enchanter's Table since 28 Oct 2026) -------------------------------
 // From a carat to another: each step's chance, fee and smallest gem come from the game's rules (bxcReforge, set by
 // atlas-guides.js). A failure costs the reagent and the fee but keeps the gem (22 Oct 2026) and never harms the piece,
 // so the expected cost of a step is (fee + reagent) / chance + one gem, and on average 1 / chance reagents go into it.
@@ -695,8 +700,8 @@ function renderInfusePlanner(){
  const R=globalThis.bxcReforge,pane=document.getElementById('enchantPane');if(!R||!pane||pane.querySelector('#infPlan'))return;
  const opts=(a,b,sel)=>Array.from({length:b-a+1},(_,i)=>a+i).map(v=>`<option value="${v}"${v===sel?' selected':''}>${v}c</option>`).join('');
  const box=document.createElement('div');box.id='infPlan';box.className='calcbox';
- box.innerHTML=`<div class="name">Infusing cost (Reforge)</div>
-  <p class="muted" style="margin:4px 0 10px">Raise an enchant one carat at a time at the Reforge tab. A failed try uses the reagent and the fee but gives the gem back, and never harms the piece. Gear holds 3 carats per metal tier (12 for titanium), capes 7, rings and pendants 6.</p>
+ box.innerHTML=`<div class="name">Infusing cost</div>
+  <p class="muted" style="margin:4px 0 10px">Raise an enchant one carat at a time at an Enchanter’s Table. A failed try uses the reagent and the fee but gives the gem back, and never harms the piece. Gear holds 3 carats per metal tier (12 for titanium), capes 7, rings and pendants 6.</p>
   <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
    <label>From <select id="infFrom">${opts(1,11,1)}</select></label><label>to <select id="infTo">${opts(2,12,4)}</select></label>
    <label>Reagent price <input id="infReag" type="number" min="0" step="100" value="0" style="width:110px"></label>
