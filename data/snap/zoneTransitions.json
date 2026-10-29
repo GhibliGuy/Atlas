@@ -1,4 +1,12 @@
 [
+{"sessionId":"4b304a31","time":1793292032610,"fromZ":5405,"toZ":0,"kind":"outdoors","outX":506,"outY":-446,"key":9297},
+{"sessionId":"4b304a31","time":1793291672458,"fromZ":5404,"toZ":5405,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":527,"atY":-464,"key":9296},
+{"sessionId":"4b304a31","time":1793291525418,"fromZ":5403,"toZ":5404,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":526,"atY":-454,"key":9295},
+{"sessionId":"4b304a31","time":1793291356625,"fromZ":5402,"toZ":5403,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":525,"atY":-464,"key":9294},
+{"sessionId":"4b304a31","time":1793291242453,"fromZ":5401,"toZ":5402,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":511,"atY":-451,"key":9293},
+{"sessionId":"4b304a31","time":1793291142823,"fromZ":5400,"toZ":5401,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":525.32,"atY":-468.47,"key":9292},
+{"sessionId":"4b304a31","time":1793291040776,"fromZ":0,"toZ":5400,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":538,"atY":-478,"key":9291},
+{"sessionId":"4b304a31","time":1793291037380,"fromZ":5405,"toZ":0,"kind":"outdoors","outX":506,"outY":-446,"key":9290},
 {"sessionId":"a6fc8bfb","time":1793290811681,"fromZ":11000,"toZ":0,"kind":"outdoors","outX":1706,"outY":1818,"key":9289},
 {"sessionId":"4b304a31","time":1793290662301,"fromZ":5404,"toZ":5405,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":527,"atY":-464,"key":9288},
 {"sessionId":"a6fc8bfb","time":1793290588113,"fromZ":null,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":9287},
@@ -4990,13 +4998,5 @@
 {"sessionId":"5a3b257f","time":1791838609112,"fromZ":-43,"toZ":-44,"zoneName":"Orc Lair","pvpMode":"none","atX":-239.44,"atY":101.78,"key":4301},
 {"sessionId":"5a3b257f","time":1791838581870,"fromZ":null,"toZ":-43,"zoneName":"Orc Lair","pvpMode":"none","atX":-229,"atY":70.1,"key":4300},
 {"sessionId":"bf9a1ead","time":1791838528870,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":4299},
-{"sessionId":"bf9a1ead","time":1791838490118,"fromZ":null,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":4298},
-{"sessionId":"29a802cc","time":1791838201876,"fromZ":null,"toZ":11000,"zoneName":"GhibliGuy's home, Plymouth Wharf","pvpMode":"none","atX":-19,"atY":4,"key":4297},
-{"sessionId":"9cf00267","time":1791838179489,"fromZ":null,"toZ":-205,"zoneName":"Wraithhollow","pvpMode":"lawless","atX":1009.5,"atY":847.5,"key":4296},
-{"sessionId":"606c472e","time":1791838169445,"fromZ":-44,"toZ":-43,"zoneName":"Orc Lair","pvpMode":"none","atX":-229.16,"atY":84.14,"key":4295},
-{"sessionId":"606c472e","time":1791838143602,"fromZ":-43,"toZ":-44,"zoneName":"Orc Lair","pvpMode":"none","atX":-240.17,"atY":99.96,"key":4294},
-{"sessionId":"606c472e","time":1791838116776,"fromZ":-42,"toZ":-43,"zoneName":"Orc Lair","pvpMode":"none","atX":-225,"atY":71,"key":4293},
-{"sessionId":"606c472e","time":1791838111017,"fromZ":-41,"toZ":-42,"zoneName":"Orc Lair","pvpMode":"none","atX":-209.1,"atY":71.1,"key":4292},
-{"sessionId":"606c472e","time":1791838105709,"fromZ":-45,"toZ":-41,"zoneName":"Orc Lair","pvpMode":"none","atX":-211.16,"atY":56.44,"key":4291},
-{"sessionId":"606c472e","time":1791838080675,"fromZ":-41,"toZ":-45,"zoneName":"Orc Lair","pvpMode":"none","atX":-213.87,"atY":51.69,"key":4290}
+{"sessionId":"bf9a1ead","time":1791838490118,"fromZ":null,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":4298}
 ]
