@@ -1,4 +1,9 @@
 [
+{"type":"gem.found","typeId":"gem-iolite","carat":1,"dropped":false,"time":1793290423788,"sessionId":"a6fc8bfb","key":906},
+{"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"npcName":"Ogre Charger","time":1793289990235,"sessionId":"4b304a31","key":905},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1793289747955,"sessionId":"a6fc8bfb","key":904},
+{"type":"gem.found","typeId":"gem-amber","carat":1,"dropped":false,"time":1793288191891,"sessionId":"22291f06","key":903},
+{"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"npcName":"Old Mother Ashka","time":1793284850565,"sessionId":"65bf94fb","key":902},
 {"type":"gem.found","typeId":"gem-pearl","carat":1,"dropped":false,"npcName":"Ogre Mauler","time":1793283336566,"sessionId":"65bf94fb","key":901},
 {"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"time":1793282246336,"sessionId":"f9621027","key":900},
 {"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"time":1793279859530,"sessionId":"512cb034","key":899},
