@@ -890,7 +890,7 @@ function parseWeakQuery(str){
 function monsterCardHtml(m,opts={}){return `<div class="card monstercard" data-t="${m.typeId}"><img class="thumb monsterthumb" src="${monsterImg(m)}" alt="${m.name}"><div class="name"><a class="page-link" href="#/monster/${encodeURIComponent(m.typeId)}">${m.name}</a> <span class="muted">Lv ${m.baseLevel}</span></div>
  <div class="s">${m.family} • ${m.archetype} • ${m.attackType} • ${m.attackStyle}</div><div class="s">${tagChipsLine(m.weakTo,m.resists,m.family)}</div>
  <div class="grid s"><div>HP: <b>${val(m.maxHp)}</b></div><div>Damage: <b>${val(m.attackDamage)}</b></div><div>XP: <b>${val(m.xp)}</b></div><div>Cooldown: <b>${m.cooldownMs?m.cooldownMs+' ms':'—'}</b></div><div>Attack range: ${val(m.attackRange)}</div><div>Aggro: ${val(m.aggroRange)}</div><div>Move: ${val(m.locomotion)}</div><div>Scale: ${val(m.scale)}</div></div>
- <div class="s">Drops gems: <b>${m.dropsGems?'Yes':'No'}</b>${Number(m.baseLevel)>=25?' • Can drop Pendant/Cape':''}</div>
+ <div class="s">Drops gems: <b>${Number(m.baseLevel)>=10?'Yes':'No'}</b>${Number(m.baseLevel)>=25?' • Can drop Pendant/Cape':''}</div>
  <div class="s ${m.count?'obs':'muted'}">${m.count?m.count+' observed • observed levels '+val(m.obsMinLevel)+'–'+val(m.obsMaxLevel):'No location captured yet'}</div>
  ${m.eliteObserved?`<div class="s good">⭐ ${m.eliteObserved} observed elite (${(m.eliteRate*100).toFixed(1)}% of seen instances) — elites have 3x HP, hit 1.4x harder, give 3x kill XP and 2.5x loot, and double odds at a cape, pendant, ring, kill gem, or crafting tome</div>`:''}
  ${m.mechanics?`<div class="s">Special: ${m.mechanics}</div>`:''}${!opts.noMapButton&&m.count?`<button type="button" class="show-on-map" data-map-kind="monster" data-map-id="${m.typeId}">Show on map</button>`:''}</div>`}
@@ -899,7 +899,7 @@ function monsterCardHtml(m,opts={}){return `<div class="card monstercard" data-t
 function monsterRowHtml(m){
  const st=(k,v,t)=>v==null||v===''?'':`<span class="mon-st"${t?` title="${escXml(t)}"`:''}><i>${k}</i> <b>${escXml(v)}</b></span>`;
  const cd=m.cooldownMs?(Math.round(m.cooldownMs/100)/10)+'s':null;
- const extra=[m.dropsGems?'<span class="mon-tag">Drops gems</span>':'',Number(m.baseLevel)>=25?'<span class="mon-tag">Can drop pendant/cape</span>':'',
+ const extra=[Number(m.baseLevel)>=10?'<span class="mon-tag">Drops gems</span>':'',Number(m.baseLevel)>=25?'<span class="mon-tag">Can drop pendant/cape</span>':'',
   m.eliteObserved?`<span class="mon-tag good" title="Elites have 3x HP, hit 1.4x harder, give 3x kill XP and 2.5x loot">⭐ Elite ${(m.eliteRate*100).toFixed(1)}%</span>`:'',
   m.count?`<span class="mon-tag obs">Seen ${m.count}× · Lv ${val(m.obsMinLevel)}–${val(m.obsMaxLevel)}</span>`:'<span class="mon-tag muted">Location not captured yet</span>'].join('');
  return `<div class="card monstercard mon-row" data-t="${m.typeId}"><img class="thumb monsterthumb" src="${monsterImg(m)}" alt="${escXml(m.name)}" loading="lazy">

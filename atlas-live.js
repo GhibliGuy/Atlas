@@ -5602,7 +5602,7 @@ function newsHtml(){
       ${m?infoRow('Hitpoints',ls?fmt(ls.hp):esc(val(m.maxHp))):''}${m?infoRow('Damage',ls?ls.dmg:esc(val(m.attackDamage))):''}${m?infoRow('XP',ls?fmt(ls.xp):esc(val(m.xp))):''}
       ${m&&m.cooldownMs?infoRow('Attack speed',(m.cooldownMs/1000).toFixed(1)+' s'):''}${m?infoRow('Attack range',esc(val(m.attackRange))):''}
       ${m?infoRow('Aggressive',m.passive?'No':'Yes'+(m.aggroRange!=null?' ('+esc(m.aggroRange)+' tiles)':'')):''}
-      ${m?infoRow('Drops gems',m.dropsGems?'Yes':'No'):''}${m&&Number(m.baseLevel)>=25?infoRow('Pendant / cape','Can drop'):''}
+      ${m?infoRow('Drops gems',Number(m.baseLevel)>=10?'Yes':'No (below level 10)'):''}${m&&Number(m.baseLevel)>=25?infoRow('Pendant / cape','Can drop'):''}
       ${m?infoRow('Seen',m.count?fmt(m.count)+' times':'Not yet'):''}
     </table></aside></article>`;
   }
