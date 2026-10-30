@@ -1,4 +1,15 @@
 [
+{"sessionId":"2cdb9359","time":1793332651960,"fromZ":5405,"toZ":0,"kind":"outdoors","outX":506,"outY":-446,"key":9461},
+{"sessionId":"2cdb9359","time":1793332450850,"fromZ":5404,"toZ":5405,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":527,"atY":-464,"key":9460},
+{"sessionId":"2cdb9359","time":1793332244387,"fromZ":5403,"toZ":5404,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":526,"atY":-454,"key":9459},
+{"sessionId":"2cdb9359","time":1793332034083,"fromZ":5402,"toZ":5403,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":510.13,"atY":-475.01,"key":9458},
+{"sessionId":"2cdb9359","time":1793331861172,"fromZ":5401,"toZ":5402,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":508.95,"atY":-455.72,"key":9457},
+{"sessionId":"2cdb9359","time":1793331713817,"fromZ":5400,"toZ":5401,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":526.1,"atY":-467.9,"key":9456},
+{"sessionId":"2cdb9359","time":1793331586100,"fromZ":0,"toZ":5400,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":538,"atY":-478,"key":9455},
+{"sessionId":"7088ec9d","time":1793331470715,"fromZ":600,"toZ":0,"kind":"outdoors","outX":1688,"outY":1869,"key":9454},
+{"sessionId":"7088ec9d","time":1793331426217,"fromZ":null,"toZ":600,"zoneName":"City of Westergarde","pvpMode":"none","atX":1690,"atY":1871,"key":9453},
+{"sessionId":"2cdb9359","time":1793331280633,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":9452},
+{"sessionId":"2cdb9359","time":1793331223049,"fromZ":0,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":9451},
 {"sessionId":"2cdb9359","time":1793329926577,"fromZ":-240,"toZ":0,"kind":"outdoors","outX":1830,"outY":354,"key":9450},
 {"sessionId":"2cdb9359","time":1793329881782,"fromZ":0,"toZ":-240,"zoneName":"The Ashen Citadel","pvpMode":"lawless","atX":1831,"atY":353,"key":9449},
 {"sessionId":"2cdb9359","time":1793327439683,"fromZ":600,"toZ":0,"kind":"outdoors","outX":1688,"outY":1869,"key":9448},
@@ -4987,16 +4998,5 @@
 {"sessionId":"14b17b32","time":1791897308519,"fromZ":null,"toZ":-205,"zoneName":"Wraithhollow","pvpMode":"lawless","atX":null,"atY":null,"key":4465},
 {"sessionId":"fa9e2f47","time":1791896283720,"fromZ":null,"toZ":-205,"zoneName":"Wraithhollow","pvpMode":"lawless","atX":1004.8,"atY":848.2,"key":4464},
 {"sessionId":"0b019424","time":1791895964245,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Plymouth Wharf","pvpMode":"none","atX":7,"atY":2,"key":4463},
-{"sessionId":"0b019424","time":1791895960116,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":4462},
-{"sessionId":"0b019424","time":1791895885523,"fromZ":0,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":4461},
-{"sessionId":"0b019424","time":1791895880044,"fromZ":11000,"toZ":0,"kind":"outdoors","outX":124,"outY":-88,"key":4460},
-{"sessionId":"205cb3a0","time":1791895566066,"fromZ":null,"toZ":-205,"zoneName":"Wraithhollow","pvpMode":"lawless","atX":1004.5,"atY":847.8,"key":4459},
-{"sessionId":"6f18e3e0","time":1791894804273,"fromZ":null,"toZ":-205,"zoneName":"Wraithhollow","pvpMode":"lawless","atX":1005.9,"atY":848,"key":4458},
-{"sessionId":"9d82dd19","time":1791894226188,"fromZ":null,"toZ":-205,"zoneName":"Wraithhollow","pvpMode":"lawless","atX":1003.3,"atY":845.6,"key":4457},
-{"sessionId":"0b019424","time":1791894219703,"fromZ":null,"toZ":11000,"zoneName":"GhibliGuy's home, Plymouth Wharf","pvpMode":"none","atX":-16,"atY":24,"key":4456},
-{"sessionId":"30e34813","time":1791894089716,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Plymouth Wharf","pvpMode":"none","atX":7,"atY":2,"key":4455},
-{"sessionId":"30e34813","time":1791894080029,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":4454},
-{"sessionId":"30e34813","time":1791894060107,"fromZ":0,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":4453},
-{"sessionId":"30e34813","time":1791894054413,"fromZ":11000,"toZ":0,"kind":"outdoors","outX":124,"outY":-88,"key":4452},
-{"sessionId":"cfec52c9","time":1791894022838,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":4451}
+{"sessionId":"0b019424","time":1791895960116,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":4462}
 ]

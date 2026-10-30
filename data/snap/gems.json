@@ -1,4 +1,8 @@
 [
+{"type":"gem.found","typeId":"gem-amber","carat":1.5,"dropped":false,"time":1793331487841,"sessionId":"7088ec9d","key":921},
+{"type":"gem.found","typeId":"gem-iolite","carat":1,"dropped":false,"time":1793331363847,"sessionId":"7088ec9d","key":920},
+{"type":"gem.found","typeId":"gem-onyx","carat":1,"dropped":false,"npcName":"Thak Footman","time":1793330979195,"sessionId":"2cdb9359","key":919},
+{"type":"gem.found","typeId":"gem-topaz","carat":1.5,"dropped":false,"npcName":"Virikh","time":1793330232882,"sessionId":"2cdb9359","key":918},
 {"type":"gem.found","typeId":"gem-pearl","carat":1,"dropped":false,"npcName":"Baby Red Dragon","time":1793327918649,"sessionId":"2cdb9359","key":917},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1793327753509,"sessionId":"7088ec9d","key":916},
 {"type":"gem.found","typeId":"gem-amber","carat":1,"dropped":false,"time":1793327446461,"sessionId":"7088ec9d","key":915},
