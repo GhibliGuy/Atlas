@@ -1,4 +1,10 @@
 [
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1793321787815,"sessionId":"ae96432f","key":912},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1793321129262,"sessionId":"ae96432f","key":911},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"npcName":"Briar Warden","time":1793319264058,"sessionId":"cf60ac53","key":910},
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"npcName":"Great Luna Moth","time":1793318961727,"sessionId":"cf60ac53","key":909},
+{"type":"gem.found","typeId":"gem-iolite","carat":1,"dropped":false,"time":1793313291925,"sessionId":"95f71e92","key":908},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1793312456997,"sessionId":"69d69f90","key":907},
 {"type":"gem.found","typeId":"gem-iolite","carat":1,"dropped":false,"time":1793290423788,"sessionId":"a6fc8bfb","key":906},
 {"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"npcName":"Ogre Charger","time":1793289990235,"sessionId":"4b304a31","key":905},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1793289747955,"sessionId":"a6fc8bfb","key":904},
