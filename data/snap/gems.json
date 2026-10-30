@@ -1,4 +1,9 @@
 [
+{"type":"gem.found","typeId":"gem-pearl","carat":1,"dropped":false,"npcName":"Baby Red Dragon","time":1793327918649,"sessionId":"2cdb9359","key":917},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1793327753509,"sessionId":"7088ec9d","key":916},
+{"type":"gem.found","typeId":"gem-amber","carat":1,"dropped":false,"time":1793327446461,"sessionId":"7088ec9d","key":915},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1793326636048,"sessionId":"91fdbe63","key":914},
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"npcName":"Moonfane Moth","time":1793324739826,"sessionId":"d937041a","key":913},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1793321787815,"sessionId":"ae96432f","key":912},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1793321129262,"sessionId":"ae96432f","key":911},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"npcName":"Briar Warden","time":1793319264058,"sessionId":"cf60ac53","key":910},
