@@ -412,6 +412,235 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   const crackAt=(q,o)=>typeof enchantCrackChance==='function'?enchantCrackChance(q,o):0;
   const qPull=over=>-.1+Math.min(.26,.13*Math.max(0,over)/15),CATALYST_PULL=.03;
   const atLeast=(qi,o)=>1-rrBell(RR_TH[qi-1],o);   // the chance of quality index qi (superior 6, flawless 7) or better
+  // ---- "Try it" (31 Oct 2026): working copies of two game windows, rolled with the rule numbers on these pages. The
+  // Enchanter's Table (EnchantersTableWindow in the client: Enchant | Infuse chips, the piece card, gem slots, the crack
+  // rows, the gold button) and the anvil's Craft tab (SmithingPanel + CraftStation + QualityForecast: the trade bar,
+  // material chips, recipe cards with their success ring, the catalyst slot, the quality bar, batch 1/5/10/20, Forge).
+  // Nothing here touches real gear. One delegated listener (__stSimWired); each box keeps its state in a WeakMap.
+  const ST_IMG=id=>{try{return typeof itemImg==='function'?itemImg({id,typeId:id,item:pretty(id)}):''}catch{return ''}};
+  const ST_RIMG=r=>{try{return typeof itemImg==='function'?itemImg(r):''}catch{return ''}};
+  const stQC=()=>Object.assign({inferior:'#8c8378',crude:'#9d9d9d',shoddy:'#b5ad9c',ordinary:'#6e685c',good:'#7fc98a',excellent:'#5fb8dd',superior:'#b98cf0',flawless:'#ffc861'},globalThis.BXC_GAME_DATA?.qualityColors||{});
+  const stQName=q=>`<span class="q-name q-${esc(q)}">${esc(pretty(q))}</span>`;
+  // the chance of each quality at a pull o, and one roll (o plus the mean of three uniform draws, against the thresholds)
+  const stDist=o=>{const out={};RR_Q.forEach((q,i)=>{const lo=i?rrBell(RR_TH[i-1],o):0,hi=i<RR_TH.length?rrBell(RR_TH[i],o):1;out[q]=Math.max(0,hi-lo)});return out};
+  const stRollQ=o=>{const r=o+(Math.random()+Math.random()+Math.random())/3;let i=0;while(i<RR_TH.length&&r>=RR_TH[i])i++;return RR_Q[i]};
+  // the game's own percent wording (QualityForecast j)
+  const stPct=p=>p<=0?'0%':p<.05?'<0.1%':p<10?Number(p.toFixed(1))+'%':Math.round(p)+'%';
+  const stState=new WeakMap();
+  const stS=box=>{let s=stState.get(box);if(!s){s=box.dataset.sim==='table'?stTableInit():stCraftInit();stState.set(box,s)}return s};
+  const stIn=(box,k)=>box.querySelector(`[data-s="${k}"]`);
+  const stNum=(box,k,lo,hi)=>Math.max(lo,Math.min(hi,Math.floor(Number(stIn(box,k)?.value)||lo)));
+  const stSkill=(label,lvl)=>`<div class="st-skill"><span class="st-skill-lv"><small>${esc(label)}</small>${lvl}</span><span class="st-skill-bar" aria-hidden="true"><i style="width:${lvl>=100?100:35}%"></i></span><span class="st-skill-xp">${lvl>=100?'Mastered':'Level '+lvl}</span></div>`;
+  const stChip=(attr,val,label,on,extra='')=>`<button type="button" class="st-chip${on?' on':''}" data-${attr}="${esc(val)}" aria-pressed="${on}">${label}${extra}</button>`;
+  const stOv=`<div class="st-ov" hidden><div class="st-big"><img class="st-base" alt=""><div class="st-lit"><img alt=""></div><div class="st-edge"></div></div><p class="st-ovname"></p><p class="st-cap"></p></div>`;
+  // the overlay: the piece lit from the top by a bright edge, then a coloured outcome (success / neutral / fail)
+  function stPlay(box,img,name,kind,text,done){
+    const ov=box.querySelector('.st-ov'),cap=ov.querySelector('.st-cap'),reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+    ov.querySelectorAll('img').forEach(i=>{i.src=img});ov.querySelector('.st-ovname').innerHTML=name;
+    box.dataset.busy='1';ov.hidden=false;ov.className='st-ov running';cap.textContent='';
+    setTimeout(()=>{ov.className='st-ov '+kind;cap.innerHTML=text;
+      setTimeout(()=>{ov.hidden=true;delete box.dataset.busy;done()},reduce?900:1700)},reduce?150:1400);
+  }
+
+  // ---- the Enchanter's Table ----
+  const ST_METALS=[['iron','Iron'],['silver','Silver'],['gold','Gold'],['titanium','Titanium']];
+  const ST_PIECES=[['longsword','Longsword','weapon','Weapon Smithing'],['mace','Mace','weapon','Weapon Smithing'],['torso','Torso (plate)','armor','Armor Smithing'],['shield','Shield','shield','Armor Smithing'],['ring','Ring','ring','Armor Smithing'],['pickaxe','Pickaxe','tool','Tool Smithing']];
+  const ST_CARATS=[1,1.5,2,2.5,3,3.5,4];
+  const ST_RING={onyx:'Brawler',emerald:'Hunter',sapphire:'Adept',diamond:'Duelist',ruby:'Scourge',topaz:'Binder',pearl:'Wanderer',amber:'Prospector',iolite:'Reaper'};
+  const stTableInit=()=>({tab:'enchant',piece:null,gems:[['ruby',4],['ruby',4],['ruby',4]],igem:4,tally:{tries:0,gold:0,gems:0,reag:0,cracks:0,log:[]}});
+  const stCap=p=>p.kind==='ring'?6:p.kind==='tool'?p.tier:3*p.tier;
+  const stArtId=p=>p.kind==='tool'?(p.metal==='iron'?'pickaxe':p.metal+'-pickaxe'):`${p.metal}-${p.key}`;
+  const stPieceName=p=>{const base=ST_METALS[p.tier-1][1]+' '+(p.key==='torso'?'Torso':pretty(p.key));return p.ench?`${base} ${p.ench}`:base};
+  // which enchant three gems make on this piece (the game's patterns, 'any' = any gem); rings and tools take one gem
+  function stEnchFor(p,gems){
+    if(p.kind==='tool')return {name:'of the Artisan',carat:Math.min(gems[0][1],p.tier)};
+    if(p.kind==='ring'){const g=gems[0][0];return {name:'of the '+(ST_RING[g]||pretty(g)),stone:g,carat:Math.min(Math.floor(gems[0][1]),p.tier)}}   // the rules: min(tier, floor(gem))
+    const kinds=gems.map(g=>g[0]),sum=Math.floor(gems.reduce((a,g)=>a+g[1],0)+1e-9);
+    const fits=pat=>{const left=[...kinds];let any=0;for(const x of pat){if(x==='any'){any++;continue}const i=left.indexOf(x);if(i<0)return false;left.splice(i,1)}return left.length===any};
+    const fam=p.kind,list=(typeof ENCHANT_RECIPES!=='undefined'&&ENCHANT_RECIPES[fam])||[];
+    const hit=list.find(x=>fits(x.gems));
+    if(!hit){const other=Object.entries(ENCHANT_RECIPES||{}).find(([f,l])=>f!==fam&&l.some(x=>fits(x.gems)));return {none:true,other:other?other[0]:null}}
+    return {name:hit.name,carat:Math.min(sum,stCap(p)),raw:sum,effect:hit.effect||''};
+  }
+  // infusing: the enchant's reagent and gem (rings: their stone's; tools: a Giant's Knucklebone and any gem)
+  function stInfuseNeeds(p){
+    if(p.kind==='tool')return {reagent:'giants-knucklebone',gem:null,chance:[.8,.7,.6][p.c-1]??0,gemMin:p.c};
+    if(p.kind==='ring')return {reagent:RF_STONE[p.stone],gem:p.stone,chance:RF_CHANCE[p.c-1],gemMin:RF_GEM(p.c)};
+    const plain=String(p.ench||'').toLowerCase(),e=Object.values(RF_ENCH).find(v=>v[2].toLowerCase().replace(/ \(.*\)$/,'').replace(/^staff /,'')===plain);
+    const r=REAGENT_ENCH&&Object.values(REAGENT_ENCH).find(v=>String(v[1]).toLowerCase()===plain);
+    return {reagent:e?e[0]:r?r[0]:null,gem:e?e[1].replace('gem-',''):null,chance:RF_CHANCE[p.c-1],gemMin:RF_GEM(p.c)};
+  }
+  function stTablePiece(box,s){
+    const k=stIn(box,'piece').value,metal=stIn(box,'metal').value,q=stIn(box,'q').value,def=ST_PIECES.find(x=>x[0]===k)||ST_PIECES[0],tier=ST_METALS.findIndex(m=>m[0]===metal)+1;
+    const sig=[k,metal].join('|');
+    if(!s.piece||s.piece.sig!==sig){s.piece={sig,key:k,label:def[1],kind:def[2],trade:def[3],metal,tier,q,ench:null,c:0,stone:null};s.tab='enchant'}
+    if(s.piece.qSet!==q){s.piece.q=q;s.piece.qSet=q}
+    return s.piece;
+  }
+  function stTableDraw(box){
+    const s=stS(box),p=stTablePiece(box,s),lvl=stNum(box,'lvl',1,100),win=box.querySelector('.st-win-body'),art=ST_IMG(stArtId(p));
+    const nE=p.ench?0:1,nI=p.ench?1:0,cap=stCap(p);
+    let side='',act=null;
+    const gemSel=(i,kind,carat,onlyKind)=>`<span class="st-gem"><img src="${esc(ST_IMG('gem-'+(onlyKind||kind)))}" alt=""><select data-g="${i}k" aria-label="Gem ${i+1}"${onlyKind?' disabled':''}>${Object.keys(ENCHANT_GEMS).map(g=>`<option value="${g}"${g===(onlyKind||kind)?' selected':''}>${esc(ENCHANT_GEMS[g].name)}</option>`).join('')}</select><select data-g="${i}c" aria-label="Gem ${i+1} carats">${ST_CARATS.map(c=>`<option value="${c}"${c===carat?' selected':''}>${c}c</option>`).join('')}</select></span>`;
+    const metalLv=enchantLevelForTier(p.tier),tradeLabel=p.trade;
+    if(s.tab==='enchant'){
+      if(p.ench)side=`<div class="st-empty"><img src="${esc(art)}" alt=""><b>Nothing to enchant</b><span>This piece already has its enchant. Infuse it instead.</span></div>`;
+      else{
+        const slots=p.kind==='ring'||p.kind==='tool'?1:3,gems=s.gems.slice(0,slots),res=stEnchFor(p,gems),fee=res.none?0:1000*res.carat;
+        let facts,rows='',reason='';
+        if(res.none){facts=`Holds ${cap}c · 1,000 gold a carat`;reason=res.other?`These gems make a ${esc(res.other)} enchant, not one for this piece.`:'These gems don’t make an enchant. See the recipes below.'}
+        else{facts=`<b>${esc(res.name)}</b> at ${res.carat}c${res.raw>res.carat?` <span class="st-warn">(the gems add up to ${res.raw}c; this piece holds ${cap}c)</span>`:''}`;
+          if(lvl<metalLv)reason=`Requires ${esc(tradeLabel)} level ${metalLv}.`;
+          const ck=crackAt(p.q,lvl-metalLv);
+          if(ck>0){const down=RR_Q[RR_Q.indexOf(p.q)-1];rows=`<div class="st-crack"><span>Stays ${stQName(p.q)} <b>${Number(((1-ck)*100).toFixed(1))}%</b></span><span>Cracks to ${stQName(down)} <b>${Number((ck*100).toFixed(1))}%</b></span></div>`}
+          if(!reason)act={kind:'enchant',fee,res,ck,label:`Enchant for ${n(fee)} gold`}}
+        side=`<div class="st-det"><div class="st-det-name">${esc(stPieceName(p))}</div><div class="st-det-facts">${facts}</div>
+          <div class="st-slots">${gems.map((g,i)=>gemSel(i,g[0],g[1])).join('')}</div>${rows}
+          ${act?`<button type="button" class="st-go">${esc(act.label)}</button>`:`<button type="button" class="st-go" disabled>Enchant the piece</button>`}${reason?`<div class="st-reason">${reason}</div>`:''}</div>`;
+      }
+    }else{
+      if(!p.ench)side=`<div class="st-empty"><img src="${esc(art)}" alt=""><b>Nothing to infuse</b><span>Enchant the piece first.</span></div>`;
+      else if(p.c>=cap)side=`<div class="st-det"><div class="st-det-name">${esc(stPieceName(p))} · ${p.c}c</div><div class="st-reason">This piece is at its cap (${cap}c).</div></div>`;
+      else{
+        const need=stInfuseNeeds(p),fee=RF_FEE(p.c),lv=p.kind==='ring'?(p.c+1<=3?16:p.c+1<=6?31:46):[16,31,46,61][p.tier-1];
+        const gk=need.gem||s.gems[0][0],ok=s.igem>=need.gemMin;
+        let reason=lvl<lv?`Requires ${esc(tradeLabel)} level ${lv}.`:!ok?`Choose ${need.gem?'a '+esc(ENCHANT_GEMS[need.gem]?.name||need.gem):'a gem'} of ${need.gemMin} carats or more.`:'';
+        if(!reason)act={kind:'infuse',fee,need,label:`Infuse for ${n(fee)} gold`};
+        side=`<div class="st-det"><div class="st-det-name">${esc(stPieceName(p))} · ${p.c}c</div><div class="st-det-facts">${Math.round(need.chance*100)}% to reach ${p.c+1}c</div>
+          <div class="st-costs">${need.reagent?`<span title="${esc(pretty(need.reagent))}"><img src="${esc(ST_IMG(need.reagent))}" alt="">${esc(pretty(need.reagent))}</span>`:''}</div>
+          <div class="st-slots">${`<span class="st-gem"><img src="${esc(ST_IMG('gem-'+gk))}" alt="">${need.gem?`<span class="st-gem-k">${esc(ENCHANT_GEMS[need.gem]?.name||need.gem)}</span>`:`<select data-g="0k" aria-label="Gem">${Object.keys(ENCHANT_GEMS).map(g=>`<option value="${g}"${g===gk?' selected':''}>${esc(ENCHANT_GEMS[g].name)}</option>`).join('')}</select>`}<select data-g="ic" aria-label="Gem carats">${ST_CARATS.map(c=>`<option value="${c}"${c===s.igem?' selected':''}>${c}c</option>`).join('')}</select></span>`}</div>
+          <p class="st-note">A failure spends the gem, the reagent and the gold.</p>
+          ${act?`<button type="button" class="st-go">${esc(act.label)}</button>`:`<button type="button" class="st-go" disabled>Infuse the piece</button>`}${reason?`<div class="st-reason">${reason}</div>`:''}</div>`;
+      }
+    }
+    box._stAct=act;
+    win.innerHTML=`${stSkill(tradeLabel,lvl)}<div class="st-chips">${stChip('tab','enchant','Enchant',s.tab==='enchant',`<span class="st-count">${nE}</span>`)}${stChip('tab','infuse','Infuse',s.tab==='infuse',`<span class="st-count">${nI}</span>`)}</div>
+      <div class="st-cols"><div class="st-grid"><div class="st-card on"><img src="${esc(art)}" alt=""><span class="st-card-name q-name q-${esc(p.q)}">${esc(stPieceName(p))}</span><span class="st-card-meta">${p.ench?p.c+'c':'Holds '+cap+'c'}</span></div></div><div class="st-side">${side}</div></div>`;
+    const t=s.tally;
+    box.querySelector('.st-tally').innerHTML=t.tries?`<span><b>${t.tries}</b> ${t.tries===1?'try':'tries'}</span><span><b>${n(t.gold)}</b> gold</span><span><b>${t.gems}</b> gem${t.gems===1?'':'s'}</span><span><b>${t.reag}</b> reagent${t.reag===1?'':'s'}</span>${t.cracks?`<span><b>${t.cracks}</b> crack${t.cracks===1?'':'s'}</span>`:''}<span class="st-log">${t.log.slice(-6).map(esc).join(' · ')}</span><button type="button" class="st-reset">Start over</button>`:'<span class="muted">Press the gold button to try it. Each try uses the game’s own chances.</span>';
+  }
+  function stTableGo(box){
+    const act=box._stAct;if(!act||box.dataset.busy)return;
+    const s=stS(box),p=s.piece,t=s.tally,art=ST_IMG(stArtId(p));let kind,text;
+    t.tries++;t.gold+=act.fee;
+    if(act.kind==='enchant'){
+      const slots=p.kind==='ring'||p.kind==='tool'?1:3;t.gems+=slots;
+      p.ench=act.res.name;p.c=act.res.carat;p.stone=act.res.stone||null;
+      if(act.ck>0&&Math.random()<act.ck){const down=RR_Q[RR_Q.indexOf(p.q)-1];p.q=down;t.cracks++;kind='fail';text=`Enchanted to ${p.c}c, but it cracked to ${pretty(down)}`;
+        const qs=stIn(box,'q');qs.value=down;p.qSet=down}
+      else{kind='success';text=`Enchanted: ${p.ench} at ${p.c}c`}
+    }else{
+      t.gems++;t.reag+=act.need.reagent?1:0;
+      if(Math.random()<act.need.chance){p.c++;kind='success';text=`Infused to ${p.c}c`}else{kind='fail';text='The infusion failed. The piece is unharmed.'}
+    }
+    t.log.push(text.replace(/\. The piece is unharmed\./,''));
+    stPlay(box,art,`<span class="q-name q-${esc(p.q)}">${esc(stPieceName(p))}</span>`,kind,esc(text),()=>stTableDraw(box));
+  }
+  function stTableHtml(){
+    return `<div class="st-sim" data-sim="table">
+      <div class="st-setup">
+        <label class="rf-f"><span>Piece</span><select data-s="piece">${ST_PIECES.map(([k,l],i)=>rfOpt(k,l,i===0)).join('')}</select></label>
+        <label class="rf-f"><span>Metal</span><select data-s="metal">${ST_METALS.map(([k,l],i)=>rfOpt(k,l,i===3)).join('')}</select></label>
+        <label class="rf-f"><span>Its quality</span><select data-s="q">${RR_Q.map(q=>rfOpt(q,pretty(q),q==='flawless')).join('')}</select></label>
+        <label class="rf-f"><span>Your trade level</span><input type="number" data-s="lvl" value="70" min="1" max="100"></label>
+      </div>
+      <div class="st-win"><div class="st-title">Enchanter’s Table</div><div class="st-win-body"></div>${stOv}</div>
+      <div class="st-tally"></div>
+    </div>`;
+  }
+
+  // ---- the Craft tab (anvil, bowyer table, tailor's bench, tanning rack) ----
+  const ST_TRADES=[['Weapon Smithing','Anvil','smithing hammer'],['Armor Smithing','Anvil','smithing hammer'],['Bowyer','Bowyer Table','carving tool'],['Tailoring','Tailor’s Bench','sewing kit'],['Leatherworking','Tanning Rack','leatherworking awl']];
+  const ST_TOOL_METAL=[0,.03,.07,.12],ST_TOOL_LV=[1,15,30,45];
+  const ST_BATCH=[1,5,10,20];
+  const stCraftInit=()=>({mat:null,id:null,batch:1,cat:false,tally:null});
+  const stGroup=r=>{const w=String(r.item).split(' ');return w.length>1?w.slice(0,-1).join(' '):'Other'};
+  const stHasQuality=r=>typeof enchantInfo==='function'?!!enchantInfo(r).kind:true;
+  const stLine=r=>{const s=r.item;
+    if(r.skill==='Weapon Smithing')return /dagger|kryss/i.test(s)?'dagger':/mace/i.test(s)?'mace':/spear/i.test(s)?'spear':'sword';
+    if(r.skill==='Bowyer')return /crossbow/i.test(s)?'crossbow':/staff/i.test(s)?'staff':/bow/i.test(s)?'bow':null;
+    if(r.skill==='Armor Smithing')return /shield/i.test(s)?'shield':/ring|pendant/i.test(s)?null:'plate';
+    return r.skill==='Tailoring'?'cloth':r.skill==='Leatherworking'?'leather':null};
+  function stCraftDraw(box){
+    const s=stS(box),trade=stIn(box,'trade').value,T=ST_TRADES.find(x=>x[0]===trade)||ST_TRADES[0],lvl=stNum(box,'lvl',1,100);
+    const tm=Math.max(0,ST_METALS.findIndex(m=>m[0]===stIn(box,'tmetal').value)),tq=stIn(box,'tq').value,tc=stNum(box,'tc',0,4);
+    const tool=lvl>=ST_TOOL_LV[tm]?ST_TOOL_METAL[tm]+.05*Math.min(tc,tm+1)+.1*(QUALITY_MULT[tq]||0):0;
+    const all=(typeof RECIPES!=='undefined'?RECIPES:[]).filter(r=>r.skill===trade&&r.chance!=='always'&&r.chance!=='cooking');
+    const groups=[...new Set(all.map(stGroup))];
+    if(s.trade!==trade){s.trade=trade;s.mat=null;s.id=null;s.cat=false;s.tally=null}
+    if(!groups.includes(s.mat)){const firstOk=[...groups].reverse().find(g=>all.some(r=>stGroup(r)===g&&r.level<=lvl));s.mat=firstOk||groups[0]}
+    const list=all.filter(r=>stGroup(r)===s.mat).sort((a,b)=>a.level-b.level);
+    let r=list.find(x=>x.id===s.id);if(!r){r=[...list].reverse().find(x=>x.level<=lvl)||list[0];s.id=r?.id}
+    const succ=x=>lvl<x.level?0:Math.min(.95,craftChance(x,lvl)+tool),refund=x=>lvl<x.level?0:Math.min(.95,Math.max(0,craftChance(x,lvl)+tool-.95));
+    const chips=groups.map(g=>{const lo=Math.min(...all.filter(x=>stGroup(x)===g).map(x=>x.level));return stChip('mat',g,esc(g),g===s.mat,lvl<lo?`<span class="st-lock">🔒${lo}</span>`:'')}).join('');
+    const cards=list.map(x=>{const ok=lvl>=x.level,ch=succ(x);return `<button type="button" class="st-card${x.id===s.id?' on':''}${ok?'':' locked'}" data-pick="${esc(x.id)}">${ok?`<span class="st-ring" style="--p:${ch*360}deg" aria-label="${Math.round(ch*100)}% success">${Math.round(ch*100)}</span>`:''}<img src="${esc(ST_RIMG(x))}" alt=""><span class="st-card-name">${esc(x.item)}</span><span class="st-card-meta">${ok?(x.ingredients||[]).map(i=>`<span><img src="${esc(ST_IMG(i.id))}" alt="">${i.quantity}</span>`).join(''):'Level '+x.level}</span></button>`}).join('');
+    let side='',act=null;
+    if(r){
+      const ok=lvl>=r.level,ch=succ(r),rf=refund(r),line=stLine(r),reag=line&&RF_LINE[line],hasQ=stHasQuality(r)&&(r.out||1)===1;
+      if(!reag)s.cat=false;
+      const over=Math.max(0,lvl-r.level),o=qPull(over),oc=o+CATALYST_PULL,d=stDist(o),dc=stDist(oc),use=s.cat?dc:d,QC=stQC();
+      const sumT=(p,ts)=>ts.reduce((a,t)=>a+(p[t]||0),0),REST=RR_Q.filter(q=>!['excellent','superior','flawless'].includes(q));
+      const fc=hasQ&&ok?(()=>{const seg=RR_Q.filter(q=>use[q]*100>=.05).map(q=>`<span class="st-fseg" style="flex-grow:${use[q]*100};background:${QC[q]}" title="${esc(pretty(q))} ${stPct(use[q]*100)}"></span>`).join('');
+        const chipQ=[['flawless',['flawless'],'Flawless'],['superior',['superior'],'Superior'],['excellent',['excellent'],'Excellent'],['rest',REST,'Good or worse']].map(([k,ts,l])=>{const v=sumT(use,ts)*100,dv=s.cat?(sumT(dc,ts)-sumT(d,ts))*100:null;
+          return `<span class="st-fchip"${k==='rest'?'':` style="--tier:${QC[k]}"`}>${l} <b>${stPct(v)}</b>${k!=='rest'&&v>0&&v<20?` <small>1 in ${Math.round(100/v)}</small>`:''}${dv!==null?` <span class="st-fdelta">${dv<0?'-':'+'}${Math.abs(dv).toFixed(1)}</span>`:''}</span>`}).join('');
+        const N=Math.max(1,Math.min(s.batch,Math.round(s.batch*ch))),f=1-Math.pow(1-use.flawless,N);
+        const line1=s.batch===1?`One attempt: ${stPct(use.flawless*100)} chance of flawless.`:`In ${s.batch}: ${stPct(f*100)} chance of at least one flawless.`;
+        return `<div class="st-fc"><div class="st-fbar">${seg}</div><div class="st-fchips">${chipQ}</div><p class="st-fline">${line1}${over>=30?' Quality peaks here; only the catalyst lifts it further.':''}</p></div>`})():'';
+      const catBox=reag&&hasQ?`<button type="button" class="st-cat${s.cat?' on':''}" data-cat="1" aria-pressed="${s.cat}"><span class="st-cat-slot"><img src="${esc(ST_IMG(reag))}" alt=""></span><span class="st-cat-text"><span class="st-cat-h">Catalyst</span><span class="st-cat-name">${esc(pretty(reag))}</span><span class="st-cat-l">${s.cat?'Steadies the work: better quality · one of 10 uses per piece made':'Click to add'}</span></span></button>`:'';
+      const reason=ok?'':`Requires ${esc(trade)} level ${r.level}.`;
+      if(ok)act={r,ch,rf,o:s.cat?oc:o,hasQ,cat:s.cat,reag};
+      side=`<div class="st-det"><div class="st-det-name">${esc(r.item)}</div><div class="st-det-facts">${ok?`${Math.round(ch*100)}% success · ${n(r.xp)} exp${rf>0?` · ${Math.round(rf*100)}% material refund`:''}`:''}</div>
+        <div class="st-costs">${(r.ingredients||[]).map(i=>`<span title="${esc(pretty(i.id))}"><img src="${esc(ST_IMG(i.id))}" alt="">${i.quantity}</span>`).join('')}</div>${fc}${catBox}
+        <div class="st-acts"><span class="st-qty">${ST_BATCH.map(k=>`<button type="button" data-n="${k}" class="${k===s.batch?'on':''}" aria-pressed="${k===s.batch}">${k}</button>`).join('')}</span><button type="button" class="st-go"${ok?'':' disabled'}>${T[1]==='Anvil'?'Forge':'Craft'} ${s.batch}</button></div>${reason?`<div class="st-reason">${reason}</div>`:''}</div>`;
+    }
+    box._stAct=act;
+    box.querySelector('.st-title').textContent=T[1];
+    box.querySelector('.st-win-body').innerHTML=`${stSkill(trade,lvl)}<div class="st-chips">${chips}</div><div class="st-cols"><div class="st-grid">${cards}</div><div class="st-side">${side}</div></div>`;
+    const t=s.tally;
+    box.querySelector('.st-tally').innerHTML=t?`<span><b>${t.att}</b> attempt${t.att===1?'':'s'}</span><span><b>${t.made}</b> made</span>${Object.entries(t.mats).map(([id,q])=>`<span><b>${n(q)}</b> ${esc(pretty(id))}</span>`).join('')}${t.cat?`<span><b>${t.cat}</b> catalyst use${t.cat===1?'':'s'}</span>`:''}<span class="st-log">${RR_Q.slice().reverse().filter(q=>t.q[q]).map(q=>`${stQName(q)} ×${t.q[q]}`).join(' · ')}</span><button type="button" class="st-reset">Start over</button>`:'<span class="muted">Pick an item and press the gold button. Each attempt uses the game’s own chances.</span>';
+  }
+  function stCraftGo(box){
+    const act=box._stAct;if(!act||box.dataset.busy)return;
+    const s=stS(box),t=s.tally||(s.tally={att:0,made:0,q:{},mats:{},cat:0}),out=[];let made=0;
+    for(let k=0;k<s.batch;k++){
+      t.att++;const back=Math.random()<act.rf;
+      if(!back)for(const i of act.r.ingredients||[])t.mats[i.id]=(t.mats[i.id]||0)+i.quantity;
+      if(Math.random()<act.ch){made++;t.made++;if(act.hasQ){const q=stRollQ(act.o);out.push(q);t.q[q]=(t.q[q]||0)+1;if(act.cat)t.cat++}}
+    }
+    const best=out.slice().sort((a,b)=>RR_Q.indexOf(b)-RR_Q.indexOf(a))[0];
+    let kind,text;
+    if(!made){kind='fail';text=s.batch===1?'The craft failed.':`All ${s.batch} attempts failed.`}
+    else if(s.batch===1){kind=RR_Q.indexOf(best)>=6?'success':'neutral';text=best?`Made: ${stQName(best)}`:'Made one.'}
+    else{kind=RR_Q.indexOf(best)>=6?'success':'neutral';const cnt={};out.forEach(q=>cnt[q]=(cnt[q]||0)+1);
+      text=`Made ${made} of ${s.batch}`+(out.length?'<br><small>'+RR_Q.slice().reverse().filter(q=>cnt[q]).map(q=>`${stQName(q)} ×${cnt[q]}`).join(' · ')+'</small>':'')}
+    stPlay(box,ST_RIMG(act.r),esc(act.r.item),kind,text,()=>stCraftDraw(box));
+  }
+  function stCraftHtml(){
+    return `<div class="st-sim" data-sim="craft">
+      <div class="st-setup">
+        <label class="rf-f"><span>Trade</span><select data-s="trade">${ST_TRADES.map(([k],i)=>rfOpt(k,k,i===0)).join('')}</select></label>
+        <label class="rf-f"><span>Your trade level</span><input type="number" data-s="lvl" value="50" min="1" max="100"></label>
+        <label class="rf-f"><span>Tool metal</span><select data-s="tmetal">${ST_METALS.map(([k,l],i)=>rfOpt(k,l,i===3)).join('')}</select></label>
+        <label class="rf-f"><span>Tool quality</span><select data-s="tq">${RR_Q.map(q=>rfOpt(q,pretty(q),q==='ordinary')).join('')}</select></label>
+        <label class="rf-f"><span>Tool Artisan carats</span><input type="number" data-s="tc" value="0" min="0" max="4"></label>
+      </div>
+      <div class="st-win"><div class="st-title">Anvil</div><div class="st-win-body"></div>${stOv}</div>
+      <div class="st-tally"></div>
+    </div>`;
+  }
+  const stDraw=box=>box.dataset.sim==='table'?stTableDraw(box):stCraftDraw(box);
+  const stAll=()=>document.querySelectorAll('.st-sim').forEach(b=>{try{stDraw(b)}catch(e){console.warn('station copy',e)}});
+  if(!globalThis.__stSimWired){globalThis.__stSimWired=true;
+    document.addEventListener('click',e=>{const box=e.target.closest&&e.target.closest('.st-sim');if(!box||box.dataset.busy)return;const s=stS(box),b=e.target.closest('button');if(!b)return;
+      if(b.dataset.tab){s.tab=b.dataset.tab}else if(b.dataset.mat){s.mat=b.dataset.mat;s.id=null}else if(b.dataset.pick){s.id=b.dataset.pick}else if(b.dataset.n){s.batch=+b.dataset.n}else if(b.dataset.cat){s.cat=!s.cat}
+      else if(b.classList.contains('st-go')){box.dataset.sim==='table'?stTableGo(box):stCraftGo(box);return}
+      else if(b.classList.contains('st-reset')){if(box.dataset.sim==='table'){s.tally=stTableInit().tally;s.piece=null}else s.tally=null}
+      else return;
+      stDraw(box)});
+    const ch=e=>{const box=e.target.closest&&e.target.closest('.st-sim');if(!box||box.dataset.busy)return;const s=stS(box),g=e.target.dataset&&e.target.dataset.g;
+      if(g){if(g==='ic')s.igem=Number(e.target.value);else{const i=+g[0];if(g[1]==='k')s.gems[i][0]=e.target.value;else s.gems[i][1]=Number(e.target.value)}}
+      stDraw(box)};
+    document.addEventListener('change',ch);document.addEventListener('input',e=>{if(e.target.matches&&e.target.matches('.st-setup input'))ch(e)})}
   reg({slug:'reforging',group:'Gear, gems & enchanting',title:'Enchanter’s Table',blurb:'Enchant and infuse gear at the Enchanter’s Table, and use reagents as crafting catalysts: every cost, chance and level.',build:()=>{
     const pc=v=>Math.round(v*100)+'%',pc1=v=>(Math.round(v*1000)/10)+'%';
     const stepRows=RF_CHANCE.map((ch,i)=>{const c=i+1;return [c+'c → '+(c+1)+'c',pc(ch),n(RF_FEE(c)),RF_GEM(c)+'c or more',(1/ch).toFixed(2),n(Math.round(RF_FEE(c)/ch))]});
@@ -457,7 +686,8 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       ['plan','Planning',`<ul class="g-list"><li>Enchant <b>before</b> chasing a superior or flawless piece’s carats only if you accept the crack risk: enchanting an excellent piece is always safe.</li><li>Infusing high carats is where the gold goes: the last three titanium carats (9c → 12c) cost more in fees than the first nine together.</li><li>Farm <b>elites</b> of the right family for reagents, or buy them on the Exchange.</li><li>The <a href="#/calc-quality">Quality calculator</a> shows your level, gold and crack chance for any piece, and has an infusing planner.</li></ul>`+note('Costs, levels, the crack chance, infusing chances, fees and gem sizes, and the catalyst’s shift are from the game’s own rules (28 October 2026 update); asking a smith from its “Hire a Smith” news and guide (29 October 2026). Reagent drop chances and XP amounts aren’t published.')]
     ],related:['quality-and-enchanting','gems','reagents']};
     for(const sec of RF_PAGE.sections)if(RF_CALC[sec[0]])sec[2]+=rfCalcHtml(RF_CALC[sec[0]]);
-    setTimeout(rfRunAll,0);
+    RF_PAGE.sections.splice(1,0,['try','Try it at the table',`<p>A working copy of the game’s <b>Enchanter’s Table</b>. Pick a piece, its metal and quality, and your trade level. On <b>Enchant</b>, choose three gems (one for a ring or a tool) and press the gold button. Then switch to <b>Infuse</b> to push the carats up. Each try uses the game’s own chances, the crack included, and the tally below adds up what it cost. Nothing here touches your real gear.</p>`+stTableHtml()]);
+    setTimeout(()=>{rfRunAll();stAll()},0);
     return RF_PAGE}});
   // ---- Unique items (11 Oct 2026): every named boss drop, straight from the game's rules (game-data.js `uniques`, built by
   // data-from-rules.js): the boss, the base piece, the game's own effect wording, the drop chance and the elite chance.
@@ -694,9 +924,11 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     const bookEnch=(ER.spellbook||[]).map(x=>x.name).join(', ').replace(/, ([^,]*)$/,' or $1');
     const enchCards=GROUPS.map(([h,fams])=>{const cs=fams.flatMap(f=>(ER[f]||[]).map(x=>ecard(f,x)));return cs.length?`<h3>${h}</h3><p class="g-note ec-on">${esc(ON[fams[0]])}</p><div class="gg-cards ec-cards">${cs.join('')}</div>`:''}).join('')
       +(ART?`<h3>Tools</h3><p class="g-note ec-on">${esc(ON.tool)}</p><div class="gg-cards ec-cards">${ecard('tool',{name:ART.name,gems:[],effect:ART.effect?.[4]||''})}</div>`:'');
+    setTimeout(stAll,0);
     return {lede:'Crafted gear and tools roll a quality that scales what they do. Any plain piece, tools included, can then be enchanted with gems at an Enchanter’s Table for extra damage, stats, accuracy or a better chance to succeed.',sections:[
       ['quality','Quality tiers',`<p>Every piece of crafted gear rolls a quality. It scales what the item itself brings: a weapon's <b>damage</b>, a piece of armour's <b>defence</b>, a staff's <b>spell power</b> and its sell price. It never changes your own attributes, or a gem set in the item.</p>`+table(['Quality','Gear stats','Tool bonus'],qRows)+note('A flawless sword hits 38% harder than an ordinary one of the same kind; an inferior one 30% softer. Tools work differently: quality adds to the tool’s bonus, which raises your success chance. Once you are at the 95% cap, the extra becomes a chance to get your materials back when crafting, or a bigger haul when gathering.')],
       ['odds','Quality odds',`<p>The quality you get depends only on how many levels you are <b>above</b> the item’s level: the further past it, the better your odds, up to <b>+30</b>. Your gear does not change it. A better tool (metal, quality, Artisan enchant) raises your chance to succeed, and past 95% your chance to get the materials back, but not the quality.</p>`+table(['Levels over recipe',...QT.map(q=>`<span class="q-name q-${q}">${esc(pretty(q))}</span>`)],odds)],
+      ['try','Try it at the anvil',`<p>A working copy of the game’s <b>Craft</b> tab. Set your trade, level and tool, pick an item and press the gold button. It shows the same quality bar the game does, and the <b>catalyst</b> slot when the item has one. The <b>batch</b> buttons craft 1, 5, 10 or 20 at once. Each attempt uses the game’s own chances for success, material refunds and quality, and the tally below counts what you made and what it used up. Nothing here touches your real bag.</p>`+stCraftHtml()],
       ['loot','Quality of dropped gear',`<p>Gear from chests and ordinary monsters is at most excellent. <b>Elites and bosses drop excellent or superior</b>: since 27 Oct 2026 nothing drops flawless, so the only way to a flawless piece is to have one made (flawless pieces found before keep their quality). Town shops sell good gear, never superior (Westergarde’s too, since 29 Oct).</p><p>Since 29 Oct 2026 <b>beasts and dragons</b> (wolves, bears, werewolves, harpies, vultures, basilisks, spiders, scorpions, sand wyrms, dust devils, sand elementals and more) drop plate, weapons and shields as well, though hide is still what they drop most. Small beasts (boars, bats, moonbeasts, snakes, beetles) still drop only cloth and leather.</p><p>Enchanted gear from monsters goes up to <b>9c</b>, and never more than its material can hold: 3c per tier, so a 9c drop is always tier 3 or 4 gear. An <b>elite</b> leaves an enchanted piece <b>1 in 20 kills</b> and a <b>boss 1 in 100</b>; ordinary monsters rarely (about 1.5% of the gear players have seen them drop).</p>`],
       ['mastery','Crafting success',`<p>Crafting an item succeeds 60% of the time at its level and climbs to its best, <b>95%, at 14 levels above</b> it. A <b>catalyst</b> (the gear-line reagent) makes superior and flawless come up more often; see ${guide('reforging')}.</p>`+masteryChart],
       ['who','Who can enchant what',`<p>Enchanting happens at an <b>Enchanter’s Table</b> (Binxonia Wizard Tower or Westergarde) on any plain piece, made, bought or looted. You need the level the piece’s metal opens at in the trade that makes it, and <b>1,000 gold per carat</b>; no reagent, and nothing is rolled.</p>`+table(['Metal','Level needed','Most carats'],[['Iron','1','3'],['Silver','16','6'],['Gold','31','9'],['Titanium','46','12']])+`<p>Enchanting a <b>superior or flawless</b> piece can <b>crack</b> it one quality (the enchant still lands); the chance and every cost are in ${guide('reforging')}.</p>`],
