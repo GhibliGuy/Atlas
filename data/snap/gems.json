@@ -1,4 +1,8 @@
 [
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"npcName":"Kragg the Unmoved","time":1793419535887,"sessionId":"8600effd","key":961},
+{"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"npcName":"Ogre Elder","time":1793417494866,"sessionId":"8600effd","key":960},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"npcName":"Ogre Charger","time":1793417220252,"sessionId":"8600effd","key":959},
+{"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"time":1793416169948,"sessionId":"faaf37ac","key":958},
 {"type":"gem.found","typeId":"gem-ruby","carat":1.5,"dropped":false,"time":1793414652698,"sessionId":"e11efe7b","key":957},
 {"type":"gem.found","typeId":"gem-ruby","carat":1,"dropped":false,"time":1793414349884,"sessionId":"e11efe7b","key":956},
 {"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"time":1793414160705,"sessionId":"e11efe7b","key":955},
