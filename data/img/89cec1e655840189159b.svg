@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="-3.320000047683716 -0.3630555820465088 3.190000047683716 4.083055248260498" width="153" height="196"><style><![CDATA[.world-shell {
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-3.2700000953674317 -0.3630555820465088 3.190000047683716 4.083055248260498" width="153" height="196"><style><![CDATA[.world-shell {
   display: grid;
   gap: 0;
   grid-template-columns: minmax(0, 1fr);
@@ -341,6 +341,21 @@
 }
 .ground-type-swatch-ground-frozen-scree {
   border-left-color: #8f979a;
+}
+.board-ground-type-ground-ash .board-ground-base {
+  fill: #8f8a85;
+}
+.ground-type-swatch-ground-ash {
+  border-left-color: #8f8a85;
+}
+.board-ground-type-ground-basalt .board-ground-base {
+  fill: #3e3f45;
+}
+.ground-type-swatch-ground-basalt {
+  border-left-color: #3e3f45;
+}
+.ground-type-swatch-ground-lava {
+  border-left-color: #c44a1d;
 }
 .board-ground-type-ground-wood-weathered .board-ground-base {
   fill: #626a62;
@@ -1145,4 +1160,4 @@
   }
 }
 
-:root{background:transparent!important}]]></style><g transform="translate(-3.7 -0.85)"><g><polygon points="1.25,2.975 3.45,4.075 2.7,4.45 0.5,3.35" style="fill:#8b919b;stroke:#5b606a;stroke-width:0.05;stroke-linejoin:round"></polygon><path d="M 1.25 2.975 L 1.25 0.675 Q 2.35 0.325 3.45 1.775 L 3.45 4.075" style="fill:none;stroke:#cbd5e1;stroke-width:0.05;stroke-linejoin:round;stroke-linecap:round"></path></g></g></svg>
+:root{background:transparent!important}]]></style><g transform="translate(-3.7 -0.85)"><g transform="translate(4 0) scale(-1 1)"><g><polygon points="1.25,2.975 3.45,4.075 2.7,4.45 0.5,3.35" style="fill:#8b919b;stroke:#5b606a;stroke-width:0.05;stroke-linejoin:round"></polygon><path d="M 1.25 2.975 L 1.25 0.675 Q 2.35 0.325 3.45 1.775 L 3.45 4.075" style="fill:none;stroke:#cbd5e1;stroke-width:0.05;stroke-linejoin:round;stroke-linecap:round"></path></g></g></g></svg>
