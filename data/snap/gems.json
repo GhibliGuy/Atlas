@@ -1,4 +1,6 @@
 [
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"time":1793475494625,"sessionId":"ea5d94cb","key":966},
+{"type":"gem.found","typeId":"gem-diamond","carat":4,"dropped":false,"time":1793473781571,"sessionId":"ea5d94cb","key":965},
 {"type":"gem.found","typeId":"gem-topaz","carat":1,"dropped":false,"time":1793464749133,"sessionId":"041b3cc0","key":964},
 {"type":"gem.found","typeId":"gem-pearl","carat":2,"dropped":false,"time":1793464232310,"sessionId":"041b3cc0","key":963},
 {"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"npcName":"Ogre Charger","time":1793461227570,"sessionId":"041b3cc0","key":962},
