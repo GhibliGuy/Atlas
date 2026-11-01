@@ -1,4 +1,7 @@
 [
+{"type":"gem.found","typeId":"gem-onyx","carat":1,"dropped":false,"time":1793518195770,"sessionId":"e1adc2a4","key":977},
+{"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"npcName":"Ogre Elder","time":1793516996420,"sessionId":"88f4991c","key":976},
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"npcName":"Ogre Butcher","time":1793514963103,"sessionId":"88f4991c","key":975},
 {"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"npcName":"Ogre Butcher","time":1793501436906,"sessionId":"9ad30160","key":974},
 {"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"npcName":"Ogre Butcher","time":1793497539923,"sessionId":"09c45b67","key":973},
 {"type":"gem.found","typeId":"gem-amber","carat":2,"dropped":false,"npcName":"Moonfane Moth","time":1793495412347,"sessionId":"60e2cda2","key":972},
