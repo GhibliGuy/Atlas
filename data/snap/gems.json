@@ -1,4 +1,7 @@
 [
+{"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"npcName":"Ogre Elder","time":1793554676886,"sessionId":"d66b9803","key":980},
+{"type":"gem.found","typeId":"gem-sapphire","carat":1,"dropped":false,"npcName":"Ogre Elder","time":1793551707478,"sessionId":"d66b9803","key":979},
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"npcName":"Ogre Charger","time":1793550613223,"sessionId":"d66b9803","key":978},
 {"type":"gem.found","typeId":"gem-onyx","carat":1,"dropped":false,"time":1793518195770,"sessionId":"e1adc2a4","key":977},
 {"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"npcName":"Ogre Elder","time":1793516996420,"sessionId":"88f4991c","key":976},
 {"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"npcName":"Ogre Butcher","time":1793514963103,"sessionId":"88f4991c","key":975},
