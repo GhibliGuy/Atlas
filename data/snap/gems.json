@@ -1,4 +1,6 @@
 [
+{"type":"gem.found","typeId":"gem-amber","carat":2,"dropped":false,"npcName":"Moonfane Moth","time":1793495412347,"sessionId":"60e2cda2","key":972},
+{"type":"gem.found","typeId":"gem-topaz","carat":2,"dropped":false,"time":1793495007417,"sessionId":"033885bd","key":971},
 {"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"time":1793487678977,"sessionId":"0a8f0dcd","key":970},
 {"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"time":1793487668332,"sessionId":"0a8f0dcd","key":969},
 {"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"time":1793487182539,"sessionId":"182d39ce","key":968},
