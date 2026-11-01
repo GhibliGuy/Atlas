@@ -342,6 +342,21 @@
 .ground-type-swatch-ground-frozen-scree {
   border-left-color: #8f979a;
 }
+.board-ground-type-ground-ash .board-ground-base {
+  fill: #8f8a85;
+}
+.ground-type-swatch-ground-ash {
+  border-left-color: #8f8a85;
+}
+.board-ground-type-ground-basalt .board-ground-base {
+  fill: #3e3f45;
+}
+.ground-type-swatch-ground-basalt {
+  border-left-color: #3e3f45;
+}
+.ground-type-swatch-ground-lava {
+  border-left-color: #c44a1d;
+}
 .board-ground-type-ground-wood-weathered .board-ground-base {
   fill: #626a62;
 }

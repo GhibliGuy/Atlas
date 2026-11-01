@@ -1,4 +1,7 @@
 [
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"npcName":"Ogre Shaman","time":1793568659108,"sessionId":"747c78c9","key":984},
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"npcName":"Old Mother Ashka","time":1793568525604,"sessionId":"747c78c9","key":983},
+{"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"npcName":"Mountain Ogre","time":1793565086563,"sessionId":"d66b9803","key":982},
 {"type":"gem.found","typeId":"gem-ruby","carat":1.5,"dropped":false,"time":1793562943475,"sessionId":"1b1c239c","key":981},
 {"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"npcName":"Ogre Elder","time":1793554676886,"sessionId":"d66b9803","key":980},
 {"type":"gem.found","typeId":"gem-sapphire","carat":1,"dropped":false,"npcName":"Ogre Elder","time":1793551707478,"sessionId":"d66b9803","key":979},
