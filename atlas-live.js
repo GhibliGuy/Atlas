@@ -6212,7 +6212,9 @@ function newsHtml(){
     const r1=v=>Number.isFinite(v)?Math.round(v*10)/10:null;
     const typeName=new Map((D.catalog||[]).map(m=>[m.typeId,String(m.name||'').toLowerCase()]));
     const npcs=[];
-    for(const n of snapshot.npcs||[]){const p=n.position;if(!p||!Number.isFinite(p.x))continue;const o=n.originPosition;
+    // a person whose record lost its name (1 Nov 2026: the collector wiped names from partial updates) keeps the last name seen
+    const obsName=new Map();for(const o of snapshot.npcObservations||[])if(o&&o.id&&o.name&&!obsName.has(o.id))obsName.set(o.id,o.name);
+    for(const n0 of snapshot.npcs||[]){const n=!n0.name&&obsName.has(n0.id)?{...n0,name:obsName.get(n0.id)}:n0;const p=n.position;if(!p||!Number.isFinite(p.x))continue;const o=n.originPosition;
       if(p.z&&!o)continue;   // only seen inside a cave or building, with no spawn point: the world map never shows it
       const nm=String(n.name||'').trim(),named=nm&&nm.toLowerCase()!==(typeName.get(n.typeId)||String(n.typeId).replace(/-/g,' '));
       npcs.push([tIx(n.typeId,n.name),named?n.id:0,Number.isFinite(n.level)?n.level:null,n.elite?1:0,Math.round((n.lastSeen||0)/1000),r1(p.x),r1(p.y),p.z||0,o?r1(o.x):null,o?r1(o.y):null,o?o.z||0:null,named&&n.npcClass?n.npcClass:0,n.firstSeen&&n.lastSeen?Math.max(0,Math.round((n.lastSeen-n.firstSeen)/1000)):null]);   // (last: seconds from first to last seen, for the area badges' most-alive-at-once)

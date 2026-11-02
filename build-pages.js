@@ -30,7 +30,7 @@ function readData(outDir) {
     const p = s[k] && s[k].part; if (!p) return Array.isArray(s[k]) ? s[k] : [];
     try { const v = JSON.parse(fs.readFileSync(path.join(outDir, 'data', p), 'utf8')); return Array.isArray(v) ? v : []; } catch { return []; }
   };
-  return { quests: Array.isArray(s.quests) ? s.quests : [], zones: Array.isArray(s.zones) ? s.zones : [], npcs: part('npcs'), inventoryTypes: part('inventoryTypes') };
+  return { quests: Array.isArray(s.quests) ? s.quests : [], zones: Array.isArray(s.zones) ? s.zones : [], npcs: part('npcs'), npcObservations: part('npcObservations'), inventoryTypes: part('inventoryTypes') };
 }
 
 // every page: [route (the part after /Atlas/), title, description]
@@ -67,7 +67,8 @@ function pageList(outDir) {
     if (okId(m.typeId)) add('monster/' + m.typeId, m.name || pretty(m.typeId), `${m.name || pretty(m.typeId)}${m.baseLevel ? ', level ' + m.baseLevel : ''}: where it lives, what it drops and how to fight it.`);
   }
   // named people (a name that is not just their kind's name), as the Atlas lists them
-  for (const n of data.npcs) {
+  // (and the names in the sightings: a record can have lost its name, 1 Nov 2026)
+  for (const n of [...data.npcs, ...data.npcObservations]) {
     const name = String((n && n.name) || '').trim(); if (!name || !n.typeId) continue;
     const plain = typeName.get(n.typeId) || String(n.typeId).replace(/-/g, ' ');
     if (name.toLowerCase() === plain || name.toLowerCase() === String(n.typeId).replace(/-/g, ' ')) continue;
