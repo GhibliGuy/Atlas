@@ -177,7 +177,7 @@ const ENCHANT_RECIPES={
   {name:'of Corrosion',gems:['onyx','topaz','emerald'],effect:'+89% base corrode'},
   {name:'of Destruction',gems:['ruby','ruby','ruby'],effect:'+89% base damage'}
  ],
- bow:[{name:'of Seeking',gems:['diamond','diamond','diamond'],effect:'+8% to-hit'}],
+ bow:[{name:'of Seeking',gems:['diamond','diamond','diamond'],effect:'+8% of each roll'}],
  armor:[
   {name:'of the Titan',gems:['iolite','topaz','any'],effect:'+20 STR'},
   {name:'of the Camel',gems:['iolite','ruby','any'],effect:'+20 END'},

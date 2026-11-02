@@ -5112,7 +5112,7 @@ function newsHtml(){
     if(en&&OWN_GEMS[en.ench]&&en.c)return {txt:ownEffect(en.ench,en.c),dmg:0};
     if(isArmorish(g)&&en&&A_ATTR[en.ench]&&en.c)return {txt:`+${A_PER_CARAT*en.c} ${A_ATTR[en.ench]}`,dmg:0};
     if(!g||g.type!=='weapon'||!en||!en.ench||!en.c)return null;const [,a,b,mult]=g.w,v=(a+b)/2*en.c*W_PER_CARAT*mult;
-    return en.ench==='seeking'?{txt:`+${2*en.c}% to hit`,dmg:0}:en.ench==='destruction'?{txt:`+${r1(v)} damage`,dmg:v}:{txt:`+${r1(v)} ${en.ench}`,dmg:v}}
+    return en.ench==='seeking'?{txt:`+${2*en.c}% of each roll`,dmg:0}:en.ench==='destruction'?{txt:`+${r1(v)} damage`,dmg:v}:{txt:`+${r1(v)} ${en.ench}`,dmg:v}}
   const W_PER_CARAT=globalThis.BXC_GAME_DATA?.combat?.enchantPerCarat||1/4.5;
   // weapons: three gems of up to 1 carat a metal tier; tools: one gem, same cap (iron 1 ... titanium 4)
   const wEnchCap=g=>g&&(g.type==='weapon'||g.type==='staff'||g.type==='shield'||g.type==='spellbook'||isArmorish(g))?3*Math.max(0,g.tier||0):g&&g.type==='tool'?Math.max(0,g.tier||0):0;
@@ -5123,7 +5123,7 @@ function newsHtml(){
     const m=1+(Q_MULT[tier]||0);
     if(g.type==='weapon'){const [,a,b,mult]=g.w,f=(1+G_TIER_BONUS[g.tier])*m*mult,avgRoll=(a+b)/2,c=en&&en.ench?en.c:0;
       const add=en&&en.ench==='destruction'?avgRoll*c*W_PER_CARAT*mult:0,elem=en&&['burn','freeze','shock','corrode'].includes(en.ench)?avgRoll*c*W_PER_CARAT*mult:0;
-      const extra=elem?` + ${r1(elem)} ${en.ench}`:en&&en.ench==='seeking'&&c?` · +${2*c}% to hit`:'';
+      const extra=elem?` + ${r1(elem)} ${en.ench}`:en&&en.ench==='seeking'&&c?` · +${2*c}% of each roll`:'';
       return {main:`${r1(a*f+add)}–${r1(b*f+add)} damage${extra}`,avg:avgRoll*f+add+elem}}
     if(g.type==='armor'){
       const base=G_ARMOR_SPECIAL[g.mat]||(G_ARMOR[g.kind]||[])[g.tier]||[0,0];
