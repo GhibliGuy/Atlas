@@ -5178,7 +5178,7 @@ function newsHtml(){
       <p class="s muted">Quality scales this item’s own stats. ${g.type==='weapon'?'Damage below is the weapon alone, before your stats and enchantments.':g.type==='armor'?'Protection comes from the armor of all five pieces together, up to 75%.':''}</p>
       <div class="g-scroll" id="gearQTable"><table class="g-table q-table"><thead><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody id="gearQRows">${rows}</tbody></table></div>
       <h2>Getting ${pick==='all'?'each quality':esc(qLabel(pick))+' ones'}</h2>
-      ${recipe?`<p><b>Crafting</b> (${esc(recipe.skill)} ${recipe.level}): the higher above ${recipe.level} you are, the better the odds, up to +30. <a href="#/calc-quality" data-qe="${esc(id)}">Plan it on Quality &amp; enchanting</a></p>
+      ${recipe?`<p><b>Crafting</b> (${esc(recipe.skill)} ${recipe.level}): the higher above ${recipe.level} you are, the better the odds, up to +36. <a href="#/calc-quality" data-qe="${esc(id)}">Plan it on Quality &amp; enchanting</a></p>
         <div class="g-scroll"><table class="g-table"><thead><tr><th>Your level</th>${QUALITY_TIERS.map(q=>`<th><span class="q-name q-${q}">${esc(prettyId(q))}</span></th>`).join('')}</tr></thead><tbody>${oddsRows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`:''}
       ${craftedLine}
       <p><b>Monster drops</b>: ordinary monsters and chests give at most Excellent; elites and bosses give Excellent or Superior. Since 27 Oct 2026 nothing drops Flawless: it is crafted only.</p>
@@ -5188,7 +5188,7 @@ function newsHtml(){
   // ---- A gem's sizes, laid out like gear's qualities: 0.5c to 4c, each with its rarity (in the game's quality colours),
   // how often it has been found, how you get one, and what it does in a ring. ?q=2.5 picks a size.
   const RARITY_Q={common:'ordinary',uncommon:'good','semi-rare':'excellent',rare:'superior','very rare':'flawless'};
-  const GEM_SIZES=[.5,1,1.5,2,2.5,3,3.5,4];
+  const GEM_SIZES=[.5,1,1.5,2,2.5,3,3.5,4,4.5,5];
   const gemPick=q=>{const c=parseFloat(q);return GEM_SIZES.includes(c)?c:null};
   const gemRar=c=>globalThis.bxcGemRarity?globalThis.bxcGemRarity(c):'common';
   const gemGlow=c=>c!=null&&typeof qualityGlow==='function'?qualityGlow(RARITY_Q[gemRar(c)]):'';
@@ -5208,7 +5208,7 @@ function newsHtml(){
       <td>${globalThis.bxcGemHow?globalThis.bxcGemHow(c):''}</td>${ring?`<td>${esc(ringAt(c)||'—')}</td>`:''}</tr>`).join('');
     const found=mine.filter(g=>!g.dropped).length,dropped=mine.length-found;
     return `<h2>Carats</h2>${picker}
-      <p class="s muted">Gems come in half-carat steps from 0.5c to 4c. Up to 2c counts as common. The witch can build up to ${s.cap}c (one 3c takes 243 small gems); 3.5c and 4c only come from finds, and a 4c gem is very rare.</p>
+      <p class="s muted">Gems come in half-carat steps from 0.5c to 5c. Up to 2c counts as common. The witch can build up to ${s.cap}c (one 3c takes 243 small gems); 3.5c and up only come from finds, 4c and up are very rare, and 4.5c and 5c only come from gathering.</p>
       <div class="g-scroll"><table class="g-table q-table"><thead><tr><th>Carat</th><th>Rarity</th><th>${esc(prettyId(kind))} found</th><th>Of all gems found</th><th>How you get one</th>${ring?`<th>In a ring (${esc(prettyId(ring.bonus))})</th>`:''}</tr></thead><tbody>${rows}</tbody></table></div>
       <p class="s muted">${mine.length?`${fmt(mine.length)} ${esc(prettyId(kind))} recorded: ${fmt(found)} while gathering${dropped?`, ${fmt(dropped)} from monsters`:''}.`:`No ${esc(prettyId(kind))} recorded yet.`} “Of all gems found” is out of ${fmt(all.length)} gems of every kind. <a href="#/gemcombine">Gem combiner</a></p>`;
   }
@@ -5586,7 +5586,6 @@ function newsHtml(){
       <p class="s muted">A weakness adds 30% damage and a resistance takes 30% off (the game's own rule).</p>
       ${m?.eliteObserved?`<p class="s good">⭐ Seen as an elite ${esc(m.eliteObserved)} times (${(m.eliteRate*100).toFixed(1)}% of sightings). Elites have 3× HP, hit 1.4× harder, give 3× XP and 2.5× loot.</p>`:''}
       ${m?.mechanics?`<p class="s">Special: ${m.mechanics}</p>`:''}
-      ${(()=>{const rs=m&&globalThis.bxcReagentsByFamily?globalThis.bxcReagentsByFamily(m.family):[];if(!rs.length)return '';return `<p class="s"><b>Reagent:</b> ${rs.map(r=>`<a href="${pageHref('item',r.id)}">${esc(prettyId(r.id))}</a> <span class="muted">(${r.onlyClass?esc(r.onlyClass)+'s only; ':''}${r.kind==='enchant'?'infuses an enchant':'crafting catalyst'})</span>`).join(', ')}. About 1 kill in 500, 1 in 50 from an elite. <a href="#/guide/reforging">Enchanter’s Table</a></p>`})()}
       ${monsterLevelsHtml(id,pageNow&&pageNow.kind==='monster'&&pageNow.id===id?pageNow.lv:null)}
       ${looksHtml(id,pl)}
       ${bossLootHtml(name)}
@@ -5671,7 +5670,7 @@ function newsHtml(){
     const u=uniqueOf(id);if(!u)return '';
     const pct=v=>v==null?'?':(Math.round(v*1000)/10)+'%',bp=globalThis.bxcNpcByName&&(globalThis.bxcNpcByName(u.bossName)||globalThis.bxcNpcByName(String(u.bossName||'').replace(/^the /i,'')));
     const boss=bp?`<a href="${esc(bp.href)}">${esc(u.bossName)}</a>`:esc(u.bossName);
-    return `<p><b class="uq-tag">Unique.</b> Dropped by ${boss} on <b>${pct(u.chance)}</b> of kills (<b>${pct(u.eliteChance)}</b> from an elite). Built on <a href="${pageHref('item',u.basePiece)}">${esc(prettyId(u.basePiece))}</a>${u.bound?'; bound, so it can’t be traded':''}. Unique items can’t be reforged.</p>`
+    return `<p><b class="uq-tag">Unique.</b> Dropped by ${boss} on <b>${pct(u.chance)}</b> of kills (<b>${pct(u.eliteChance)}</b> from an elite). Built on <a href="${pageHref('item',u.basePiece)}">${esc(prettyId(u.basePiece))}</a>${u.bound?'; bound, so it can’t be traded':''}. A unique can’t be enchanted.</p>`
       +(u.effects&&u.effects.length?`<ul class="wp-list">${u.effects.map(t=>`<li>${esc(t)}</li>`).join('')}</ul>`:'')
       +`<p class="muted">See <a href="#/guide/unique-items">Unique items</a> for all of them.</p>`;
   }

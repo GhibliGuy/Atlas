@@ -109,15 +109,9 @@ function slugId(v){return String(v||'').trim().toLowerCase().replace(/[^a-z0-9]+
 // 14 levels over). Cooking: a burn chance that falls to nothing at the level it stops, never below 5%. Grinding never fails.
 const CRAFT_BASE=globalThis.BXC_GAME_RECIPES?.craftChance?.base??.6,CRAFT_SPAN=globalThis.BXC_GAME_RECIPES?.craftChance?.span??15,CRAFT_CAP=.95;
 const craftSureAt=r=>r.chance==='always'?r.level:r.chance==='cooking'?r.stop:r.level+Math.ceil((CRAFT_CAP-CRAFT_BASE)/(1-CRAFT_BASE)*CRAFT_SPAN);
-// Enchanting at the Enchanter's Table (game update 28 Oct 2026, its rules): any plain piece, from the trade level its
-// metal opens at - 1 iron, 16 silver, 31 gold, 46 titanium (no metal: 1) - for 1,000 gold a carat. A superior or
-// flawless piece can crack one quality: flawless 1x / superior 0.85x of 90% up to 14 levels over the metal's level,
-// down to 50% at 44 over, then 4% less a level to at least 30%.
-const ENCHANT_FEE=1000;
-const enchantLevelForTier=t=>{t=Math.max(1,Number(t)||1);return t<=1?1:1+15*(t-1)};
-const craftEnchantAt=r=>enchantLevelForTier(enchantInfo(r).tier);
-const ENCHANT_CRACK={flawless:1,superior:.85};
-const enchantCrackChance=(q,over)=>{const m=ENCHANT_CRACK[q];if(!m)return 0;const o=Math.max(0,over);return m*(o<=14?.9:o<=44?.9-.4*(o-14)/30:Math.max(.3,.5-.04*(o-44)))};
+// Enchanting happens in the craft (the game's "Forge and Find" update and its rules): gems go in at the station, from the
+// level of the next metal up, with no fee. The rules' ladders are 15 levels apart and the top metal is +15 as well.
+const craftEnchantAt=r=>r.level+15;
 function craftChance(r,level){
  if(r.chance==='cooking'){
    if(level>=r.stop)return .95;
@@ -131,32 +125,18 @@ function craftChance(r,level){
 
 const QUALITY_TIERS=['inferior','crude','shoddy','ordinary','good','excellent','superior','flawless'];
 const QUALITY_MULT={inferior:-.30,crude:-.20,shoddy:-.10,ordinary:0,good:.10,excellent:.22,superior:.30,flawless:.38};
-// The developer's table: the chance of each quality by how many levels you are over the item, capped at +30. Every
-// tier is listed; shoddyOrWorse / goodPlus / superiorPlus are those tiers added up.
-const CRAFT_QUALITY_TABLE=[
- {levelsOver:0,shoddyOrWorse:0.246,ordinary:0.562,goodPlus:0.193,superiorPlus:0.002,flawless:0,inferior:0.015,crude:0.04,shoddy:0.191,good:0.162,excellent:0.029,superior:0.002},
- {levelsOver:5,shoddyOrWorse:0.171,ordinary:0.557,goodPlus:0.272,superiorPlus:0.007,flawless:0,inferior:0.005,crude:0.024,shoddy:0.142,good:0.214,excellent:0.051,superior:0.007},
- {levelsOver:10,shoddyOrWorse:0.113,ordinary:0.527,goodPlus:0.359,superiorPlus:0.017,flawless:0,inferior:0.001,crude:0.012,shoddy:0.1,good:0.264,excellent:0.078,superior:0.017},
- {levelsOver:15,shoddyOrWorse:0.07,ordinary:0.475,goodPlus:0.455,superiorPlus:0.036,flawless:0.001,inferior:0,crude:0.004,shoddy:0.066,good:0.308,excellent:0.111,superior:0.035},
- {levelsOver:20,shoddyOrWorse:0.04,ordinary:0.408,goodPlus:0.553,superiorPlus:0.065,flawless:0.006,inferior:0,crude:0.001,shoddy:0.039,good:0.337,excellent:0.151,superior:0.059},
- {levelsOver:23,shoddyOrWorse:0.028,ordinary:0.363,goodPlus:0.6094,superiorPlus:0.0896,flawless:0.012,inferior:0,crude:0.0004,shoddy:0.0276,good:0.3448,excellent:0.175,superior:0.0776},
- {levelsOver:25,shoddyOrWorse:0.02,ordinary:0.333,goodPlus:0.647,superiorPlus:0.106,flawless:0.016,inferior:0,crude:0,shoddy:0.02,good:0.35,excellent:0.191,superior:0.09},
- {levelsOver:30,shoddyOrWorse:0.008,ordinary:0.257,goodPlus:0.735,superiorPlus:0.161,flawless:0.033,inferior:0,crude:0,shoddy:0.008,good:0.347,excellent:0.227,superior:0.128}
-];
-function interpolateCraftQuality(levelsOver){
- const t=CRAFT_QUALITY_TABLE;
- if(levelsOver<=t[0].levelsOver)return t[0];
- if(levelsOver>=t[t.length-1].levelsOver)return t[t.length-1];
- for(let i=0;i<t.length-1;i++){
-   const a=t[i],b=t[i+1];
-   if(levelsOver>=a.levelsOver&&levelsOver<=b.levelsOver){
-     const frac=(levelsOver-a.levelsOver)/(b.levelsOver-a.levelsOver);
-     const lerp=k=>a[k]+(b[k]-a[k])*frac;
-     const out={levelsOver};for(const k of Object.keys(a))if(k!=='levelsOver')out[k]=lerp(k);return out;
-   }
- }
- return t[t.length-1];
+// Quality odds, from the game's rules: a craft's roll is your pull (-0.1 + min(0.312, 0.13 x levels over the recipe / 15),
+// so it stops improving at +36) plus the mean of three uniform draws, against the quality thresholds. Every tier is
+// listed; shoddyOrWorse / goodPlus / superiorPlus are those tiers added up.
+const CRAFT_QUALITY_CAP=36,CRAFT_QUALITY_TH=[.05,.13,.28,.55,.71,.83,.965];
+function craftQualityAt(levelsOver){
+ const over=Math.max(0,Math.min(CRAFT_QUALITY_CAP,levelsOver)),pull=-.1+Math.min(.312,.13*over/15);
+ const bell=e=>{const a=3*(e-pull);if(a<=0)return 0;if(a>=3)return 1;const r=o=>o>0?o*o*o:0;return (r(a)-3*r(a-1)+3*r(a-2))/6};
+ const c=CRAFT_QUALITY_TH.map(bell),inferior=c[0],crude=c[1]-c[0],shoddy=c[2]-c[1],ordinary=c[3]-c[2],good=c[4]-c[3],excellent=c[5]-c[4],superior=c[6]-c[5],flawless=1-c[6];
+ return {levelsOver,shoddyOrWorse:c[2],ordinary,goodPlus:1-c[3],superiorPlus:1-c[5],flawless,inferior,crude,shoddy,good,excellent,superior};
 }
+const CRAFT_QUALITY_TABLE=[0,5,10,15,20,25,30,35,36].map(craftQualityAt);
+const interpolateCraftQuality=craftQualityAt;
 // ---- Enchanting: the recipes and rules from the Binxonia field guide (binxonia.com/guide/enchanting) ----
 const ENCHANT_GEMS={
  ruby:{name:'Ruby',found:'Mining',ring:'Scourge: burn, poison, venom and bleed you inflict deal 9% more'},
@@ -192,7 +172,7 @@ const ENCHANT_RECIPES={
   {name:'of Lightning',gems:['amber','topaz','topaz'],effect:'shock school +4'}
  ]
 };
-const ENCHANT_TIER={iron:1,silver:2,gold:3,titanium:4,pine:1,oak:2,'black walnut':3,shagbark:4,imp:1,snakeskin:2,ogrewax:3,dragonscale:4,deerhide:1,bearhide:2,werewolfpelt:3,werewolf:3,dragonhide:4};
+const ENCHANT_TIER={iron:1,silver:2,gold:3,titanium:4,carapace:2,basilisk:3,talon:3,thak:3,bloomguard:3,lizper:4,thorn:4,virikh:4,pine:1,oak:2,'black walnut':3,shagbark:4,imp:1,snakeskin:2,shellweave:2,ogrewax:3,mirehide:3,wispweave:3,bloomweave:3,wraithweave:3,dragonscale:4,gravewrap:4,mothsilk:4,leather:1,deerhide:1,bearhide:2,jackalhide:2,werewolfpelt:3,werewolf:3,plume:3,alphahide:3,bloomleather:3,dunehide:3,dragonhide:4,glimmerfox:4,silverhide:4};   // the rules' material tiers
 const ENCHANT_TOOL_PCT=[5,13,22,32];   // success-chance bonus of an Artisan tool at full carat, by metal tier
 // ---- The game's own data (game-data.js, generated from its rules by the app - see data-from-rules.js) ----------------
 // replaces the built-in copies above wherever it is loaded; the built-in ones stay as a fallback.
@@ -216,13 +196,13 @@ const ENCHANT_TOOL_PCT=[5,13,22,32];   // success-chance bonus of an Artisan too
 })();
 // the class that gives an item picture its quality's glow ('' for ordinary, which has none)
 const qualityGlow=t=>t&&t!=='ordinary'&&t!=='all'&&QUALITY_TIERS.includes(t)?'q-glow-'+t:'';
-// the quality a craft most likely comes out at, levels over the recipe (capped at +30)
+// the quality a craft most likely comes out at, levels over the recipe (capped at +36)
 // The quality you'll most likely reach: the best one you have at least an even chance of getting or beating - players
 // aim for a quality or better, so the biggest single slice is the wrong answer (48% exactly Ordinary with 45% Good or
 // better is "Ordinary"; once Good or better passes 50% it is "Good", however big exactly-Ordinary still is).
 const likelyTier=p=>{let acc=0;for(let i=QUALITY_TIERS.length-1;i>=0;i--){acc+=p[QUALITY_TIERS[i]]||0;if(acc>=0.5-1e-9)return QUALITY_TIERS[i]}return QUALITY_TIERS[0]};
 const orBetterOf=(p,t)=>QUALITY_TIERS.slice(QUALITY_TIERS.indexOf(t)).reduce((a,x)=>a+(p[x]||0),0);
-const likelyQuality=over=>likelyTier(interpolateCraftQuality(Math.min(30,Math.max(0,over))));
+const likelyQuality=over=>likelyTier(interpolateCraftQuality(Math.min(CRAFT_QUALITY_CAP,Math.max(0,over))));
 const ENCHANT_TOOL_SERVES=[[/Scribing Quill$/,'Scribing'],[/Herbalist Sickle$/,'Herblore'],[/Sewing Kit$/,'Tailoring'],[/Leatherworking Awl$/,'Leatherworking'],[/Fishing Rod$/,'Fishing'],[/Shears$/,'Shearing'],[/Carving Tool$/,'Bowyer'],[/Pickaxe$/,'Mining'],[/Axe$/,'Lumberjack'],[/Frying Pan$/,'Cooking'],[/Smithing Hammer$/,'Smithing']];
 // What kind of enchant a recipe's item can take (null = cannot be enchanted: ammunition), and its material tier.
 function enchantInfo(r){
@@ -269,9 +249,9 @@ function renderCraftQualityObserved(snapshot=window.BINXONIA_COLLECTOR_SNAPSHOT)
      ['Superior or better',pred.superiorPlus*100,supPlus/n*100],
      ['Flawless',pred.flawless*100,flawlessCount/n*100]
    ];
-   const capNote=levelsOver>=30?' (at or past the +30 cap)':'';
-   return `<div class="note" style="border-color:#5c7cae;background:#1c2636"><b>Dev-confirmed quality curve:</b> the developer provided the full quality distribution by levels-over-required, which caps at +30 levels over. Required levels are looked up automatically from the recipe database; across ${matchedCount} of ${n} filtered craft${n===1?'':'s'} where that lookup succeeded, you averaged <b>${levelsOver.toFixed(1)} levels over</b>${capNote}.<table class="qualitytable"><thead><tr><th></th><th>Predicted</th><th>Observed</th></tr></thead><tbody>${rows.map(([label,pv,ov])=>`<tr><td>${label}</td><td>${pv.toFixed(1)}%</td><td>${ov.toFixed(1)}%</td></tr>`).join('')}</tbody></table><span class="muted">Predicted values are interpolated from the developer's confirmed table (0, 5, 10, 15, 20, 23, 25, 30 levels over); anything past +30 uses the +30 row since that's the stated cap.</span></div>`;
- })():`<div class="note muted">Couldn't automatically match a required level to any of your currently filtered crafts (unrecognized item id), so there's nothing yet to compare against the dev-confirmed quality curve.</div>`;
+   const capNote=levelsOver>=CRAFT_QUALITY_CAP?' (at or past the +36 cap)':'';
+   return `<div class="note" style="border-color:#5c7cae;background:#1c2636"><b>The game’s quality curve:</b> the chance of each quality by levels over the recipe, which stops improving at +36. Required levels are looked up automatically from the recipe database; across ${matchedCount} of ${n} filtered craft${n===1?'':'s'} where that lookup succeeded, you averaged <b>${levelsOver.toFixed(1)} levels over</b>${capNote}.<table class="qualitytable"><thead><tr><th></th><th>Predicted</th><th>Observed</th></tr></thead><tbody>${rows.map(([label,pv,ov])=>`<tr><td>${label}</td><td>${pv.toFixed(1)}%</td><td>${ov.toFixed(1)}%</td></tr>`).join('')}</tbody></table><span class="muted">Predicted values are interpolated from the developer's confirmed table (0, 5, 10, 15, 20, 23, 25, 30 levels over); anything past +30 uses the +30 row since that's the stated cap.</span></div>`;
+ })():`<div class="note muted">Couldn't automatically match a required level to any of your currently filtered crafts (unrecognized item id), so there's nothing yet to compare against the game’s quality curve.</div>`;
  const recent=f.slice(0,8).map(x=>`<div class="research-row"><b>${prettyId(x.quality||'ordinary')} ${prettyId(x.itemTypeId||'item')}</b>${x.enchant?' · '+prettyId(x.enchant)+(x.carat!=null?' '+x.carat+'c':''):''}${x.skillLevel!=null?' · '+prettyId(x.skillId)+' Lv '+x.skillLevel:''}<span>${new Date(x.time).toLocaleString()}</span></div>`).join('');
  root.innerHTML=n?`<div class="qualitygrid"><div class="qualitymetric"><b>${n.toLocaleString()}</b>observed crafts</div><div class="qualitymetric"><b>${(goodPlus/n*100).toFixed(1)}%</b>Good or better</div><div class="qualitymetric"><b>${(supPlus/n*100).toFixed(1)}%</b>Superior or better</div></div>
  <div class="note"><b>${prettyId(target)} or better:</b> ${(p*100).toFixed(2)}% observed${expected?` · about 1 in ${expected.toFixed(1)} crafts`:''} · ${(within10*100).toFixed(1)}% chance within 10 crafts.<br><span class="muted">Empirical estimate from your collector, not an official server probability. Small samples can move a lot.</span></div>
@@ -428,7 +408,7 @@ function calcGather(){
  // Quality odds apply to any craft, enchantable or not, so this is shared by both halves of the merged pane
  // below - it used to be its own separate "Craft Quality" tab (renderQualityPlanner), now folded in here.
  function qualityChartHtml(r,lvl){
-   const over=lvl-r.level,capped=Math.min(30,Math.max(0,over));
+   const over=lvl-r.level,capped=Math.min(CRAFT_QUALITY_CAP,Math.max(0,over));
    const p=interpolateCraftQuality(capped);
    const pct=v=>(v*100).toFixed(v>=.995?0:1)+'%';
    const oneIn=v=>v>=.0005?'about 1 in '+Math.round(1/v).toLocaleString():'under 1 in 2,000';
@@ -437,9 +417,9 @@ function calcGather(){
    const bands=QUALITY_TIERS.map(t=>[prettyId(t),p[t]||0,QC[t],t==='ordinary'?'No stat change':((QUALITY_MULT[t]>0?'+':'')+Math.round(QUALITY_MULT[t]*100)+'% stats')]);
    const status=over<0
      ?`<div class="note" style="border-color:#b5574b"><b>You are ${-over} level${over===-1?'':'s'} short.</b> ${r.item} needs ${r.skill} level ${r.level}. The odds below are what you will get once you reach it (+0).</div>`
-     :over>30?`<div class="note muted">You are ${over} levels over the requirement; the odds stop improving at +30, so this is the best case.</div>`:'';
+     :over>CRAFT_QUALITY_CAP?`<div class="note muted">You are ${over} levels over the requirement; the odds stop improving at +36, so this is the best case.</div>`:'';
    // first level at which a given "or better" chance is reached
-   const reach=(key,target)=>{for(let k=0;k<=30;k++)if(interpolateCraftQuality(k)[key]>=target)return k;return null};
+   const reach=(key,target)=>{for(let k=0;k<=CRAFT_QUALITY_CAP;k++)if(interpolateCraftQuality(k)[key]>=target)return k;return null};
    const miles=[['Good or better at least 50%','goodPlus',.5],['Superior or better at least 10%','superiorPlus',.1],['Flawless at least 2%','flawless',.02]].map(([label,key,t])=>{
      const k=reach(key,t);if(k==null||k<=capped)return '';
      return `<li>${label}: at level <b>${r.level+k}</b> (+${k})</li>`;
@@ -448,7 +428,7 @@ function calcGather(){
    const mine=(Array.isArray(snap?.crafts)?snap.crafts:[]).filter(x=>slugId(x.itemTypeId||'')===id);
    const mineGood=mine.filter(x=>QUALITY_TIERS.indexOf(x.quality||'ordinary')>=QUALITY_TIERS.indexOf('good')).length;
    const mineLine=mine.length?`<div class="muted" style="margin-top:6px">You have crafted ${prettyId(r.item)} ${mine.length} time${mine.length===1?'':'s'} so far: ${(mineGood/mine.length*100).toFixed(0)}% came out Good or better.</div>`:'';
-   const ref=CRAFT_QUALITY_TABLE.filter(t=>t.levelsOver%5===0).map(t=>`<tr><td>+${t.levelsOver}${t.levelsOver===15?' (you can enchant)':t.levelsOver===30?' (cap)':''}</td>${QUALITY_TIERS.map(q=>`<td>${pct(t[q]||0)}</td>`).join('')}</tr>`).join('');
+   const ref=CRAFT_QUALITY_TABLE.map(t=>`<tr><td>+${t.levelsOver}${t.levelsOver===15?' (gem sockets open)':t.levelsOver===CRAFT_QUALITY_CAP?' (cap)':''}</td>${QUALITY_TIERS.map(q=>`<td>${pct(t[q]||0)}</td>`).join('')}</tr>`).join('');
    // The headline: the best quality you have even odds or better of reaching (see likelyTier), and the split at the next
    // quality up - how close the next step is.
    const bandP=Object.fromEntries(QUALITY_TIERS.map((t,i)=>[t,bands[i]?bands[i][1]:0]));
@@ -458,11 +438,11 @@ function calcGather(){
    <div class="qualitygrid"><div class="qualitymetric"><b>${pct(p.goodPlus)}</b>Good or better</div><div class="qualitymetric"><b>${pct(p.superiorPlus)}</b>Superior or better</div><div class="qualitymetric"><b>${pct(p.flawless)}</b>Flawless</div></div>
    <table class="qualitytable"><thead><tr><th>Quality of the ${prettyId(r.item)}</th><th>Chance</th><th></th></tr></thead><tbody>${bands.map(([label,v,color,hint],bi)=>`<tr title="${hint}"><td><img class="q-mini ${qualityGlow(QUALITY_TIERS[bi])}" src="${itemImg({id:r.id,item:r.item,skill:r.skill})}" alt="">${label}</td><td>${pct(v)}</td><td><div class="qualitybar"><span style="width:${(v*100).toFixed(2)}%;background:${color}"></span></div></td></tr>`).join('')}</tbody></table>
    ${mineLine}
-   <details class="craft-more"><summary>More detail</summary><div class="muted" style="margin:6px 0">Per craft: Good or better ${oneIn(p.goodPlus)} · Superior or better ${oneIn(p.superiorPlus)} · Flawless ${oneIn(p.flawless)}. Quality depends on how many levels you are <b>over</b> the item's level, and stops improving at +30.</div>${miles?`<div class="muted">Getting better:</div><ul style="margin:4px 0 8px 18px;padding:0">${miles}</ul>`:''}<div class="muted" style="margin-top:6px">The developer's full table:</div><div class="table-scroll"><table class="qualitytable"><thead><tr><th>Levels over</th>${QUALITY_TIERS.map(q=>`<th>${prettyId(q)}</th>`).join('')}</tr></thead><tbody><tr style="font-weight:700"><td>You: +${capped}</td>${QUALITY_TIERS.map(q=>`<td>${pct(p[q]||0)}</td>`).join('')}</tr>${ref}</tbody></table></div><div class="muted">Values between the listed rows are interpolated.</div></details>`;
+   <details class="craft-more"><summary>More detail</summary><div class="muted" style="margin:6px 0">Per craft: Good or better ${oneIn(p.goodPlus)} · Superior or better ${oneIn(p.superiorPlus)} · Flawless ${oneIn(p.flawless)}. Quality depends on how many levels you are <b>over</b> the item's level, and stops improving at +36.</div>${miles?`<div class="muted">Getting better:</div><ul style="margin:4px 0 8px 18px;padding:0">${miles}</ul>`:''}<div class="muted" style="margin-top:6px">The full table:</div><div class="table-scroll"><table class="qualitytable"><thead><tr><th>Levels over</th>${QUALITY_TIERS.map(q=>`<th>${prettyId(q)}</th>`).join('')}</tr></thead><tbody><tr style="font-weight:700"><td>You: +${capped}</td>${QUALITY_TIERS.map(q=>`<td>${pct(p[q]||0)}</td>`).join('')}</tr>${ref}</tbody></table></div><div class="muted">Values between the listed rows are interpolated.</div></details>`;
  }
  // Mastery is a different system from craft quality: it is the chance the craft succeeds at all (60% at the
  // recipe's level, capped at 95% fourteen levels over - the same curve the Crafting XP calculator uses), not what
- // quality tier it lands on. Enchanting needs the level the item's metal opens at (craftEnchantAt). Shown only for
+ // quality tier it lands on. Gems need the level of the next metal up (craftEnchantAt). Shown only for
  // enchantable items.
  function masteryChartHtml(rec,lvl){
    const chance=craftChance(rec,lvl),enchLevel=craftEnchantAt(rec),sureLevel=craftSureAt(rec),short=lvl<rec.level;
@@ -472,7 +452,7 @@ function calcGather(){
      :lvl>=sureLevel?`<div class="note muted">Success is at its best, 95%.</div>`:'';
    const color=chance>=.95?'#5fae6f':chance>=.75?'#d9b878':'#b5574b';
    return `${status}
-   <div class="qualitygrid"><div class="qualitymetric"><b>${pct(chance)}</b>chance to succeed at Lv ${lvl}</div><div class="qualitymetric"><b>${sureLevel}</b>95% success from (+14)</div><div class="qualitymetric"><b>${enchLevel}</b>enchant from (its metal’s level)</div></div>
+   <div class="qualitygrid"><div class="qualitymetric"><b>${pct(chance)}</b>chance to succeed at Lv ${lvl}</div><div class="qualitymetric"><b>${sureLevel}</b>95% success from (+14)</div><div class="qualitymetric"><b>${enchLevel}</b>gem sockets from (+15)</div></div>
    <div class="qualitybar" style="height:14px"><span style="width:${(chance*100).toFixed(2)}%;background:${color}"></span></div>`;
  }
  // ---- Craft quality & enchanting: tradeskill -> item -> the quality odds above, plus (if it can be enchanted)
@@ -535,11 +515,11 @@ function calcGather(){
  // missing), what quality will I get, and which gems do I bring. The finer print sits in closed "More detail" sections.
  let enCaratPick=null,enNone=false;   // enNone: "No enchant" picked - the plain item
  // The gem sizes that make an enchant of so many carats: the gems' carats add up and round down (the game's rule), each
- // gem is 0.5c to 4c, and anything past the item's limit is lost. Ranked by how easy the stones are to get (the
+ // gem is 0.5c to 5c, and anything past the item's limit is lost. Ranked by how easy the stones are to get (the
  // rarest one decides: up to 2c is common; the witch also builds 2.5c and 3c, at a cost), then by carats wasted in the rounding.
  function enCombosHtml(C,n,gems,dmg,maxC){
   if(!C)return '';
-  const sizes=[.5,1,1.5,2,2.5,3,3.5,4],rank={common:0,uncommon:1,'semi-rare':2,rare:3,'very rare':4},list=[];
+  const sizes=[.5,1,1.5,2,2.5,3,3.5,4,4.5,5],rank={common:0,uncommon:1,'semi-rare':2,rare:3,'very rare':4},list=[];
   if(n===1){for(const x of sizes)if(Math.floor(x)===C)list.push([x])}
   else for(let i=0;i<sizes.length;i++)for(let j=i;j<sizes.length;j++)for(let k=j;k<sizes.length;k++){const t=[sizes[k],sizes[j],sizes[i]],sum=t[0]+t[1]+t[2];if(Math.floor(sum)===C)list.push(t)}
   const worst=t=>Math.max(...t.map(x=>rank[gemRarity(x)])),waste=t=>t.reduce((a,x)=>a+x,0)-C;
@@ -551,8 +531,8 @@ function calcGather(){
   const what=dmg&&dmg.add?'<span class="e-name e-'+dmg.key+'">'+dmg.add+'</span>'+(/^(destruction|burn|freeze|shock|corrode)$/.test(dmg.key)?' a hit':''):'';
   return '<div class="en-combo"><div class="en-combo-h"><b>'+C+' carat'+(C===1?'':'s')+'</b>'+(what?' → '+what:'')+'</div>'+
    '<div class="muted">'+(n===1?'One '+names[0]+' of this size:':names.join(' + ')+' (in any order), '+(list.length?'sizes that add up to '+C+':':'')+'')+'</div>'+
-   (list.length?'<ul class="en-combo-list">'+rows+'</ul>':'<div class="muted">No mix of 0.5c-4c gems makes exactly this.</div>')+
-   '<div class="muted en-combo-foot">Up to 2c is common; 2.5c uncommon, 3c semi-rare (the witch can build those too, at a cost), 3.5c rare, 4c very rare.'+(C===maxC?' This is the most this item holds.':'')+'</div></div>';
+   (list.length?'<ul class="en-combo-list">'+rows+'</ul>':'<div class="muted">No mix of 0.5c-5c gems makes exactly this.</div>')+
+   '<div class="muted en-combo-foot">Up to 2c is common; 2.5c uncommon, 3c semi-rare (the witch can build those too, at a cost), 3.5c rare, 4c and up very rare.'+(C===maxC?' This is the most this item holds.':'')+'</div></div>';
  }   // the carats picked on the planner (whole carats), kept while you look around
  function renderEnchantPlanner(){
    const root=q('enResult');if(!root)return;
@@ -562,7 +542,7 @@ function calcGather(){
    const e=enchantInfo(r),opts=enchOptions(r),sel=opts[Number(q('enEnchant').value)||0]||opts[0];
    const tool=e.kind==='tool'?enchToolNeed(r):null;
    const masteryRec=r;
-   // Enchanting needs the level the item's metal opens at (the game's own rule; craftEnchantAt), tools included.
+   // Gems need the level of the next metal up (the game's own rule; craftEnchantAt), tools included.
    const masteryLevel=craftEnchantAt(masteryRec),sureLevel=craftSureAt(masteryRec),chance=craftChance(masteryRec,lvl);
    const per=(e.kind==='tool'||e.kind==='ring')?1:3,maxC=e.tier?per*e.tier:null;
    const pickC=maxC?Math.max(1,Math.min(maxC,enCaratPick||Math.min(maxC,2*per))):0;
@@ -571,7 +551,7 @@ function calcGather(){
    const dmg=typeof globalThis.bxcGearDamage==='function'?globalThis.bxcGearDamage(r.id,(q('enQual')&&q('enQual').value)||(lvl>=r.level?likelyQuality(lvl-r.level):'ordinary'),ench,pickC):null;
    // the answer as a wiki page: the four steps on the left, the item and its key numbers in a facts box on the right
    const likelyQ=lvl>=r.level?likelyQuality(lvl-r.level):'ordinary';
-   const wantQ=(q('enQual')&&q('enQual').value)||likelyQ,overQ=Math.min(30,Math.max(0,lvl-r.level)),pq=interpolateCraftQuality(overQ);
+   const wantQ=(q('enQual')&&q('enQual').value)||likelyQ,overQ=Math.min(CRAFT_QUALITY_CAP,Math.max(0,lvl-r.level)),pq=interpolateCraftQuality(overQ);
    const orBetter=QUALITY_TIERS.slice(QUALITY_TIERS.indexOf(wantQ)).reduce((a,t)=>a+(pq[t]||0),0),exactly=pq[wantQ]||0;
    const gs=typeof globalThis.bxcGearStats==='function'?globalThis.bxcGearStats(r.id,wantQ):null,gs0=gs&&wantQ!=='ordinary'?globalThis.bxcGearStats(r.id,'ordinary'):null;
    const pctQ=v=>(v*100).toFixed(v<.1?1:0)+'%';
@@ -579,7 +559,7 @@ function calcGather(){
      <tr><th>Quality</th><td><span class="q-name q-${wantQ}">${prettyId(wantQ)}</span>${QUALITY_MULT[wantQ]?` (${QUALITY_MULT[wantQ]>0?'+':''}${Math.round(QUALITY_MULT[wantQ]*100)}% stats)`:''}</td></tr>
      ${gs?`<tr><th>Stats</th><td>${gs.main}${gs0&&gs0.main!==gs.main?` <span class="muted">(ordinary: ${gs0.main})</span>`:''}${dmg&&dmg.add?`<br><span class="e-name e-${dmg.key}">${dmg.add}</span> <span class="muted">(${pickC}c)</span><br>= <b>${dmg.total}</b>`:''}</td></tr>${gs.set?`<tr><th>A full set</th><td>${gs.set}</td></tr>`:''}`:''}
      <tr><th>Chance at ${Math.max(lvl,r.level)}</th><td>${pctQ(orBetter)} ${prettyId(wantQ)} or better · ${pctQ(exactly)} exactly</td></tr>${(()=>{const nx=QUALITY_TIERS[QUALITY_TIERS.indexOf(wantQ)+1];if(!nx)return '';const up=orBetterOf(pq,nx);return `<tr><th>Next step</th><td>${prettyId(wantQ)} or worse ${pctQ(1-up)} · ${prettyId(nx)} or better ${pctQ(up)}</td></tr>`})()}
-     <tr><th>Made with</th><td>${r.skill} ${r.level}</td></tr>${e.kind?`<tr><th>Enchant from</th><td>${masteryRec.skill} ${masteryLevel}</td></tr>`:''}${maxC?`<tr><th>Most carats</th><td>${maxC}</td></tr>`:''}${maxC&&e.kind!=='tool'?`<tr><th>Intellect to wear</th><td>${5*maxC}</td></tr>`:''}<tr><th>Success at ${lvl}</th><td>${lvl>=r.level?(craftChance(r,lvl)*100).toFixed(0)+'%':'Locked'}</td></tr></table>
+     <tr><th>Made with</th><td>${r.skill} ${r.level}</td></tr>${e.kind?`<tr><th>Gem sockets from</th><td>${masteryRec.skill} ${masteryLevel}</td></tr>`:''}${maxC?`<tr><th>Most carats</th><td>${maxC}</td></tr>`:''}${maxC&&e.kind!=='tool'?`<tr><th>Intellect to wear</th><td>${5*maxC}</td></tr>`:''}<tr><th>Success at ${lvl}</th><td>${lvl>=r.level?(craftChance(r,lvl)*100).toFixed(0)+'%':'Locked'}</td></tr></table>
      <p class="g-aside-h">More</p><ul class="g-toc"><li><a href="#/item/${encodeURIComponent(r.id)}">${r.item} page</a></li>${globalThis.bxcGuides?.forSkill(r.skill)?'<li>'+globalThis.bxcGuides.link(globalThis.bxcGuides.forSkill(r.skill))+'</li>':''}<li><a href="#/guide/quality-and-enchanting">Quality &amp; enchanting guide</a></li><li><a href="#/guide/gems">Gems guide</a></li></ul></aside></article>`;
    const step=(n,title,body,cls='')=>`<section class="craft-step ${cls}"><div class="craft-step-head"><span class="craft-step-n">${n}</span><h3>${title}</h3></div>${body}</section>`;
    const item=`<div class="craft-item"><img class="thumb itemthumb" src="${itemImg({id:r.id,item:r.item,skill:r.skill})}" alt=""><div><div class="name" style="margin:0">${sel&&sel.rec&&!none?r.item+' '+sel.rec.name:r.item}</div><div class="muted">${r.skill} · needs level ${r.level}${e.tier?' · '+e.material:''}</div></div></div>`;
@@ -589,19 +569,16 @@ function calcGather(){
      :`<div class="craft-answer no">Not yet - it needs ${r.skill} level ${r.level}. You're ${r.level-lvl} level${r.level-lvl===1?'':'s'} short.</div>`);
    // 2 - can you enchant it
    let s2;
-   if(!e.kind)s2=step(2,'Can you enchant it?',`<div class="craft-answer">No - this item can't take an enchant. Ammunition never can; everything else you hold or wear can.</div>`,'dim');
+   if(!e.kind)s2=step(2,'Can you enchant it?',`<div class="craft-answer">No - this item can't take an enchant.</div>`,'dim');
    else{
      const mastered=lvl>=masteryLevel,left=masteryLevel-lvl,prog=masteryLevel<=1?1:Math.max(0,Math.min(1,lvl/masteryLevel));
-     const metal=e.material?String(e.material).toLowerCase():'';
-     const need=[`Level: ${masteryRec.skill} <b>${masteryLevel}</b>${metal?` (the level ${metal} opens at)`:''}`];
+     const need=[`Level: ${masteryRec.skill} <b>${masteryLevel}</b> (15 over the recipe)`];
      if(maxC)need.push(e.kind==='tool'?`Gem: one stone, up to <b>${maxC} carat${maxC===1?'':'s'}</b>`:`Gems: ${per===1?'one stone':'three stones'}, up to <b>${maxC} carat${maxC===1?'':'s'}</b> in total`);
-     if(maxC)need.push(`Gold: <b>${ENCHANT_FEE.toLocaleString('en-US')}</b> per carat (${(ENCHANT_FEE*maxC).toLocaleString('en-US')} for the full ${maxC}c)`);
      if(maxC&&e.kind!=='tool')need.push(`Intellect: <b>${5*maxC}</b> to wear it at full strength (5 per carat)`);
-     const crackOver=Math.max(0,lvl-masteryLevel),pc=v=>Math.round(v*1000)/10+'%';
-     s2=step(2,'Can you enchant it?',`<div class="craft-answer ${mastered?'ok':'no'}">${mastered?`Yes - you're level ${lvl}, and enchanting it needs ${masteryLevel}. Take it to an Enchanter’s Table.`:`Not yet - enchanting it needs <b>${masteryRec.skill} level ${masteryLevel}</b>. You're level ${lvl}: ${left} to go.`}</div>
-       <div class="craft-progress" title="Progress to enchanting"><span style="width:${(prog*100).toFixed(1)}%"></span></div>
+     s2=step(2,'Can you enchant it?',`<div class="craft-answer ${mastered?'ok':'no'}">${mastered?`Yes - you're level ${lvl}, and its gem sockets open at ${masteryLevel}. Add the gems when you craft it.`:`Not yet - its gem sockets open at <b>${masteryRec.skill} level ${masteryLevel}</b>. You're level ${lvl}: ${left} to go.`}</div>
+       <div class="craft-progress" title="Progress to gem sockets"><span style="width:${(prog*100).toFixed(1)}%"></span></div>
        <div class="muted" style="margin-top:4px">What it takes:</div><ul class="craft-needs">${need.map(x=>'<li>'+x+'</li>').join('')}</ul>
-       <details class="craft-more"><summary>More detail</summary><div class="muted" style="margin:6px 0">Enchanting happens at an <b>Enchanter’s Table</b> (Binxonia Wizard Tower or Westergarde), on any plain piece: made, bought or looted. Nothing is rolled: the gems’ carats add up, and gems past the cap are turned away before anything is spent. A piece takes one enchant for good; infusing makes it stronger.${e.kind==='tool'?' A tool comes off the anvil plain and the table sets its gem; an enchanted tool needs no Intellect.':''}</div><div class="muted" style="margin:6px 0"><b>The crack:</b> enchanting a superior or flawless piece can drop it one quality (the enchant still lands). At level ${Math.max(lvl,masteryLevel)}: flawless <b>${pc(enchantCrackChance('flawless',crackOver))}</b>, superior <b>${pc(enchantCrackChance('superior',crackOver))}</b>. Excellent and lower never crack.</div><div class="muted">Success to craft it: ${(chance*100).toFixed(0)}% at your level now, 95% (the most anything ever gets) from level ${sureLevel}.</div></details>`);
+       <details class="craft-more"><summary>More detail</summary><div class="muted" style="margin:6px 0">Gems go in at the craft, in the <b>Enchant</b> section at the bottom of the craft window. A craft with gems makes one piece, and the same craft rolls its quality. A failed craft costs the materials and keeps the gems. The gems' carats add up, and gems past the cap are all spent anyway, with the piece at its cap. A piece made without gems stays plain, and nothing can enchant it later.${e.kind==='tool'?' An enchanted tool needs no Intellect.':''}</div><div class="muted">Success to craft it: ${(chance*100).toFixed(0)}% at your level now, 95% (the most anything ever gets) from level ${sureLevel}.</div></details>`);
    }
    // quality: step 4 when there is an enchant to pick first, else step 3
    const s3=step(e.kind?4:3,'What quality will you get?',qualityChartHtml(r,lvl));
@@ -642,7 +619,7 @@ function calcGather(){
      (maxC?`<div class="ench-pick-h">Carats</div><div class="q-picker en-carat" role="group" aria-label="Carats"><button type="button" class="q-chip" data-encarat="0" title="The plain item">No enchant</button>${Array.from({length:maxC},(_,i)=>i+1).map(c=>{const big=Math.ceil(c/total),rr=gemRarity(big);return `<button type="button" class="q-chip q-${({common:'ordinary',uncommon:'good','semi-rare':'excellent',rare:'superior','very rare':'flawless'})[rr]}${c===pickC?' on':''}" data-encarat="${c}" title="${total>1?`three gems adding up to ${c}, the biggest ${big}c`:`a ${c}-carat gem`} (${rr})">${c}c</button>`}).join('')}</div>${enCombosHtml(pickC,total,gems,dmg,maxC)}`:'')+
      `<div class="ench-pick-h">Gems for <b>${r.item} ${sel&&sel.rec?sel.rec.name:e.kind==='tool'?'of the Artisan':e.kind==='ring'&&sel?'of the '+ENCHANT_GEMS[sel.gem].ring.split(':')[0]:''}</b></div>
      <div class="muted" style="margin:0 0 6px">${effect}</div>${gems.map((g,i)=>enchGemChip(g,i,total)).join('')}
-     ${fit?`<div class="craft-tip">Best size: about <b>${fit}c</b> ${total===1?'':'each '}to fill it. Most gems you find are small (0.5c); 4c stones are very rare.</div>`:''}
+     ${fit?`<div class="craft-tip">Best size: about <b>${fit}c</b> ${total===1?'':'each '}to fill it. Most gems you find are small (0.5c); 4c and bigger stones are very rare.</div>`:''}
      <details class="craft-more"><summary>How gems work</summary><div class="muted" style="margin:6px 0">${how}</div></details>`);
    root.innerHTML=enchPage(s1+s2+s4+s3);
    root.onclick=enClick;
@@ -678,7 +655,7 @@ function calcGather(){
  const singlePane=singlePanes[calcGroup];
  if(singlePane){document.querySelector('.calcsubtabs')?.remove();q(singlePane).style.display='block';for(const id of ['craftXpPane','enchantPane','gatherPane','combatPane']){if(id!==singlePane){const el=q(id);if(el)el.style.display='none'}}
    if(singlePane==='combatPane')calcCombat();
-   if(singlePane==='enchantPane'){renderEnchantPlanner();renderCraftQualityObserved(window.BINXONIA_COLLECTOR_SNAPSHOT);renderInfusePlanner()}
+   if(singlePane==='enchantPane'){renderEnchantPlanner();renderCraftQualityObserved(window.BINXONIA_COLLECTOR_SNAPSHOT)}
  }
  else document.querySelector('.calcsubtab')?.click();
  const intro=content.querySelector('.note');
@@ -690,35 +667,6 @@ function calcGather(){
  // The page title already says what this is; on the crafting planner a second heading and a data-source note is
  // just clutter, so it goes (and so does the box's own title, which repeats the page title again).
  if(intro){if(calcGroup==='quality'){intro.remove();q('enchantPane')?.querySelector(':scope>.name')?.remove();}else intro.innerHTML=introText[calcGroup]||introText.crafting;}
-}
-
-// ---- Infusing planner (5 Oct 2026; at the Enchanter's Table since 28 Oct 2026) -------------------------------
-// From a carat to another: each step's chance, fee and smallest gem come from the game's rules (bxcReforge, set by
-// atlas-guides.js). A failure costs the reagent, the gem and the fee (the user saw it in game, 29 Oct 2026; the game's
-// guide agrees) but never harms the piece, so a step costs (fee + reagent + gem) / chance, 1 / chance of each on average.
-function renderInfusePlanner(){
- const R=globalThis.bxcReforge,pane=document.getElementById('enchantPane');if(!R||!pane||pane.querySelector('#infPlan'))return;
- const opts=(a,b,sel)=>Array.from({length:b-a+1},(_,i)=>a+i).map(v=>`<option value="${v}"${v===sel?' selected':''}>${v}c</option>`).join('');
- const box=document.createElement('div');box.id='infPlan';box.className='calcbox';
- box.innerHTML=`<div class="name">Infusing cost</div>
-  <p class="muted" style="margin:4px 0 10px">Raise an enchant one carat at a time at an Enchanter’s Table. A failed try uses up the reagent, the gem and the fee, but never harms the piece. Gear holds 3 carats per metal tier (12 for titanium), capes 7, rings and pendants 6.</p>
-  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center">
-   <label>From <select id="infFrom">${opts(1,11,1)}</select></label><label>to <select id="infTo">${opts(2,12,4)}</select></label>
-   <label>Reagent price <input id="infReag" type="number" min="0" step="100" value="0" style="width:110px"></label>
-   <label>Gem price <input id="infGem" type="number" min="0" step="100" value="0" style="width:110px"></label></div>
-  <div id="infOut" style="margin-top:10px"></div>`;
- pane.appendChild(box);
- const fmtN=v=>Math.round(v).toLocaleString('en-US');
- const run=()=>{
-  let from=+box.querySelector('#infFrom').value,to=+box.querySelector('#infTo').value;const reag=Math.max(0,+box.querySelector('#infReag').value||0),gem=Math.max(0,+box.querySelector('#infGem').value||0);
-  const out=box.querySelector('#infOut');if(to<=from){out.innerHTML='<p class="muted">Pick a target above the starting carat.</p>';return}
-  let gold=0,tries=0,allFirst=1;const rows=[];
-  for(let c=from;c<to;c++){const ch=R.chance[c-1]||0;if(!ch)break;const t=1/ch,cost=(R.fee(c)+reag+gem)*t;gold+=cost;tries+=t;allFirst*=ch;
-   rows.push(`<tr><td>${c}c → ${c+1}c</td><td>${Math.round(ch*100)}%</td><td>${fmtN(R.fee(c))}</td><td>${R.gem(c)}c+</td><td>${t.toFixed(2)}</td><td>${fmtN(cost)}</td></tr>`)}
-  out.innerHTML=`<div style="overflow-x:auto"><table class="research-table"><thead><tr><th>Step</th><th>Chance</th><th>Fee</th><th>Gem</th><th>Tries (avg)</th><th>Cost (avg)</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
-   <p style="margin-top:8px"><b>${fmtN(gold)} gold</b> on average, using about <b>${tries.toFixed(1)} reagents</b> and as many gems (a failed try uses up both). The chance every step works first time is ${(allFirst*100).toFixed(1)}%.</p>`;
- };
- box.addEventListener('input',run);box.addEventListener('change',run);run();
 }
 
 // ---- Gem combiner --------------------------------------------------------------------------------------------
@@ -766,7 +714,7 @@ function gemPromote(counts,s){
 function gemCaratIndex(carat,s){const i=Math.round((+carat||0)/s.step)-1;return Number.isFinite(i)?i:-1}
 const gemCoin=n=>Math.round(n||0).toLocaleString();
 // How rare a gem size is. 0.5c to 2c can be made at the witch's bench, so they count as common whatever the drop
-// rate; above that a gem has to be found: 2.5c uncommon, 3c semi-rare, 3.5c rare, 4c very rare (always the top). The
+// rate; above that a gem has to be found: 2.5c uncommon, 3c semi-rare, 3.5c rare, 4c and up very rare (always the top). The
 // colours follow the game's quality colours (good, excellent, superior, flawless). The find
 // rates next to them are the collector's recorded gem finds (the game's files do not hold the drop table).
 const GEM_RARITY=[[4,'very rare'],[3.5,'rare'],[3,'semi-rare'],[2.5,'uncommon']];
@@ -781,9 +729,10 @@ function gemFindShares(){
  return {total:g.length,share:c=>g.length?(m.get(+(+c).toFixed(1))||0)/g.length:null,count:c=>m.get(+(+c).toFixed(1))||0};
 }
 // where a gem of this size can come from: gathering gives every size; monsters of level 10+ give up to 0.5c, 20+ 1c,
-// 30+ 1.5c, 40+ 2c (official guide); the witch builds 1c to 3c from three of the size below
-function gemHowText(c){c=+c;const mon=c<=2+1e-9?`monsters level ${[10,20,30,40][Math.round(c*2)-1]}+`:'',witch=c>.5+1e-9&&c<=3+1e-9?`the witch (3 × ${+(c-.5).toFixed(1)}c, ${gemCombineFee(c).toLocaleString()} gold${c>=3-1e-9?', after her quest Dragon’s Hoard':c>=2.5-1e-9?', after her quest Swallowed Stones':''})`:'';
- const parts=['Gathering',mon,witch].filter(Boolean);return parts.length===1?'Gathering only':parts.slice(0,-1).join(', ')+' or '+parts[parts.length-1]}
+// 30+ 1.5c, 40+ 2c, 45+ 2.5c, 50+ 3c, 55+ 4c (the game's guide and news); the witch builds 1c to 3c from three of the size
+// below, and her Reagent tab gives 1c, 1.5c or 2c
+function gemHowText(c){c=+c;const lv=[10,20,30,40,45,50,55,55][Math.round(c*2)-1],mon=lv?`monsters level ${lv}+`:'',witch=c>.5+1e-9&&c<=3+1e-9?`the witch (3 × ${+(c-.5).toFixed(1)}c, ${gemCombineFee(c).toLocaleString()} gold${c>=3-1e-9?', after her quest Dragon’s Hoard':c>=2.5-1e-9?', after her quest Swallowed Stones':''})`:'',reagent=c>=1-1e-9&&c<=2+1e-9?'a reagent at the witch':'';
+ const parts=['Gathering',mon,witch,reagent].filter(Boolean);return parts.length===1?'Gathering only':parts.slice(0,-1).join(', ')+' or '+parts[parts.length-1]}
 globalThis.bxcGemHow=gemHowText;
 function gemRarityTableHtml(){
  const s=gemCombineSettings(),f=gemFindShares(),rows=[];
@@ -818,7 +767,9 @@ function gemWitchHtml(){
   <div class="g-scroll"><table class="g-table gc-ladder"><thead><tr><th>Carat</th><th>0.5c gems</th><th>Combines</th><th>Fees</th><th>Total cost</th></tr></thead><tbody id="gcLadder">${gemWitchLadderRows()}</tbody></table></div>
  </div>
  <h3>Transmute: a different kind</h3>
- <p>Give her two gems of the <b>same size</b>; you get back one gem of that size, never the same kind as either. It is how spare gems become the kind you need. A transmute never lifts a gem past <b>3.5c</b>: a 4c gem has to be found.</p>
+ <p>Give her two gems of the <b>same size</b>; you get back one gem of that size, never the same kind as either. It is how spare gems become the kind you need. A transmute never lifts a gem past <b>3.5c</b>: anything bigger has to be found.</p>
+ <h3>Reagent: a gem for an old reagent</h3>
+ <p>One reagent and <b>500 gold</b> get you one gem of <b>1c, 1.5c or 2c</b> (50%, 35% and 15%). A reagent tied to a ring stone gives that stone, and any other gives a random kind. Keep a free bag slot for the gem.</p>
  <h3>What your gems could become</h3>
  <p>Pick a gem, its size and how many you have, to see what they turn into when you combine them as far as she goes.</p>
  <div class="calcgrid tool-form gc-mine">

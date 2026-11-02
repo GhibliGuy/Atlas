@@ -195,12 +195,12 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
     // under 10% is very rare - excellent, superior and flawless - so it is not what to plan on
     // the odds come from the best smith's Tool Smithing over the tool's recipe (unknown: assume 10 levels over)
     const sm=smithLevel(smithIn),over=t=>{const rl=toolRecipeLevel(skill,t);return rl==null?10:sm?sm.lv-rl:10};
-    // an Artisan gem is set at the Enchanter's Table (28 Oct 2026), by someone with the Tool Smithing level the tool's
-    // metal opens at (1/16/31/46; t is 0 for iron) - the same rule as any other enchant. Unknown smith: assumed able.
-    const gemAt=t=>typeof enchantLevelForTier==='function'?enchantLevelForTier(t+1):[1,16,31,46][t]||1;
+    // an Artisan gem goes in when the tool is forged, by a smith who could forge the same tool one metal up (the game's
+    // rule: 15 over the recipe). Unknown smith: assumed able.
+    const gemAt=t=>{const rl=toolRecipeLevel(skill,t);return rl==null?[16,31,46,61][t]||16:rl+15};
     const artisanOk=t=>!sm||sm.lv>=gemAt(t);
-    const noArtisan=t=>`no smith can set a gem in it yet: needs Tool Smithing ${gemAt(t)}; best is ${sm.lv}`;
-    const qOdds=(q,t=ti)=>{if(typeof interpolateCraftQuality!=='function')return null;const o=over(t);return o<0?0:(interpolateCraftQuality(Math.min(30,o))[q]||0)};
+    const noArtisan=t=>`no smith can forge it with a gem yet: needs Tool Smithing ${gemAt(t)}; best is ${sm.lv}`;
+    const qOdds=(q,t=ti)=>{if(typeof interpolateCraftQuality!=='function')return null;const o=over(t);return o<0?0:(interpolateCraftQuality(Math.min(CRAFT_QUALITY_CAP,o))[q]||0)};
     const qRare=(q,t=ti)=>{const o=qOdds(q,t);return o!=null&&QUALITIES.findIndex(x=>x[0]===q)>3&&o<.10};
     const oddsTxt=o=>o<.005?'almost never':'about '+(o*100).toFixed(o<.1?1:0)+'%';
     const smithTxt=t=>smithWho(sm);
@@ -219,8 +219,8 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
     if(nt>0&&nt>topT)ups.push({label:spec(nt,qual,c0),future:TOOL[nt][3]});
     // better quality on the tool you have (10% of the quality's value is added to success)
     for(const qn of [QUALITIES[qi+1]&&QUALITIES[qi+1][0],'flawless'])if(qn&&QUALITIES.findIndex(q=>q[0]===qn)>qi&&!ups.some(u=>u.q===qn)){const before=ups.length;add(spec(ti,qn,c0),rate(ti,qn,c0,pros),qNote(qn));if(ups.length>before)ups[ups.length-1].q=qn}
-    // one more Artisan carat on the tool you have
-    if(c0<ti+1&&artisanOk(ti))add(spec(ti,qual,c0+1),rate(ti,qual,c0+1,pros),caratNote(c0+1,'tools'));
+    // one more Artisan carat: nothing raises an enchant later, so it is a new tool forged with a bigger gem
+    if(c0<ti+1&&artisanOk(ti))add(spec(ti,qual,c0+1),rate(ti,qual,c0+1,pros),['a new tool forged with a bigger gem',caratNote(c0+1,'tools')].filter(Boolean).join('; '));
     else if(c0<ti+1&&!artisanOk(ti))ups.push({label:`Artisan ${c0+1}c`,info:noArtisan(ti)});
     else if(c0<4&&nt>0)ups.push({label:`Artisan ${c0+1}c`,info:`needs a ${TOOL[nt][1].toLowerCase()} ${tname} (a ${TOOL[ti][1].toLowerCase()} one holds ${ti+1}c)${c0+1>=4?"; 4-carat tools are very rare":""}`});
     const ringNote=p=>{const hi=Math.ceil(p/2);return hi>=3?'needs a '+caratNote(hi,'ring').replace(/-carat ring are /,'-carat ring: '):''};
@@ -630,7 +630,7 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
   // recipe; unknown smith: 10 levels over), and an enchant of three gems up to 3 carats each (4-carat gems are very rare)
   function realisticWeapon(w,t,smLv){
     const rl=weaponRecipeLevel(w,t),over=rl==null?10:smLv?smLv-rl:10;let qual='ordinary';
-    if(typeof interpolateCraftQuality==='function'&&over>=0){const od=interpolateCraftQuality(Math.min(30,over));for(let k=QUALITIES.length-1;k>3;k--)if((od[QUALITIES[k][0]]||0)>=.10){qual=QUALITIES[k][0];break}}
+    if(typeof interpolateCraftQuality==='function'&&over>=0){const od=interpolateCraftQuality(Math.min(CRAFT_QUALITY_CAP,over));for(let k=QUALITIES.length-1;k>3;k--)if((od[QUALITIES[k][0]]||0)>=.10){qual=QUALITIES[k][0];break}}
     return {qual,carats:t?Math.min(3*REAL_CARAT,3*t):0,recipe:rl,over,canMake:!(smLv&&rl!=null&&smLv<rl)};
   }
   function renderCombatPlanner(){
@@ -753,7 +753,7 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
       const gearFor=(w,cl)=>{const g=gearBase(w,cl);return {...g,rings:bestRings(w,g)}};
       const gearBase=(w,cl)=>{if(isSpell(w)){let t=0;for(let i=1;i<=4;i++)if(cl>=EQUIP_LEVEL[i]&&(!(+v.int>0)||+v.int>=EQUIP_ATTR[i]))t=i;
           const bwS=bestSmith('Bowyer',el('cmbSmith').value),bw=bwS?bwS.lv:null;while(t>0&&bw&&bw<[0,15,30,45,60][t])t--;const rl=[0,15,30,45,60][t],over=bw?bw-rl:10;
-          let q='ordinary';if(t&&typeof interpolateCraftQuality==='function'&&over>=0){const od=interpolateCraftQuality(Math.min(30,over));for(let k=QUALITIES.length-1;k>3;k--)if((od[QUALITIES[k][0]]||0)>=.10){q=QUALITIES[k][0];break}}
+          let q='ordinary';if(t&&typeof interpolateCraftQuality==='function'&&over>=0){const od=interpolateCraftQuality(Math.min(CRAFT_QUALITY_CAP,over));for(let k=QUALITIES.length-1;k>3;k--)if((od[QUALITIES[k][0]]||0)>=.10){q=QUALITIES[k][0];break}}
           return {...v,weapon:w,tier:0,qual:'ordinary',ench:'',carats:0,staff:t,squal:q,sc:Math.min(3*t,6)}}let tier=bestTierFor(w,cl,v);while(tier>0&&!realisticWeapon(w,tier,smithFor(w)).canMake)tier--;
         const rw=realisticWeapon(w,tier,smithFor(w));return {...v,weapon:w,tier,qual:rw.qual,ench:rw.carats?'destruction':'',carats:rw.carats}};
       // an archer's own weapons (bows and the crossbow) come first; the dagger is the melee backup
@@ -831,7 +831,7 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
         const recLv=t=>{if(!t)return null;const id=(ranged?WOOD_IDS:METAL_IDS)[t-1]+'-'+(W_ID[w]||w),r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.level:null};
         const over=t=>{const rl=recLv(t);return rl==null?10:sm?sm.lv-rl:10};
         const qi=q=>QUALITIES.findIndex(x=>x[0]===q);
-        const qOdds=(q,t)=>{if(typeof interpolateCraftQuality!=='function')return null;const o=over(t);return o<0?0:(interpolateCraftQuality(Math.min(30,o))[q]||0)};
+        const qOdds=(q,t)=>{if(typeof interpolateCraftQuality!=='function')return null;const o=over(t);return o<0?0:(interpolateCraftQuality(Math.min(CRAFT_QUALITY_CAP,o))[q]||0)};
         const qRare=(q,t)=>{const o=qOdds(q,t);return o!=null&&qi(q)>3&&o<.10};
         const smithTxt=smithWho(sm);
         const wName=t=>(matName({weapon:w,tier:t})+' '+pretty(w)).toLowerCase();
@@ -852,8 +852,8 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
         }
         for(const qn of [QUALITIES[qi(base.qual)+1]&&QUALITIES[qi(base.qual)+1][0],'flawless'])if(qn&&qi(qn)>qi(base.qual)&&!ups.some(u=>u.q===qn)){const vv={...base,qual:qn},n0=ups.length;add(spec(vv),vv,qNote(qn,t0));if(ups.length>n0)ups[ups.length-1].q=qn}
         const cap=capOf(t0);
-        if(!base.ench||!(+base.carats>0)){for(const c of [3,6,9].filter(c=>c<=cap)){const vv={...base,ench:'destruction',carats:c};add(spec(vv),vv,caratNote(c/3,'gems')||`three ${c/3}-carat rubies`)}}
-        else if(+base.carats<cap){const c=Math.min(cap,+base.carats+3),vv={...base,carats:c};add(spec(vv),vv,c>6?'needs '+caratNote(Math.ceil(c/3),'gems').replace(' are ',': '):'')}
+        if(!base.ench||!(+base.carats>0)){for(const c of [3,6,9].filter(c=>c<=cap)){const vv={...base,ench:'destruction',carats:c};add(spec(vv),vv,'a new weapon forged with the gems (a plain one can’t be enchanted later): '+(caratNote(c/3,'gems')||`three ${c/3}-carat rubies`))}}
+        else if(+base.carats<cap){const c=Math.min(cap,+base.carats+3),vv={...base,carats:c};add(spec(vv),vv,'a new weapon forged with bigger gems'+(c>6?'; needs '+caratNote(Math.ceil(c/3),'gems').replace(' are ',': '):''))}
         const rings=[0,1].map(i=>({...(base.rings[i]||{})}));
         let emptyDone=false;for(const i of [0,1]){const r=rings[i];
           if(!r.bonus||!(+r.carat>0)){if(emptyDone)continue;emptyDone=true;for(const c of [2,3]){let best=null;for(const [b] of RINGS){if(!b)continue;const rr=rings.map((x,j)=>j===i?{bonus:b,carat:c}:x),m=metric({...base,rings:rr});if(m&&(!best||m>best.m))best={b,m,rr}}
