@@ -1,4 +1,14 @@
 [
+{"sessionId":"d8ded27a","time":1793646436730,"fromZ":5402,"toZ":5403,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":527,"atY":-461,"key":11236},
+{"sessionId":"d8ded27a","time":1793646216400,"fromZ":5401,"toZ":5402,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":511,"atY":-451,"key":11235},
+{"sessionId":"b298a8e4","time":1793646033685,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":11234},
+{"sessionId":"d8ded27a","time":1793646024391,"fromZ":5400,"toZ":5401,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":527,"atY":-470,"key":11233},
+{"sessionId":"b298a8e4","time":1793646013728,"fromZ":600,"toZ":0,"kind":"outdoors","outX":1688,"outY":1869,"key":11232},
+{"sessionId":"b298a8e4","time":1793645989178,"fromZ":0,"toZ":600,"zoneName":"City of Westergarde","pvpMode":"none","atX":1690.03,"atY":1870.84,"key":11231},
+{"sessionId":"b298a8e4","time":1793645969307,"fromZ":11000,"toZ":0,"kind":"outdoors","outX":1706,"outY":1818,"key":11230},
+{"sessionId":"d8ded27a","time":1793645855536,"fromZ":null,"toZ":5400,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":538,"atY":-478,"key":11229},
+{"sessionId":"b298a8e4","time":1793645851752,"fromZ":null,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":null,"atY":null,"key":11228},
+{"sessionId":"63f8249b","time":1793645825829,"fromZ":null,"toZ":1,"zoneName":"Wispmeyer","pvpMode":"none","atX":896,"atY":-703,"key":11227},
 {"sessionId":"bcc6a5ff","time":1793636226539,"fromZ":11076,"toZ":0,"kind":"outdoors","outX":954,"outY":-719,"key":11226},
 {"sessionId":"bcc6a5ff","time":1793636158828,"fromZ":null,"toZ":11076,"zoneName":"GhibFish's home, Wispmeyer","pvpMode":"none","atX":11,"atY":5,"key":11225},
 {"sessionId":"00524c66","time":1793635335646,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":11224},
@@ -4988,15 +4998,5 @@
 {"sessionId":"55d62b1c","time":1792428212148,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":6240},
 {"sessionId":"55d62b1c","time":1792428177870,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":6239},
 {"sessionId":"55d62b1c","time":1792428035685,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":12.8,"atY":-11.4,"key":6238},
-{"sessionId":"cb3da628","time":1792428027010,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":6237},
-{"sessionId":"cb3da628","time":1792427738851,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":6236},
-{"sessionId":"cb3da628","time":1792427723577,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":6235},
-{"sessionId":"cb3da628","time":1792427401102,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":6234},
-{"sessionId":"cb3da628","time":1792427369598,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":6233},
-{"sessionId":"cb3da628","time":1792426961432,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":6232},
-{"sessionId":"cb3da628","time":1792426927421,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":6231},
-{"sessionId":"cb3da628","time":1792426651878,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":6230},
-{"sessionId":"cb3da628","time":1792426630116,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":6229},
-{"sessionId":"cb2553fb","time":1792426371190,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":6228},
-{"sessionId":"cb2553fb","time":1792426348736,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":6227}
+{"sessionId":"cb3da628","time":1792428027010,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":6237}
 ]
