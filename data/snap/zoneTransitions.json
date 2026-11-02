@@ -1,4 +1,5 @@
 [
+{"sessionId":"97a26de3","time":1793592209536,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":null,"atY":null,"key":11138},
 {"sessionId":"a80dd3ed","time":1793590779155,"fromZ":0,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":11137},
 {"sessionId":"a80dd3ed","time":1793590775961,"fromZ":20,"toZ":0,"kind":"outdoors","outX":149.6,"outY":-69.32,"key":11136},
 {"sessionId":"a80dd3ed","time":1793590764398,"fromZ":null,"toZ":20,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":152,"atY":-71,"key":11135},
@@ -4997,6 +4998,5 @@
 {"sessionId":"ead4421d","time":1792412621120,"fromZ":-40,"toZ":0,"kind":"outdoors","outX":85.47,"outY":169.09,"key":6142},
 {"sessionId":"ead4421d","time":1792412617473,"fromZ":-41,"toZ":-40,"zoneName":"Rustpick Mine","pvpMode":"none","atX":82,"atY":160,"key":6141},
 {"sessionId":"ead4421d","time":1792412612708,"fromZ":-42,"toZ":-41,"zoneName":"Rustpick Mine","pvpMode":"none","atX":75,"atY":157,"key":6140},
-{"sessionId":"ead4421d","time":1792412607291,"fromZ":-43,"toZ":-42,"zoneName":"Rustpick Mine","pvpMode":"none","atX":82,"atY":152,"key":6139},
-{"sessionId":"ead4421d","time":1792412603891,"fromZ":-45,"toZ":-43,"zoneName":"Rustpick Mine","pvpMode":"none","atX":77.58,"atY":149.58,"key":6138}
+{"sessionId":"ead4421d","time":1792412607291,"fromZ":-43,"toZ":-42,"zoneName":"Rustpick Mine","pvpMode":"none","atX":82,"atY":152,"key":6139}
 ]
