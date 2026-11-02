@@ -1,4 +1,6 @@
 [
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"time":1793635138632,"sessionId":"00524c66","key":999},
+{"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"time":1793634155369,"sessionId":"04a012a0","key":998},
 {"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"time":1793630262552,"sessionId":"9defabaa","key":997},
 {"type":"gem.found","typeId":"gem-amber","carat":1.5,"dropped":false,"time":1793588986740,"sessionId":"15081297","key":996},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"npcName":"Young Red Dragon","time":1793588533923,"sessionId":"f16f78bd","key":995},
