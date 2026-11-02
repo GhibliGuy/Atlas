@@ -766,7 +766,7 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
     // with how often players actually find it (the collector's recorded finds). 0.5c-2c can be built at the witch, so common.
     const rar=c=>typeof gemRarity==='function'?gemRarity(c):'common',shares=typeof gemFindShares==='function'?gemFindShares():null;
     const rarity=`<div class="gg-rarity" role="list" aria-label="Gem rarity by carat">${[.5,1,1.5,2,2.5,3,3.5,4,4.5,5].map(c=>{const r=rar(c),sh=shares&&shares.total?shares.share(c):null;
-      return `<div class="gg-rar rar-${r.replace(/ /g,'-')}" role="listitem" title="${esc(typeof gemHowText==='function'?gemHowText(c):'')}"><b>${c}c</b><span class="gg-rar-name">${esc(r[0].toUpperCase()+r.slice(1))}</span>${sh!=null?`<span class="gg-rar-pct" title="Share of the gems players have recorded">${(sh*100).toFixed(sh<.1?1:0)}%</span>`:''}</div>`}).join('')}</div>`;
+      return `<div class="gg-rar rar-${r.replace(/ /g,'-')}" role="listitem" title="${esc(typeof gemHowText==='function'?gemHowText(c):'')}"><b>${c}c</b><span class="gg-rar-name">${esc(r[0].toUpperCase()+r.slice(1))}</span>${sh!=null?`<span class="gg-rar-pct" title="Share of the gems players have recorded">${sh?(sh*100).toFixed(sh<.1?1:0)+'%':'None yet'}</span>`:''}</div>`}).join('')}</div>`;
     const GT=typeof GATHERABLES!=='undefined'?GATHERABLES:[],tier=(sk,i)=>{const t=GT.filter(x=>x.skill===sk).sort((a,b)=>a.level-b.level)[i];return t?item(slug(t.item),t.item):'—'};
     const tiers=[.5,.6,.75,1].map((p,i)=>[`Tier ${i+1}`,tier('mining',i),tier('fishing',i),tier('lumberjack',i),`<b>${p}%</b>`]);
     // where gems come from: each gathering skill that finds them (its guide), and monsters by level (the official guide's rule)
@@ -782,15 +782,17 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
       +src('Monsters',`Since 29 Oct 2026 <b>any monster</b> from level 10 up can drop a gem, at about <b>0.5%</b> a kill (half the old 1%, now spread over every hunt), up to a size set by its level. Elites and bosses drop one size up, but no monster drops a gem above 4c. Click a band to see its monsters:<div class="gg-bands">${BANDS.map(band).join('')}</div>`)
       +src('Dark Witch',`Three gems of the same kind and size become one half a carat bigger: up to 2c at first, 2.5c after her quest Swallowed Stones and 3c after Dragon’s Hoard (2,500 gold a combine, 5,000 for a 2.5c gem, 10,000 for a 3c). <button type="button" class="gg-to-witch" title="Go to the Dark Witch">How it works</button>`)
       +src('Reagents',`One old reagent and <b>500 gold</b> get you a gem of 1c, 1.5c or 2c at any gem transmuter. See ${guide('reagents')}.`)
+      +src('Raids',`The last boss of a raid has a chance at a bigger gem, up to 4c, for everyone who was there for every boss. See ${guide('raids')}.`)
       +'</div>';
     return {lede:'Nine gems in ten sizes: the bigger the gem, the rarer it is and the stronger it makes your gear.',sections:[
       ['sources','Where gems come from',sources],
-      ['rarity','Gem rarity',rarity],
+      ['rarity','Gem rarity',rarity+`<p>4.5c and 5c are new since 2 Nov 2026 and only come from gathering. Any shop pays <b>100 gold a carat</b>, so 50 gold for a 0.5c and 500 for a 5c; on the Exchange a gem goes for whatever another player will pay.</p>`],
       ['list','The nine gems and what they make',`<p>Gems are what turn good gear into great gear.</p><ul class="g-list">`
         +`<li><b>Enchanted weapons and armour.</b> Three gems enchant a weapon, bow, staff or piece of armour: blades that burn, freeze, shock or corrode, sharper aim, stronger stats or more powerful spells. Every recipe is in ${guide('quality-and-enchanting')}.</li>`
-        +`<li><b>Enchanted tools.</b> One gem set in a tool while it is forged makes it <i>of the Artisan</i>, raising your success with it. See ${guide('tool-smithing')}.</li>`
-        +`<li><b>Rings and pendants.</b> A gem set in a ring or pendant gives a lasting bonus of its own: more critical hits, faster movement, bigger hauls and more.</li></ul>`
-        +`<p>The bigger the gem, the stronger the effect. Wearing enchanted gear takes <b>5 INT</b> per carat.</p>`+cards],
+        +`<li><b>Enchanted tools.</b> One gem of 1c or more set in a tool while it is forged makes it <i>of the Artisan</i>, raising your success with it. See ${guide('tool-smithing')}.</li>`
+        +`<li><b>Rings.</b> One gem of 1c or more set in a ring while it is forged gives a lasting bonus of its own: more critical hits, faster movement, bigger hauls and more.</li>`
+        +`<li><b>Pendants.</b> Each gem has its own pendant. They are never crafted: they drop from monsters. See ${guide('pendants')}.</li></ul>`
+        +`<p>The bigger the gem, the stronger the effect. Wearing enchanted gear takes <b>5 INT</b> per carat.</p><p><b>A bigger gem is not always stronger.</b> Three 4c gems already fill a Titanium piece (12c), so 4.5c and 5c gems only help when the other gems are smaller. A ring or tool holds 1c, 2c, 3c or 4c for iron, silver, gold or titanium, counts whole carats only, and buff scrolls treat anything above 4c as 4c.</p>`+cards],
       ['finding','Gathering odds',`<p><b>Every successful gather</b> has a small chance of turning up a gem from that skill, and better resources give better odds (for fishing, it is the fish that bit that counts). Which of the skill’s gems you get is random.</p>`+table(['','Mining','Fishing','Lumberjack','Chance'],tiers)],
       ['witch','Dark Witch: building bigger gems (up to 3c with her quests)',globalThis.bxcGemWitchHtml?globalThis.bxcGemWitchHtml():'']
     ],related:['quality-and-enchanting','mining','lumberjack','fishing']};

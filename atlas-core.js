@@ -104,7 +104,7 @@ function slugId(v){return String(v||'').trim().toLowerCase().replace(/[^a-z0-9]+
  // the game keys iron tools without the metal ("scribing-quill", "pickaxe"; silver and up are "silver-pickaxe"), so the
  // recipes use the game's ids and the item pages find them
  for(const r of RECIPES)if(r.skill==='Tool Smithing'&&/^iron-/.test(r.id))r.id=r.id.slice(5);
- if(Array.isArray(G.gatherables)&&G.gatherables.length>10){GATHERABLES.length=0;GATHERABLES.push(...G.gatherables)}})();
+ if(Array.isArray(G.gatherables)&&G.gatherables.length>10){GATHERABLES.length=0;const seen=new Set();for(const g of G.gatherables){const k=g.skill+'|'+g.item+'|'+g.level;if(!seen.has(k)){seen.add(k);GATHERABLES.push(g)}}}})();
 // Crafting success, the game's rule: 60% at the recipe's level, +40% over the next 15 levels, capped at 95% (so 95% from
 // 14 levels over). Cooking: a burn chance that falls to nothing at the level it stops, never below 5%. Grinding never fails.
 const CRAFT_BASE=globalThis.BXC_GAME_RECIPES?.craftChance?.base??.6,CRAFT_SPAN=globalThis.BXC_GAME_RECIPES?.craftChance?.span??15,CRAFT_CAP=.95;
@@ -739,7 +739,7 @@ function gemRarityTableHtml(){
  for(let c=.5;c<=4+1e-9;c+=.5){const sh=f.share(c);
   rows.push(`<tr><td>${c}c</td><td>${gemRarityChip(c)}</td><td>${sh==null?'—':(sh*100).toFixed(sh<.1?1:0)+'%'}${f.count(c)?` <span class="muted">(${f.count(c)})</span>`:''}</td><td>${gemHowText(c)}</td></tr>`)}
  return `<div class="g-scroll"><table class="g-table"><thead><tr><th>Carat</th><th>Rarity</th><th>Of gems found</th><th>Where it comes from</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
- <p class="g-note">Up to 2c counts as common. The witch can build 2.5c and 3c too, but one 3c takes 243 small gems, so they stay uncommon and semi-rare; 3.5c (rare) and 4c (very rare) only come from gathering.${f.total?` “Of gems found” is out of the ${f.total.toLocaleString()} gems players have recorded.`:''}</p>`;
+ <p class="g-note">Up to 2c counts as common. The witch can build 2.5c and 3c too, but one 3c takes 243 small gems, so they stay uncommon and semi-rare; 3.5c (rare) and 4c (very rare) have to be found, by gathering or from monsters level 55+, and 4.5c and 5c only come from gathering.${f.total?` “Of gems found” is out of the ${f.total.toLocaleString()} gems players have recorded.`:''}</p>`;
 }
 globalThis.bxcGemRarity=gemRarity;globalThis.bxcGemRarityChip=gemRarityChip;globalThis.bxcGemRarityTable=gemRarityTableHtml;
 
@@ -754,7 +754,7 @@ function gemWitchPlan(){
 }
 function gemWitchHtml(){
  const s=gemCombineSettings(),rows=gemLadder(s);
- return `<p>The <a href="#/npc/dark-witch">Dark Witch</a> lives in a hut in Midland Forest (her page shows it on the map). She does two things with gems: makes them bigger, and changes their kind.</p>
+ return `<p>The <a href="#/npc/dark-witch">Dark Witch</a> lives in a hut in Midland Forest (her page shows it on the map). She does three things with gems: makes them bigger, changes their kind, and trades them for old reagents.</p>
  <h3>Combine: one size bigger</h3>
  <p>Give her <b>3</b> gems of the <b>same kind and size</b> and a fee; you get back one gem of that kind, half a carat bigger. She combines up to <b>2c</b> at first; her quest <b>Swallowed Stones</b> opens <b>2.5c</b> and <b>Dragon’s Hoard</b> opens <b>3c</b> (22 Oct 2026). The fee is <b>2,500</b> coins for each combine up to 2c, <b>5,000</b> to make a 2.5c gem and <b>10,000</b> to make a 3c one.</p>
  <div class="gc-card">
@@ -767,7 +767,7 @@ function gemWitchHtml(){
   <div class="g-scroll"><table class="g-table gc-ladder"><thead><tr><th>Carat</th><th>0.5c gems</th><th>Combines</th><th>Fees</th><th>Total cost</th></tr></thead><tbody id="gcLadder">${gemWitchLadderRows()}</tbody></table></div>
  </div>
  <h3>Transmute: a different kind</h3>
- <p>Give her two gems of the <b>same size</b>; you get back one gem of that size, never the same kind as either. It is how spare gems become the kind you need. A transmute never lifts a gem past <b>3.5c</b>: anything bigger has to be found.</p>
+ <p>Give her two gems of the <b>same size</b> and <b>1,500</b> coins; you get back one gem of that size, never the same kind as either. It is how spare gems become the kind you need. Once in a while it comes out half a carat bigger, and very rarely a full carat, but never past <b>3.5c</b>: anything bigger has to be found.</p>
  <h3>Reagent: a gem for an old reagent</h3>
  <p>One reagent and <b>500 gold</b> get you one gem of <b>1c, 1.5c or 2c</b> (50%, 35% and 15%). A reagent tied to a ring stone gives that stone, and any other gives a random kind. Keep a free bag slot for the gem.</p>
  <h3>What your gems could become</h3>

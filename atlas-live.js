@@ -5199,7 +5199,7 @@ function newsHtml(){
     for(const g of mine)byC.set(+g.carat,(byC.get(+g.carat)||0)+1);
     for(const g of all)byCAll.set(+g.carat,(byCAll.get(+g.carat)||0)+1);
     const s=typeof gemCombineSettings==='function'?gemCombineSettings():{per:3,step:.5,cap:2};
-    const ring=(globalThis.BXC_GAME_DATA?.rings||[]).find(r=>r.gem===kind),ringAt=c=>{if(!ring||!ring.text)return null;if(Number.isInteger(c)&&ring.text[c])return ring.text[c];const t4=String(ring.text[4]||''),m=/(\d+(?:\.\d+)?)%/.exec(t4);return m?t4.replace(m[0],'≈'+(+(m[1]/4*c).toFixed(2))+'%'):null};
+    const ring=(globalThis.BXC_GAME_DATA?.rings||[]).find(r=>r.gem===kind),ringAt=c=>ring&&ring.text&&c>=1?ring.text[Math.min(Math.floor(c),4)]||null:null;   // a ring needs 1c, counts whole carats and holds 4c at most (titanium)
     const chip=c=>globalThis.bxcGemRarityChip?globalThis.bxcGemRarityChip(c):esc(gemRar(c));
     const pct=(n,t)=>t?(n/t*100).toFixed(n/t<.1?1:0)+'%':'—';
     const picker=`<div class="q-picker" role="group" aria-label="Carat"><a class="q-chip${pick==null?' on':''}" href="${pageHref('item',id)}">All</a>${GEM_SIZES.map(c=>`<a class="q-chip${c===pick?' on':''} q-${RARITY_Q[gemRar(c)]}" href="${pageHref('item',id)}?q=${c}">${c}c${byC.get(c)?` <span>${fmt(byC.get(c))}</span>`:''}</a>`).join('')}</div>`;
@@ -5208,7 +5208,7 @@ function newsHtml(){
       <td>${globalThis.bxcGemHow?globalThis.bxcGemHow(c):''}</td>${ring?`<td>${esc(ringAt(c)||'—')}</td>`:''}</tr>`).join('');
     const found=mine.filter(g=>!g.dropped).length,dropped=mine.length-found;
     return `<h2>Carats</h2>${picker}
-      <p class="s muted">Gems come in half-carat steps from 0.5c to 5c. Up to 2c counts as common. The witch can build up to ${s.cap}c (one 3c takes 243 small gems); 3.5c and up only come from finds, 4c and up are very rare, and 4.5c and 5c only come from gathering.</p>
+      <p class="s muted">Gems come in half-carat steps from 0.5c to 5c. Up to 2c counts as common. The witch can build up to ${s.cap}c (one 3c takes 243 small gems); 3.5c and up only come from finds, 4c and up are very rare, and 4.5c and 5c only come from gathering.${ring?' A ring needs at least 1c, counts whole carats and holds 4c at most.':''}</p>
       <div class="g-scroll"><table class="g-table q-table"><thead><tr><th>Carat</th><th>Rarity</th><th>${esc(prettyId(kind))} found</th><th>Of all gems found</th><th>How you get one</th>${ring?`<th>In a ring (${esc(prettyId(ring.bonus))})</th>`:''}</tr></thead><tbody>${rows}</tbody></table></div>
       <p class="s muted">${mine.length?`${fmt(mine.length)} ${esc(prettyId(kind))} recorded: ${fmt(found)} while gathering${dropped?`, ${fmt(dropped)} from monsters`:''}.`:`No ${esc(prettyId(kind))} recorded yet.`} “Of all gems found” is out of ${fmt(all.length)} gems of every kind. <a href="#/gemcombine">Gem combiner</a></p>`;
   }
