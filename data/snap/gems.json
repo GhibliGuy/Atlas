@@ -1,4 +1,10 @@
 [
+{"type":"gem.found","typeId":"gem-amber","carat":1.5,"dropped":false,"time":1793588986740,"sessionId":"15081297","key":996},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"npcName":"Young Red Dragon","time":1793588533923,"sessionId":"f16f78bd","key":995},
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"npcName":"Baby Red Dragon","time":1793588407515,"sessionId":"f16f78bd","key":994},
+{"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1793586196429,"sessionId":"f33230fb","key":993},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1793585600889,"sessionId":"f33230fb","key":992},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"npcName":"Ogre Charger","time":1793585196930,"sessionId":"f16f78bd","key":991},
 {"type":"gem.found","typeId":"gem-pearl","carat":1,"dropped":false,"time":1793576024153,"sessionId":"cd8bb7c7","key":990},
 {"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"time":1793574709950,"sessionId":"c1eea1a7","key":989},
 {"type":"gem.found","typeId":"gem-pearl","carat":2.5,"dropped":false,"time":1793572415566,"sessionId":"b6f53556","key":988},
