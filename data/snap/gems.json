@@ -1,4 +1,5 @@
 [
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"time":1793656959617,"sessionId":"2b3d614d","key":1002},
 {"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"npcName":"Ogre Butcher","time":1793649007735,"sessionId":"308278f7","key":1001},
 {"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"npcName":"Ogre Charger","time":1793647983408,"sessionId":"d8ded27a","key":1000},
 {"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"time":1793635138632,"sessionId":"00524c66","key":999},
