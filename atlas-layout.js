@@ -66,7 +66,7 @@
     xp:['Calculators','Experience tables','Plan your next milestone with skill XP curves.'],
     'calc-crafting':['Calculators','Crafting XP','Plan your way to a goal level: what to make or gather, how many, and the materials.'],
     'calc-quality':['Calculators','Quality & enchanting','What quality you’ll get, whether you can enchant it yet, and which gems to use.'],
-    'calc-gear':['Calculators','Gear & DPS','Your whole loadout and the damage a second it does against weak, neutral and resistant monsters.'],
+    'calc-gear':['Calculators','Gear & DPS','Your whole loadout and the damage a second it does against weak and neutral monsters.'],
     'calc-combat':['Calculators','Combat calculator','Kills to your goal: character level, weapon and magic skills.'],
     gemcombine:['Gathering','Gem combiner','What it costs to build a bigger gem at the witch, and what it ends up worth.'],
     feature:['Community','Request a feature','Tell us what the Atlas should do next.'],

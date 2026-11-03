@@ -5583,7 +5583,7 @@ function newsHtml(){
     const lede=m?`A level ${esc(m.baseLevel)} ${esc(prettyId(m.family||'creature'))} that attacks with ${esc(m.attackType||'?')} (${esc(m.attackStyle||'melee')}).${m.passive?' It will not attack first.':''}`:'A creature the collector has seen.';
     return `<article class="wp"><div class="wp-main">${lockNote}<p class="wp-lede">${lede}</p>
       <h2>Fighting it</h2><div class="s">${tagChipsLine(m?.weakTo,m?.resists,m?.family)}</div>
-      <p class="s muted">A weakness adds 30% damage and a resistance takes 30% off (the game's own rule).</p>
+      <p class="s muted">A weakness adds ${Math.round(((globalThis.BXC_GAME_DATA?.combat?.weakMult??1.15)-1)*100)}% damage (the game's own rule). Monsters have no resistances.</p>
       ${m?.eliteObserved?`<p class="s good">⭐ Seen as an elite ${esc(m.eliteObserved)} times (${(m.eliteRate*100).toFixed(1)}% of sightings). Elites have 3× HP, hit 1.4× harder, give 3× XP and 2.5× loot.</p>`:''}
       ${m?.mechanics?`<p class="s">Special: ${m.mechanics}</p>`:''}
       ${monsterLevelsHtml(id,pageNow&&pageNow.kind==='monster'&&pageNow.id===id?pageNow.lv:null)}

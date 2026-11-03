@@ -67,7 +67,7 @@ function tagChipsLine(weakStr,resistStr,family){
     for(const x of split(str))out.push(`<span class="tag-chip ${cls}">${e(x)}</span>`);
     return out.join('')||'<span class="muted">None known</span>';
   };
-  return `<i>Weak</i> ${row(weakStr,'weak')} &nbsp; <i>Resists</i> ${row(resistStr,'resist')}`;
+  return `<i>Weak</i> ${row(weakStr,'weak')}`+(split(resistStr).length?` &nbsp; <i>Resists</i> ${row(resistStr,'resist')}`:'');
 }
 
 

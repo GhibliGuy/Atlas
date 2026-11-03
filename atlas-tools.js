@@ -483,7 +483,7 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
   // ---- Your weapon against each monster --------------------------------------------------------------------------
   // Damage per hit is the game's own formula (its rules file): (roll × (1 + material bonus) × quality + average roll ×
   // 22% per Destruction carat) × the weapon's multiplier; an elemental enchant adds 22% per carat of the average roll as
-  // that element. Weak ×1.3 / resist ×0.7 per damage type. Crits: 4% + 0.1% per DEX (+10% with a dagger), up to 50%,
+  // that element. Weak ×1.15 per damage type (no monster resists since 2 Nov 2026). Crits: 4% + 0.1% per DEX (+10% with a dagger), up to 50%,
   // ×1.8. Chance to hit is worked out by the server, so it comes from what the server told you: the collector keeps a
   // tally of the "% to hit" of your attacks per monster and character level; without one it is estimated from your
   // attacks at the same level gap (or, with none at all, a curve read off recorded attacks - marked "est.").
@@ -537,8 +537,9 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
     return {hp:GL.hp[L-1],xp:GL.xp[L-1],dmg:dm?dm[L-1]:null};
   }
   const list=s=>String(s||'').split(',').map(x=>x.trim()).filter(Boolean);
-  // the game's rule: resist is checked first (x0.7), then weak (x1.3)
-  function typeMult(m,type){return list(m.resists).includes(type)?.7:list(m.weakTo).includes(type)?1.3:1}
+  // the game's rule: a weakness adds to the hit; no monster resists anything since 2 Nov 2026
+  const WEAK_MULT=globalThis.BXC_GAME_DATA?.combat?.weakMult??1.15;
+  function typeMult(m,type){return list(m.weakTo).includes(type)?WEAK_MULT:1}
   // Kill XP by level gap (binxonia.com news, 29 Sep 2026: "Full kill exp now reaches three levels below you"; 26 Sep:
   // it "reaches zero at ten"). The server applies it; in between it is taken as a straight line.
   const KILL_XP_FULL_BELOW=3,KILL_XP_ZERO_BELOW=10;
@@ -799,8 +800,8 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
       }
       const ranked=scoreWith(wh);rows.length=0;rows.push(...ranked);
       const top=rows.slice(0,25),best=top[0];
-      const chip=(t,m)=>{const x=typeMult(m,t);return x>1?`<span class="tag-chip weak">weak to ${esc(t)}</span>`:x<1?`<span class="tag-chip resist">resists ${esc(t)}</span>`:''};
-      const weakLine=m=>[list(m.weakTo).length?'weak: '+esc(list(m.weakTo).join(', ')):'',list(m.resists).length?'resists: '+esc(list(m.resists).join(', ')):''].filter(Boolean).join(' · ')||'—';
+      const chip=(t,m)=>{const x=typeMult(m,t);return x>1?`<span class="tag-chip weak">weak to ${esc(t)}</span>`:''};
+      const weakLine=m=>list(m.weakTo).length?'weak: '+esc(list(m.weakTo).join(', ')):'—';
       const kills=best&&best.xp?Math.ceil(toGo/best.xp):null;
       // the suggested gear, weapon by weapon (best first); "Use" picks it and the page switches to that weapon
       const mageMode=v.cls==='mage';
@@ -885,7 +886,7 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
         <tr><th>Level</th><td>${best.L}${best.L!==bm.baseLevel?` <span class="muted">(base ${bm.baseLevel})</span>`:''}</td></tr>
         <tr><th>Hit points</th><td>${n(best.st.hp)}</td></tr><tr><th>XP per kill</th><td>${best.xp!=null?n(best.xp)+(best.share<1?` <span class="muted">(${Math.round(best.share*100)}% of ${n(best.st.xp)})</span>`:''):'—'}</td></tr>
         <tr><th>Attacks with</th><td>${esc(bm.attackType||'—')}${best.st.dmg?' · '+best.st.dmg+' dmg':''}</td></tr>
-        <tr><th>Weak to</th><td>${esc(list(bm.weakTo).join(', ')||'—')}</td></tr><tr><th>Resists</th><td>${esc(list(bm.resists).join(', ')||'—')}</td></tr>
+        <tr><th>Weak to</th><td>${esc(list(bm.weakTo).join(', ')||'—')}</td></tr>
         ${wh?`<tr><th>Your hit</th><td>${Math.round(best.h.c*100)}% of the roll · ${best.perHit.toFixed(1)} dmg</td></tr><tr><th>Kill time</th><td>${best.ttk.toFixed(1)} s</td></tr>`:''}
         <tr><th>XP to go</th><td>${n(toGo)}</td></tr></table>
         <p class="g-aside-h">Guides</p><ul class="g-toc"><li><a href="#/guide/combat">Combat</a></li><li><a href="#/guide/special-attacks">Weapon skills &amp; specials</a></li><li><a href="#/guide/monsters-by-level">Monsters by level</a></li></ul>`
@@ -982,11 +983,11 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
   globalThis.renderCombatPlanner=renderCombatPlanner;
 
   // ---- Gear & DPS planner (Calculators > Gear & DPS) ---------------------------------------------------------------
-  // Every slot you wear, your own stats, and the damage a second it adds up to against a monster that is neutral to,
-  // resists or is weak to your damage. The maths is the combat calculator's (weaponHit / spellHit, the game's own
+  // Every slot you wear, your own stats, and the damage a second it adds up to against a monster that is neutral to
+  // or weak to your damage. The maths is the combat calculator's (weaponHit / spellHit, the game's own
   // formulas). Armor enchants add 5 of their attribute per carat (3 carats per material tier); shields take no enchant;
-  // pendants only defend. Resist is x0.7 and weak x1.3 per damage type, so a weapon with an elemental enchant does two
-  // types at once: "double" is both of them resisted (or both weak).
+  // pendants only defend. Weak is WEAK_MULT per damage type, so a weapon with an elemental enchant does two
+  // types at once: "double" is both of them weak.
   const ARMOR_SLOTS=[['head','Head'],['torso','Torso'],['arms','Arms'],['legs','Legs'],['feet','Feet']];
   const ARMOR_ENCH=[['','No enchant',null],['titan','of the Titan (STR)','str'],['camel','of the Camel (END)','end'],['weasel','of the Weasel (DEX)','dex'],['leopard','of the Leopard (SPD)','spd'],['sage','of the Sage (INT)','int'],['mage','of the Mage (MAG)','mag']];
   const ARMOR_TIERS=['None','Tier 1 (iron, imp, deerhide)','Tier 2 (silver, snakeskin, bearhide)','Tier 3 (gold, ogrewax, werewolf)','Tier 4 (titanium, dragonscale, dragonhide)'];
@@ -1082,7 +1083,7 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
     const cls=['warrior','archer','mage'].includes(saved.cls)?saved.cls:(globalThis.bxcCharClass&&globalThis.bxcCharClass())||'warrior';
     const pend=(G.pendants||[]).map(p=>[p.gem,pretty(p.bonus)+' ('+pretty(p.gem)+')']);
     content.innerHTML=`<article class="wp tool-wp gear-wp"><div class="wp-main">
-      <p class="wp-lede">Put together a whole loadout - weapon, armor, rings and your own stats - and see the damage a second it does against monsters that are neutral to it, resist it or are weak to it.</p>
+      <p class="wp-lede">Put together a whole loadout - weapon, armor, rings and your own stats - and see the damage a second it does against monsters that are neutral to it or weak to it.</p>
       ${typeof globalThis.bxcCharGear==='function'&&!globalThis.BXC_PUBLIC?'<p><button type="button" id="gpMine" class="gp-mine">Fill in my character</button> <span id="gpMineNote" class="muted"></span></p>':''}
       <section><h2>Class and weapon</h2><div class="tool-form gp-row">
         <label>Class<select id="gpClass">${opt([['warrior','Warrior'],['archer','Archer'],['mage','Mage']],cls)}</select></label>
@@ -1153,16 +1154,15 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
       if(!wh){el('gpOut').innerHTML=`<p class="muted">${mage?'No damage spell of this school is open to you: every spell needs 10 INT per spell level, and levels 2-6 need 10, 20, 30, 45 and 60 in the school.':'Pick a weapon.'}</p>`;el('gpTotals').innerHTML='';el('gpAdvice').innerHTML='';return}
       const hitC=Math.min(.95,Math.max(0,s.hit/100)+(wh.seeking||0)),critX=1+wh.crit*(wh.critMult-1);
       const dps=(pm,em)=>hitC*(wh.phys*pm+(wh.elemType?wh.elem*em:0))*critX/wh.swing,f=x=>x.toFixed(1);
-      const M=[['Weak',1.3],['Neutral',1],['Resists',.7]],lbl=(l,t)=>l==='Resists'?'Resists '+esc(t):l+' to '+esc(t),cell=(pm,em)=>`<b>${f(dps(pm,em))}</b>`;
-      // One set of boxes: damage a second against weak / neutral / resisting monsters (the average landed hit under
-      // each), then the doubles, then what one attack is. Singles: your weapon's own type weak or resisted (the
-      // enchant's element neutral). Doubles need a second damage type (an elemental enchant): both weak, or both resisted.
+      // One set of boxes: damage a second against weak / neutral monsters (the average landed hit under
+      // each), then the double, then what one attack is. Single: your weapon's own type weak (the enchant's element
+      // neutral). The double needs a second damage type (an elemental enchant): both weak.
       const two=!!(wh.elemType&&wh.elem>0),hitAvg=(pm,em)=>(wh.phys*pm+(two?wh.elem*em:0))*critX,act=mage?'cast':/bow/.test(w)?'shot':'swing';
       const card=(label,pm,em,cls)=>`<div class="gp-c ${cls||''}"><span class="gp-l">${label}</span><b>${f(dps(pm,em))}</b><span class="gp-h">${f(hitAvg(pm,em))} a hit</span></div>`;
       const stat=(label,val,sub)=>`<div class="gp-c gp-s"><span class="gp-l">${label}</span><b>${val}</b>${sub?`<span class="gp-h">${sub}</span>`:''}</div>`;
       el('gpOut').innerHTML=`<div class="gp-cards">
-        ${card('Weak',1.3,1,'gp-3')}${card('Neutral',1,1,'gp-3 gp-n')}${card('Resists',.7,1,'gp-3')}
-        ${two?card('Double weak',1.3,1.3,'gp-dw gp-half')+card('Double resist',.7,.7,'gp-dr gp-half')
+        ${card('Weak',WEAK_MULT,1,'gp-half')}${card('Neutral',1,1,'gp-half gp-n')}
+        ${two?card('Double weak',WEAK_MULT,WEAK_MULT,'gp-dw gp-full')
           :`<div class="gp-c gp-na gp-full">No doubles: all your damage is ${esc(wh.type)}.${mage?'':' An elemental enchant adds a second type.'}</div>`}
         <div class="gp-sep gp-full">One ${act}${v.only?`: your rotation (${v.only.length} spell${v.only.length===1?'':'s'})`:mage?' (best rotation)':''}</div>
         ${stat('Damage',f(wh.phys+(wh.elem||0)),two?`${f(wh.phys)} ${esc(wh.type)} + ${f(wh.elem)} ${esc(wh.elemType)}`:esc(wh.type))}
@@ -1170,7 +1170,7 @@ const r=(typeof RECIPES!=='undefined'?RECIPES:[]).find(x=>x.id===id);return r?r.
         ${stat('Of each roll',Math.round(hitC*100)+'%',wh.seeking?'Seeking included':'')}
         ${wh.crit?stat('Crits',Math.round(wh.crit*100)+'%','×'+wh.critMult):''}
       </div>
-      <p class="g-note">Damage a second, with the average landed hit${wh.crit?' (crits included)':''} under it.${two?` Single: weak to or resisting ${esc(wh.type)}. Double: ${esc(wh.type)} and ${esc(wh.elemType)} both.`:''}</p>
+      <p class="g-note">Damage a second, with the average landed hit${wh.crit?' (crits included)':''} under it.${two?` Weak: weak to ${esc(wh.type)}. Double: weak to ${esc(wh.type)} and ${esc(wh.elemType)} both.`:''}</p>
         ${s.ammo&&/bow/.test(w)&&s.ammo!=='bodkin'?'<p class="g-note">Poisoned ammo adds poison over time that the game works out on its server; it is not in these numbers.</p>':''}`;
       el('gpAdvice').innerHTML=adviceHtml(s,v,wh);
       const ak=ARMOR_KINDS.find(k=>k[0]===s.akind)||ARMOR_KINDS[0],ap=ARMOR_SLOTS.reduce((a,[k])=>a+(ak[3][s.armor[k].t]||0),0),strHp=Math.floor(Math.max(0,s.stats.str-10)*.5);
