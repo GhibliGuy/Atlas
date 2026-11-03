@@ -741,6 +741,7 @@ function dataFetch(u){return fetch(u,{cache:'no-cache'})}
       if(!items.has(id))items.set(id,{itemTypeId:id,craft:null,craftCount:0,gatherSkill:null,gatherSuccesses:0,monsterSources:new Map(),resourceSources:new Map(),lastSeen:0});
       return items.get(id);
     };
+    for(const a of globalThis.BXC_AUGMENTS||[])for(const tier of [1,2,3,4])ensure(`augment-${a.id}-${tier}`);   // every augment has a page, found or not
     for(const t of snapshot?.inventoryTypes||[]){
       if(!t.typeId)continue;
       const r=ensure(t.typeId);
@@ -5719,6 +5720,7 @@ function newsHtml(){
       ${(()=>{const t=gearReqText(id);return t?`<p class="wp-req"><b>Requires</b> ${t} <span class="muted">to equip</span></p>`:''})()}
       ${(globalThis.bxcWeaponSkillHtml&&globalThis.bxcWeaponSkillHtml(id))||''}
       ${(globalThis.bxcReagentUsesHtml&&globalThis.bxcReagentUsesHtml(id))||''}
+      ${(globalThis.bxcAugmentHtml&&globalThis.bxcAugmentHtml(id))||''}
       <h2>How to get it</h2>
       ${uniqueInfoHtml(id)}
       ${scrollInfoHtml(id)}

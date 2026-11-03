@@ -95,7 +95,7 @@ function itemImg(r){
 }
 
 function xpAt(curve,level){const a=curve==='Combat'?COMBAT_XP:TRADE_XP; level=Math.max(1,Math.min(a.length,Number(level)||1));return a[level-1]}
-function prettyId(s){return String(s||'').replaceAll('-',' ').replace(/\bammy\b/gi,'pendant').replace(/\b\w/g,c=>c.toUpperCase())}
+function prettyId(s){const aug=/^augment-([a-z]+)-([1-4])$/.exec(String(s||''));if(aug)return aug[1][0].toUpperCase()+aug[1].slice(1)+' Augment '+['I','II','III','IV'][aug[2]-1];return String(s||'').replaceAll('-',' ').replace(/\bammy\b/gi,'pendant').replace(/\b\w/g,c=>c.toUpperCase())}
 function slugId(v){return String(v||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')}
 // The game's own recipe and gathering lists (game-recipes.js, generated from its rules by the app - see
 // recipes-from-rules.js) replace the built-in ones below when loaded. The built-in lists stay as a fallback.

@@ -499,6 +499,40 @@ tool:'axe',unit:'log',learn:'Learn it from a trainer for a skill point.',nodeLin
   const uqPct=v=>v==null?'—':(v*100<1?(v*100).toFixed(1):String(Math.round(v*1000)/10))+'%';
   const uqOneIn=v=>v?'1 in '+n(Math.round(1/v)):'';
   const uqBoss=name=>{const plain=String(name||'').replace(/^the /i,'');const p=globalThis.bxcNpcByName&&(globalThis.bxcNpcByName(name)||globalThis.bxcNpcByName(plain));return p?`<a href="${esc(p.href)}">${esc(name)}</a>`:esc(name)};
+  // ---- Augments (2 Nov 2026), a placeholder until there is more data. Numbers: the game's rules (its augment table) and its
+  // "Combat Augments" news. Which monster drops which kind is not in either: only what players report and the collector records.
+  const AUGMENTS=[
+    {id:'swiftness',name:'Swiftness',slot:'weapon',text:'Attack speed, within the attack speed cap',wand:'Spell cooldowns (not the global cooldown)',unit:'%',v:[2,3,4,5]},
+    {id:'keenness',name:'Keenness',slot:'weapon',text:'Crit chance',wand:'Spell effects land more often',unit:' points',v:[2,3,4,5]},
+    {id:'readiness',name:'Readiness',slot:'weapon',text:'Shorter special-attack cooldowns',wand:'Shorter signature spell cooldowns',unit:'%',v:[3,5,7,10]},
+    {id:'vigor',name:'Vigor',slot:'armor',text:'Max HP',unit:'%',v:[1,2,3,4],cap:9},
+    {id:'clarity',name:'Clarity',slot:'armor',text:'Max mana',unit:'%',v:[1,2,3,4],cap:12},
+    {id:'hardiness',name:'Hardiness',slot:'armor',text:'Max stamina',unit:'%',v:[1,2,3,4],cap:9},
+    {id:'thrift',name:'Thrift',slot:'armor',text:'Spells cost less mana',unit:'%',v:[1,1.5,2,3],cap:9},
+    {id:'valor',name:'Valor',slot:'armor',text:'Less damage from elite and boss monsters',unit:'%',v:[1,2,3,4],cap:12},
+    {id:'emberward',name:'Emberward',slot:'armor',text:'Less burn damage',unit:'%',v:[4,6,8,10],cap:30},
+    {id:'venomward',name:'Venomward',slot:'armor',text:'Less bleed, poison, venom and Corroded damage',unit:'%',v:[4,6,8,10],cap:30},
+    {id:'composure',name:'Composure',slot:'armor',text:'Shorter stuns and roots',unit:'%',v:[4,6,8,10],cap:30,pvp:1},
+    {id:'surefoot',name:'Surefoot',slot:'armor',text:'Shorter chill and hobble',unit:'%',v:[4,6,8,10],cap:30,pvp:1},
+    {id:'fleetness',name:'Fleetness',slot:'armor',text:'Move speed, within the +25% gear speed cap',unit:'%',v:[1,1.5,2,3],cap:10,pvp:1},
+    {id:'strongback',name:'Strongback',slot:'armor',text:'Carry weight',unit:'',v:[25,40,55,75],cap:150},
+    {id:'longevity',name:'Longevity',slot:'armor',text:'Longer meals and buff scrolls',unit:'%',v:[5,8,11,15],cap:40},
+    {id:'nourishment',name:'Nourishment',slot:'armor',text:'More healing from food and potions',unit:'%',v:[2,3,4,5],cap:15},
+    {id:'recovery',name:'Recovery',slot:'armor',text:'Longer death bag private window',unit:' min',v:[2,3,4,5],cap:12}];
+  globalThis.BXC_AUGMENTS=AUGMENTS;
+  const AUG_TIERS=[['I',10],['II',23],['III',36],['IV',49]],augNote='This page is a placeholder: drop rates and which monsters give which kind are still unknown.';
+  const augRow=a=>[...AUG_TIERS.map(([t],i)=>item('augment-'+a.id+'-'+(i+1),t)+` <span class="muted">${a.v[i]}${a.unit}</span>`)];
+  // the item page's block: what this one does, in the same words as the guide
+  globalThis.bxcAugmentHtml=id=>{const m=/^augment-([a-z]+)-([1-4])$/.exec(String(id||''));const a=m&&AUGMENTS.find(x=>x.id===m[1]);if(!a)return '';const i=m[2]-1;
+    return `<section class="wp-augment"><h2>What it does</h2><p>${esc(a.text)}: <b>${a.v[i]}${a.unit}</b>. Goes on ${a.slot==='weapon'?'a weapon':'an armor piece'}.${a.wand?` On a wand: ${esc(a.wand)}.`:''}${a.cap?` All your armor together stops at ${a.cap}${a.unit}.`:''}${a.pvp?' Halved in PvP.':''} Lasts 500 kills that pay you XP.</p><p class="muted">Dropped by monsters of level ${AUG_TIERS[i][1]} and up${i<3?`, below level ${AUG_TIERS[i+1][1]}`:''}. ${guide('augments','About augments')}. Placeholder: which monsters give which kind is still unknown.</p></section>`};
+  reg({slug:'augments',group:'Gear, gems & enchanting',title:'Augments',blurb:'One extra bonus for a weapon or armor piece, dropped by monsters. A placeholder for now.',build:()=>({lede:'An augment goes on a weapon or an armor piece and gives it one extra bonus on top of its enchant. It wears out as you hunt.',sections:[
+    ['status','About this page',note(augNote)],
+    ['finding','Finding them',`<ul class="g-list"><li>Any monster of level 10 or higher can drop one. They’re rare; elites and bosses drop them more often, and raid monsters drop them too.</li><li>The kill must pay you XP, so a monster more than 10 levels below you gives none.</li><li>The monster’s level sets the tier: ${AUG_TIERS.map(([t,l])=>`<b>${t}</b> from ${l}`).join(', ')}.</li></ul>`],
+    ['seen','Seen so far',`<p>Not enough to say what drops what. Only the first row was recorded by the collector; the others are what players said in chat.</p>`+table(['Augment','From','Source'],[[item('augment-emberward-4','Emberward Augment IV'),monster('young-red-dragon','Young Red Dragon'),'Recorded'],[item('augment-vigor-4','Vigor Augment IV'),'Ogres','Player report'],['“3% less damage from bosses”, which matches '+item('augment-valor-3','Valor Augment III'),'A Thak','Player report']])],
+    ['using','Putting one on',`<ul class="g-list"><li>Drag it onto a weapon or one of your five armor pieces, in your bag or worn, outside combat. Weapon augments only go on weapons and armor augments only on armor. Shields, spellbooks, capes, rings, pendants, tools and quivers can’t take one.</li><li>A piece holds one augment, next to its enchant. It can’t be taken off, and salvaging, burning or crafting with the piece destroys it.</li><li>It works at full strength for <b>500 kills that pay you XP</b>, party kills included, then it’s gone. Gathering, crafting, dying, getting hit and PvP don’t wear it down.</li><li>Feed it the same kind at an equal or lower tier to refill it, by the ratio of the tiers: a tier I restores 25% of a tier IV and 50% of a tier II. A higher tier or a different kind replaces it at full charge.</li><li>The Exchange only takes gear with a full augment: listing a piece below 100% removes its augment for good, even if the order is canceled. Loose augments stack and sell like any item.</li></ul>`],
+    ['weapon','Weapon augments',table(['Augment','Effect','On a wand','I','II','III','IV'],AUGMENTS.filter(a=>a.slot==='weapon').map(a=>[esc(a.name),esc(a.text),esc(a.wand),...augRow(a)]))],
+    ['armor','Armor augments',table(['Augment','Effect','I','II','III','IV','Most from all armor'],AUGMENTS.filter(a=>a.slot==='armor').map(a=>[esc(a.name),esc(a.text)+(a.pvp?' <span class="muted">(halved in PvP)</span>':''),...augRow(a),a.cap+a.unit]))],
+    ['source','Where this comes from',note('The game’s “Combat Augments” news (2 Nov 2026) and its rules.')]],related:['unique-items','quality-and-enchanting','combat']})});
   reg({slug:'unique-items',group:'Gear, gems & enchanting',title:'Unique items',blurb:'Every named boss drop: what it does, who drops it, and how often.',build:()=>{
     const GD=globalThis.BXC_GAME_DATA||{},list=Array.isArray(GD.uniques)?GD.uniques:[],R=GD.uniqueDropRates||{};
     if(!list.length)return {lede:'The list of unique items comes from the game’s rules and hasn’t loaded yet.',sections:[]};
