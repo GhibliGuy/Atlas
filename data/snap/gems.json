@@ -1,4 +1,9 @@
 [
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1793679581545,"sessionId":"19f1a299","key":1021},
+{"type":"gem.found","typeId":"gem-amber","carat":1,"dropped":false,"time":1793679562939,"sessionId":"19f1a299","key":1020},
+{"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"npcName":"Young Red Dragon","time":1793679401613,"sessionId":"ad14236a","key":1019},
+{"type":"gem.found","typeId":"gem-ruby","carat":1.5,"dropped":false,"time":1793676540131,"sessionId":"dad95fb1","key":1018},
+{"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"npcName":"Embermaw","time":1793676233120,"sessionId":"ad14236a","key":1017},
 {"type":"gem.found","typeId":"gem-onyx","carat":0.5,"dropped":false,"npcName":"Young Red Dragon","time":1793674413507,"sessionId":"ad14236a","key":1016},
 {"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"npcName":"Young Red Dragon","time":1793674085040,"sessionId":"ad14236a","key":1015},
 {"type":"gem.found","typeId":"gem-sapphire","carat":2.5,"dropped":false,"time":1793673042019,"sessionId":"1245bbac","key":1014},
