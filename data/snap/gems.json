@@ -1,4 +1,9 @@
 [
+{"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"time":1793716639601,"sessionId":"0228aa04","key":1026},
+{"type":"gem.found","typeId":"gem-diamond","carat":0.5,"dropped":false,"time":1793712514382,"sessionId":"0228aa04","key":1025},
+{"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"npcName":"Ogre Butcher","time":1793710707719,"sessionId":"5aea5a4a","key":1024},
+{"type":"gem.found","typeId":"gem-amber","carat":1,"dropped":false,"time":1793710583891,"sessionId":"306c4e0a","key":1023},
+{"type":"gem.found","typeId":"gem-topaz","carat":1,"dropped":false,"npcName":"Virikh Templar","time":1793710053821,"sessionId":"5aea5a4a","key":1022},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1793679581545,"sessionId":"19f1a299","key":1021},
 {"type":"gem.found","typeId":"gem-amber","carat":1,"dropped":false,"time":1793679562939,"sessionId":"19f1a299","key":1020},
 {"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"npcName":"Young Red Dragon","time":1793679401613,"sessionId":"ad14236a","key":1019},
