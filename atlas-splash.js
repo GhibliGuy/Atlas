@@ -125,23 +125,24 @@
   // the numbers under the search box (what the Atlas knows right now)
   // "Where to fight at your level" (wiki redesign, Oct 2026): every monster players have seen, drawn as a bar over the
   // levels it was seen at (the catalog's observed min/max level). Sliding to your level lights up those within three
-  // levels and lists them nearest first. Only the bars' classes and the short list change while sliding.
+  // levels and lists them nearest first. Only the bars' classes and the short list change while sliding. Levels seen inside
+  // a raid don't count (raids scale to you): a monster met only in raids is left out, and the raids your level is within are named instead.
   const FIGHT_KEY='bxcFightLevel',FIGHT_NEAR=3;
   function fightList(){
     // A sighting at level 0 is one whose level wasn't known, so the lowest level counts from 1 (else the base level).
     // Passive animals (chickens, rabbits, deer) count too; horses are mounts, not monsters to fight.
-    const lvOk=v=>Number(v)>0?Number(v):null;
+    const lvOk=v=>Number(v)>0?Number(v):null,open=typeof globalThis.bxcOpenLevels==='function'?globalThis.bxcOpenLevels():null;
     return (typeof D!=='undefined'&&D.catalog||[]).filter(m=>m&&m.name&&m.family!=='human'&&!/^horse-/.test(m.typeId)&&m.maxHp&&(m.count||m.collectorCount)&&(lvOk(m.obsMinLevel)??lvOk(m.baseLevel)))
-      .map(m=>{const lo=lvOk(m.obsMinLevel)??lvOk(m.baseLevel),hi=Math.max(lo,lvOk(m.obsMaxLevel)??lo);return {id:m.typeId,name:m.name,lo,hi}}).sort((a,b)=>a.lo-b.lo||a.hi-b.hi);
+      .map(m=>{const o=open&&open[m.typeId];if(o&&o.lo==null)return null;const lo=o?o.lo:lvOk(m.obsMinLevel)??lvOk(m.baseLevel),hi=o?o.hi:Math.max(lo,lvOk(m.obsMaxLevel)??lo);return {id:m.typeId,name:m.name,lo,hi}}).filter(Boolean).sort((a,b)=>a.lo-b.lo||a.hi-b.hi);
   }
   function fightHtml(){
     const L=fightList();if(L.length<3)return '';
-    const top=Math.max(60,...L.map(x=>x.hi)),pct=v=>((v-1)/(top-1))*100,rows=[];
+    const top=Math.max(60,...L.map(x=>x.hi),...(globalThis.BXC_RAIDS||[]).map(r=>r.lv+30)),pct=v=>((v-1)/(top-1))*100,rows=[];
     const bars=L.map(x=>{const a=pct(x.lo),b=pct(x.hi);let r=0;while(rows[r]!=null&&rows[r]>a-0.6)r++;rows[r]=b+0.6;
       return `<span class="fight-bar" data-lo="${x.lo}" data-hi="${x.hi}" style="left:${a.toFixed(2)}%;width:max(4px,${(b-a).toFixed(2)}%);top:${r*7}px" title="${esc(x.name)} · level ${x.lo===x.hi?x.lo:x.lo+'–'+x.hi}"></span>`}).join('');
     const v=Math.min(top,Math.max(1,+get(FIGHT_KEY)||10)),marks=[1,...Array.from({length:Math.floor(top/10)},(_,i)=>(i+1)*10)];
     return `<section class="splash-fight" data-n="${L.length}" aria-labelledby="fightH"><h2 id="fightH">Where to fight at your level</h2>
-      <p class="fight-sub">Slide to your level. Monsters players have seen within ${FIGHT_NEAR} levels of it light up.</p>
+      <p class="fight-sub">Slide to your level. Monsters players have seen within ${FIGHT_NEAR} levels of it light up, and any raid that scales to it is listed.</p>
       <div class="fight-box"><div class="fight-you"><output id="fightOut" for="fightLv">${v}</output><label for="fightLv">Your level</label><input type="range" id="fightLv" min="1" max="${top}" value="${v}"></div>
       <div class="fight-ruler" aria-hidden="true" style="height:${rows.length*7+2}px">${bars}<span class="fight-mark" style="left:${pct(v)}%"></span></div>
       <div class="fight-scale" aria-hidden="true">${marks.map(m=>`<span style="left:${pct(m)}%">${m}</span>`).join('')}</div>
@@ -154,7 +155,9 @@
     for(const b of box.querySelectorAll('.fight-bar'))b.classList.toggle('on',v>=+b.dataset.lo-FIGHT_NEAR&&v<=+b.dataset.hi+FIGHT_NEAR);
     const near=fightList().filter(x=>v>=x.lo-FIGHT_NEAR&&v<=x.hi+FIGHT_NEAR).map(x=>({...x,d:v<x.lo?x.lo-v:v>x.hi?v-x.hi:0})).sort((a,b)=>a.d-b.d||b.lo-a.lo).slice(0,12);
     const img=id=>typeof globalThis.bxcAssetImg==='function'&&globalThis.bxcAssetImg(id,'monster')||'';
-    box.querySelector('.fight-picks').innerHTML=near.length?near.map(x=>`<button type="button" class="fight-pick" data-monster="${esc(x.id)}">${img(x.id)?`<img src="${esc(img(x.id))}" alt="">`:''}<span><b>${esc(x.name)}</b><small>Level ${x.lo===x.hi?x.lo:x.lo+'–'+x.hi}</small></span></button>`).join(''):'<p class="fight-none">No monsters seen within three levels of this yet.</p>';
+    const raids=(globalThis.BXC_RAIDS||[]).filter(r=>v>=r.lv&&v<=r.lv+30);
+    box.querySelector('.fight-picks').innerHTML=(near.length?near.map(x=>`<button type="button" class="fight-pick" data-monster="${esc(x.id)}">${img(x.id)?`<img src="${esc(img(x.id))}" alt="">`:''}<span><b>${esc(x.name)}</b><small>Level ${x.lo===x.hi?x.lo:x.lo+'–'+x.hi}</small></span></button>`).join(''):'<p class="fight-none">No monsters seen within three levels of this yet.</p>')
+      +(raids.length?`<p class="fight-raids-h">Raids that scale to level ${v}</p>`+raids.map(r=>`<button type="button" class="fight-pick fight-raid" data-raid="1"><span><b>${esc(r.name)}</b><small>Raid · scales from level ${r.lv} to ${r.lv+30}</small></span></button>`).join(''):'');
   }
   function statsHtml(){
     const d=typeof D!=='undefined'?D:{},S=globalThis.BINXONIA_COLLECTOR_SNAPSHOT||{};
@@ -202,7 +205,7 @@
     if(IN_APP&&typeof globalThis.bxcNews==='function')tryNews(3);   // the app's bridge may not answer yet right at start
     el.addEventListener('input',e=>{if(e.target.id==='fightLv'){put(FIGHT_KEY,e.target.value);fightUpdate()}});fightUpdate();
     el.addEventListener('click',e=>{const b=e.target.closest('.splash-tile');if(b&&b.tagName==='A')return;if(b){go(TILES[+b.dataset.i][0]);return}
-      const f=e.target.closest('.splash-feature-go,.fight-pick');if(f){close();(globalThis.bxcGo||(h=>{location.hash=h}))('#/monster/'+encodeURIComponent(f.dataset.monster));return}
+      const f=e.target.closest('.splash-feature-go,.fight-pick');if(f){close();(globalThis.bxcGo||(h=>{location.hash=h}))(f.dataset.raid?'#/guide/raids':'#/monster/'+encodeURIComponent(f.dataset.monster));return}
       if(e.target.closest('.splash-new a'))close()});
     el.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close()}});
   }

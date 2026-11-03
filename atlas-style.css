@@ -1237,6 +1237,8 @@ html[data-theme="light"] .wp-infobox .wp-pic{background:radial-gradient(closest-
 .fight-pick b{display:block;font-weight:700;line-height:1.2}
 .fight-pick small{color:var(--muted);font-size:12.5px}
 .fight-none{margin:0;color:var(--muted)}
+.fight-raids-h{grid-column:1/-1;margin:6px 0 0;font-weight:700}
+.fight-raid{border-color:var(--accent-soft)}
 @media (max-width:560px){.fight-box{padding:14px}.fight-you output{font-size:38px}}
 .splash-stats{box-sizing:border-box}
 html[data-theme="light"] #content a:not(.page-link),html[data-theme="light"] #mapPanel a:not(.map-panel-open){color:var(--accent)} /* the dark-theme gold is too pale on paper */

@@ -166,6 +166,9 @@ function dataFetch(u){return fetch(u,{cache:'no-cache'})}
   let catalogWeak=new Map(); // monster typeId -> its weakTo string, rebuilt alongside catalogFamily
   let catalogResist=new Map(); // monster typeId -> its resists string, rebuilt alongside catalogFamily
   let zoneOverlayDrag=null, zoneOverlayPan=null, suppressNextOverlayClick=false, lastRenderedZoneOverlayZ=null;
+  // spawns that were not real game spawns (keep in step with BAD_SIGHTINGS in background.js, which also leaves them out of the publish)
+  const BAD_SIGHTINGS=new Set(['61a6db8e-5c8a-417c-9fc1-be5043d61196','39b5dc36-223b-453c-a63d-0f1dcaeba5f3','ad61a75e-e789-4703-b3d1-2f5d59b7afce','f1045b27-3b59-419b-b7b8-3644e80eb7ba','438fea02-9a93-4bbd-85d9-5158f602c021','7c858df2-1497-4cc9-b6f2-d0de6f43d4b9','d9c402d1-c657-44ae-9c5b-c1f2e16a6aad']);
+  const withoutBadSightings=s=>{if(!s)return s;const clean=a=>Array.isArray(a)&&a.some(n=>n&&BAD_SIGHTINGS.has(n.id))?a.filter(n=>!(n&&BAD_SIGHTINGS.has(n.id))):a,npcs=clean(s.npcs),obs=clean(s.npcObservations);return npcs===s.npcs&&obs===s.npcObservations?s:{...s,npcs,npcObservations:obs}};
   let requestCounter=0, snapshot=null, rawSnapshot=null, syncing=false, lastSnapshotStats=null;   // rawSnapshot: as the collector sent it; snapshot: places split (splitPlaces)
   const pending=new Map();
   const selectedResourceLayer=(typeof map!=='undefined'&&typeof L!=='undefined')?L.layerGroup().addTo(map):null;
@@ -2909,6 +2912,18 @@ function newsHtml(){
     state.worldTypes=[...wm.values()].sort((a,b)=>b.count-a.count||a.typeId.localeCompare(b.typeId));
   }
 
+  // Each monster's levels outside the raids, for the home page's level slider: raids scale to whoever walks in, so a level
+  // seen inside one says nothing about the monster. {typeId:{lo,hi}} (hi/lo null: seen only in raids), rebuilt per snapshot.
+  let openLevelsFor=null,openLevelsZones=-1,openLevels=null;
+  globalThis.bxcOpenLevels=function(){
+    const zones=state.zones?.size||0;if(!snapshot)return null;
+    if(openLevelsFor===snapshot&&openLevelsZones===zones)return openLevels;
+    const key=s=>String(s||'').toLowerCase().replace(/[’']/g,'').replace(/^the /,'').trim(),names=new Set((globalThis.BXC_RAIDS||[]).map(r=>key(r.name))),raidZ=new Set();
+    for(const [z,m] of state.zones||[])if(names.has(key(m&&m.name)))raidZ.add(z);
+    const out={};
+    for(const n of [...(snapshot.npcObservations||[]),...(snapshot.npcs||[])]){const v=Number(n?.level);if(!n?.typeId||!(v>0))continue;const r=out[n.typeId]||(out[n.typeId]={lo:null,hi:null});if(raidZ.has(n.position?.z))continue;r.lo=r.lo==null?v:Math.min(r.lo,v);r.hi=r.hi==null?v:Math.max(r.hi,v)}
+    openLevelsFor=snapshot;openLevelsZones=zones;return openLevels=out;
+  };
   function deriveMonsters(){
     const groups=new Map();
     const all=[...(snapshot?.npcObservations||[]),...(snapshot?.npcs||[])];
@@ -4180,7 +4195,7 @@ function newsHtml(){
   // few seconds while you walk), so only what's built from them is redone, and a reference page you're reading is not
   // rebuilt under you: it gets the "New data - refresh" link instead (the project's rule for live updates).
   function applySnapshot(s,opts={}){
-    rawSnapshot=s||{};snapshot=splitPlaces(rawSnapshot);window.BINXONIA_COLLECTOR_SNAPSHOT=snapshot;if(!state.visitBaseline)state.visitBaseline={...(loadStoredBaseline()||snapshot.stats||{})};
+    rawSnapshot=withoutBadSightings(s)||{};snapshot=splitPlaces(rawSnapshot);window.BINXONIA_COLLECTOR_SNAPSHOT=snapshot;if(!state.visitBaseline)state.visitBaseline={...(loadStoredBaseline()||snapshot.stats||{})};
     console.time('applySnapshot:derive');
     if(opts.layoutOnly){deriveResourceSkills();deriveResourceCatalog();deriveItems();deriveZones();deriveSelf();deriveResearch()}
     else{deriveResourceSkills();deriveResourceCatalog();deriveGatherStats();deriveGems();deriveXp();deriveKills();deriveDrops();deriveItems();deriveZones();deriveSelf();deriveAssets();deriveResearch();deriveMonsters()}
@@ -4206,7 +4221,7 @@ function newsHtml(){
     const npcs=(m.npcs||[]).map((r,i)=>{const [ti,id,level,elite,ls,px,py,pz,ox,oy,oz,cls,span]=r,t=types[ti]||[];
       const n={id:id||('lite-'+i),typeId:t[0],name:t[1],level,elite:!!elite,lastSeen:ls*1000,position:{x:px,y:py,z:pz},originPosition:ox!=null?{x:ox,y:oy,z:oz||0}:null};if(cls)n.npcClass=cls;if(span!=null&&ls)n.firstSeen=(ls-span)*1000;return n});
     const worldObjects=(m.objects||[]).map((r,i)=>{const [typeId,name,x,y,status,fish,z,ls,fs,zid]=r,o={id:zid||('lite-o'+i),typeId,name,position:{x,y,z:z||0},status};if(ls)o.lastSeen=ls*1000;if(fs)o.firstSeen=fs*1000;if(fish)o.data={fishTypes:fish};return o});
-    rawSnapshot={...base,npcs,worldObjects,npcObservations:[],drops:[],terrain:[],zoneTransitions:[],bxcLite:true,bxcHomeCounts:m.home||null};
+    rawSnapshot={...base,npcs:npcs.filter(n=>!BAD_SIGHTINGS.has(n.id)),worldObjects,npcObservations:[],drops:[],terrain:[],zoneTransitions:[],bxcLite:true,bxcHomeCounts:m.home||null};
     snapshot=rawSnapshot;window.BINXONIA_COLLECTOR_SNAPSHOT=snapshot;
     deriveResourceSkills();deriveResourceCatalog();deriveAssets();
     state.zones=new Map((m.zones||[]).map(z=>[z.z,z]));state.zoneEntrances=new Map(m.entrances||[]);
