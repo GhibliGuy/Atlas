@@ -175,7 +175,7 @@
 {"z":-7,"name":"Binxonia - Weapon Store","pvpMode":"none","firstSeen":1790704304238,"lastSeen":1791835626175,"nameOverride":true,"entranceOverride":{"x":26.274780329205953,"y":12.887861164268202},"exitOverride":null},
 {"z":-6,"name":"Binxonia - Tailor","pvpMode":"none","firstSeen":1790131677973,"lastSeen":1792375311026,"nameOverride":true,"entranceOverride":{"x":7.1128033932425865,"y":16.980333056436564},"exitOverride":null},
 {"z":-5,"name":"Binxonia - Inn","pvpMode":"none","firstSeen":1790704259025,"lastSeen":1790704259025,"nameOverride":true,"entranceOverride":{"x":-0.24148559676058312,"y":-22.358053128727022},"exitOverride":null},
-{"z":-1,"name":"Plymouth Wharf","pvpMode":"none","firstSeen":1789944024696,"lastSeen":1793741241931,"nameOverride":false,"entranceOverride":null,"exitOverride":null,"gameName":"Plymouth Wharf"},
+{"z":-1,"name":"Plymouth Wharf","pvpMode":"none","firstSeen":1789944024696,"lastSeen":1793820193830,"nameOverride":false,"entranceOverride":null,"exitOverride":null,"gameName":"Plymouth Wharf"},
 {"z":1,"name":"Wispmeyer Bank","pvpMode":"none","firstSeen":1789881545261,"lastSeen":1793650393910,"nameOverride":true,"entranceOverride":{"x":892.4854432514098,"y":-699.0279084863778},"exitOverride":null,"gameName":"Wispmeyer"},
 {"z":3,"name":"Binxonia Iron Mine","pvpMode":"none","firstSeen":1790037725245,"lastSeen":1792451883441,"nameOverride":true,"entranceOverride":{"x":34.936654625021546,"y":-187.11253726644628},"exitOverride":null},
 {"z":20,"name":"Plymouth Wharf - Fishing Trainer","pvpMode":"none","firstSeen":1790128357177,"lastSeen":1793717425251,"nameOverride":true,"entranceOverride":{"x":148.07179609351374,"y":-71.08540600852842},"exitOverride":null,"gameName":"Plymouth Wharf"},
