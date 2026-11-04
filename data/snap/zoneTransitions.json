@@ -1,4 +1,12 @@
 [
+{"sessionId":"c3e94f44","time":1793810776051,"fromZ":null,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":-19,"atY":20,"key":11576},
+{"sessionId":"4a9e20cb","time":1793810503974,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":11575},
+{"sessionId":"4a9e20cb","time":1793810479281,"fromZ":11000,"toZ":0,"kind":"outdoors","outX":1706,"outY":1818,"key":11574},
+{"sessionId":"4a9e20cb","time":1793808181873,"fromZ":null,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":28,"key":11573},
+{"sessionId":"47e22312","time":1793807237255,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":11572},
+{"sessionId":"47e22312","time":1793807214964,"fromZ":11000,"toZ":0,"kind":"outdoors","outX":1706,"outY":1818,"key":11571},
+{"sessionId":"809960d7","time":1793804192327,"fromZ":600,"toZ":0,"kind":"outdoors","outX":1688,"outY":1869,"key":11570},
+{"sessionId":"809960d7","time":1793804181622,"fromZ":null,"toZ":600,"zoneName":"City of Westergarde","pvpMode":"none","atX":1690,"atY":1871,"key":11569},
 {"sessionId":"47e22312","time":1793803466271,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":11568},
 {"sessionId":"47e22312","time":1793803442738,"fromZ":11000,"toZ":0,"kind":"outdoors","outX":1706,"outY":1818,"key":11567},
 {"sessionId":"47e22312","time":1793800245247,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":11566},
@@ -4990,13 +4998,5 @@
 {"sessionId":"ac57be42","time":1792524507305,"fromZ":-251,"toZ":-250,"zoneName":"Grumm's Hollow","pvpMode":"lawless","atX":1025,"atY":253,"key":6580},
 {"sessionId":"ac57be42","time":1792524498052,"fromZ":-252,"toZ":-251,"zoneName":"Grumm's Hollow","pvpMode":"lawless","atX":1027,"atY":254,"key":6579},
 {"sessionId":"ac57be42","time":1792524490262,"fromZ":-253,"toZ":-252,"zoneName":"Grumm's Hollow","pvpMode":"lawless","atX":1037,"atY":253,"key":6578},
-{"sessionId":"ac57be42","time":1792524466162,"fromZ":-252,"toZ":-253,"zoneName":"Grumm's Hollow","pvpMode":"lawless","atX":997,"atY":241,"key":6577},
-{"sessionId":"ac57be42","time":1792524433716,"fromZ":-251,"toZ":-252,"zoneName":"Grumm's Hollow","pvpMode":"lawless","atX":1006,"atY":235,"key":6576},
-{"sessionId":"ac57be42","time":1792524412238,"fromZ":-250,"toZ":-251,"zoneName":"Grumm's Hollow","pvpMode":"lawless","atX":1000.68,"atY":233.44,"key":6575},
-{"sessionId":"ac57be42","time":1792524320588,"fromZ":-251,"toZ":-250,"zoneName":"Grumm's Hollow","pvpMode":"lawless","atX":1025,"atY":253,"key":6574},
-{"sessionId":"ac57be42","time":1792524319528,"fromZ":-250,"toZ":-251,"zoneName":"Grumm's Hollow","pvpMode":"lawless","atX":997,"atY":235,"key":6573},
-{"sessionId":"ac57be42","time":1792524313686,"fromZ":-251,"toZ":-250,"zoneName":"Grumm's Hollow","pvpMode":"lawless","atX":1025,"atY":253,"key":6572},
-{"sessionId":"ac57be42","time":1792524305607,"fromZ":-252,"toZ":-251,"zoneName":"Grumm's Hollow","pvpMode":"lawless","atX":1027,"atY":254,"key":6571},
-{"sessionId":"ac57be42","time":1792524297580,"fromZ":-253,"toZ":-252,"zoneName":"Grumm's Hollow","pvpMode":"lawless","atX":1037,"atY":253,"key":6570},
-{"sessionId":"ac57be42","time":1792524280425,"fromZ":-252,"toZ":-253,"zoneName":"Grumm's Hollow","pvpMode":"lawless","atX":997,"atY":241,"key":6569}
+{"sessionId":"ac57be42","time":1792524466162,"fromZ":-252,"toZ":-253,"zoneName":"Grumm's Hollow","pvpMode":"lawless","atX":997,"atY":241,"key":6577}
 ]
