@@ -1,4 +1,8 @@
 [
+{"sessionId":"5f3521e7","time":1793838077804,"fromZ":600,"toZ":0,"kind":"outdoors","outX":1688,"outY":1869,"key":11600},
+{"sessionId":"5f3521e7","time":1793838071411,"fromZ":null,"toZ":600,"zoneName":"City of Westergarde","pvpMode":"none","atX":1690,"atY":1871,"key":11599},
+{"sessionId":"9bbf4b6f","time":1793835683397,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":11598},
+{"sessionId":"9bbf4b6f","time":1793835649661,"fromZ":null,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":11597},
 {"sessionId":"f682bec9","time":1793820226114,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":11596},
 {"sessionId":"f682bec9","time":1793820193830,"fromZ":null,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":11595},
 {"sessionId":"c3e94f44","time":1793813579394,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":11594},
@@ -4994,9 +4998,5 @@
 {"sessionId":"549f3edf","time":1792526653402,"fromZ":-45,"toZ":0,"kind":"outdoors","outX":-26,"outY":20,"key":6604},
 {"sessionId":"549f3edf","time":1792526442307,"fromZ":0,"toZ":-45,"zoneName":"Midland Forest","pvpMode":"none","atX":1034,"atY":-35,"key":6603},
 {"sessionId":"549f3edf","time":1792526260948,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":452,"outY":152,"key":6602},
-{"sessionId":"1f65526d","time":1792525971545,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":6601},
-{"sessionId":"1f65526d","time":1792525958615,"fromZ":11001,"toZ":0,"kind":"outdoors","outX":-26,"outY":20,"key":6600},
-{"sessionId":"1f65526d","time":1792525941875,"fromZ":0,"toZ":11001,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":8,"atY":17,"key":6599},
-{"sessionId":"1f65526d","time":1792525893081,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":6598},
-{"sessionId":"1f65526d","time":1792525671503,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":12.9,"atY":-12.2,"key":6597}
+{"sessionId":"1f65526d","time":1792525971545,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":6601}
 ]
