@@ -1,4 +1,10 @@
 [
+{"type":"gem.found","typeId":"gem-iolite","carat":1,"dropped":false,"time":1793897239717,"sessionId":"dc75e90c","key":1120},
+{"type":"gem.found","typeId":"gem-topaz","carat":1,"dropped":false,"time":1793896596928,"sessionId":"0a3a58c2","key":1119},
+{"type":"gem.found","typeId":"gem-iolite","carat":2,"dropped":false,"time":1793895853832,"sessionId":"dc75e90c","key":1118},
+{"type":"gem.found","typeId":"gem-amber","carat":3,"dropped":false,"time":1793894329885,"sessionId":"dc75e90c","key":1117},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1793894100901,"sessionId":"dc75e90c","key":1116},
+{"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"npcName":"Thak Footman","time":1793892273827,"sessionId":"85d8894c","key":1115},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1793889726005,"sessionId":"dc75e90c","key":1114},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1793889159338,"sessionId":"dc75e90c","key":1113},
 {"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"time":1793888144726,"sessionId":"85d8894c","key":1112},
