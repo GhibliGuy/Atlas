@@ -1,4 +1,11 @@
 [
+{"sessionId":"e2e2638d","time":1793995015185,"fromZ":-486,"toZ":0,"kind":"outdoors","outX":160,"outY":-1241,"key":11792},
+{"sessionId":"e2e2638d","time":1793995012399,"fromZ":0,"toZ":-486,"zoneName":"The Keepers' Drift","pvpMode":"none","atX":163,"atY":-1240,"key":11791},
+{"sessionId":"e2e2638d","time":1793992019165,"fromZ":-486,"toZ":0,"kind":"outdoors","outX":160,"outY":-1241,"key":11790},
+{"sessionId":"e2e2638d","time":1793992012583,"fromZ":-487,"toZ":-486,"zoneName":"The Keepers' Drift","pvpMode":"none","atX":187,"atY":-1219,"key":11789},
+{"sessionId":"2eb09377","time":1793991846348,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":11788},
+{"sessionId":"2eb09377","time":1793991843218,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":13.4,"atY":-13.8,"key":11787},
+{"sessionId":"e2e2638d","time":1793991585769,"fromZ":null,"toZ":-487,"zoneName":"The Keepers' Drift","pvpMode":"none","atX":208.5,"atY":-1203.1,"key":11786},
 {"sessionId":"1911e82d","time":1793987412961,"fromZ":-486,"toZ":-487,"zoneName":"The Keepers' Drift","pvpMode":"none","atX":196,"atY":-1241,"key":11785},
 {"sessionId":"1911e82d","time":1793987405601,"fromZ":null,"toZ":-486,"zoneName":"The Keepers' Drift","pvpMode":"none","atX":163,"atY":-1240,"key":11784},
 {"sessionId":"e0b2ce77","time":1793986254510,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":11783},
@@ -4991,12 +4998,5 @@
 {"sessionId":"63f3c389","time":1792594984362,"fromZ":0,"toZ":11001,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":8,"atY":17,"key":6796},
 {"sessionId":"63f3c389","time":1792594318095,"fromZ":11001,"toZ":0,"kind":"outdoors","outX":1706,"outY":1819,"key":6795},
 {"sessionId":"63f3c389","time":1792594285954,"fromZ":0,"toZ":11001,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":8,"atY":17,"key":6794},
-{"sessionId":"63f3c389","time":1792594281415,"fromZ":602,"toZ":0,"kind":"outdoors","outX":1707,"outY":1838,"key":6793},
-{"sessionId":"63f3c389","time":1792594266073,"fromZ":0,"toZ":602,"zoneName":"City of Westergarde","pvpMode":"none","atX":1708,"atY":1841,"key":6792},
-{"sessionId":"63f3c389","time":1792594261715,"fromZ":11001,"toZ":0,"kind":"outdoors","outX":1706,"outY":1819,"key":6791},
-{"sessionId":"63f3c389","time":1792594169477,"fromZ":0,"toZ":11001,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":8,"atY":17,"key":6790},
-{"sessionId":"63f3c389","time":1792594164954,"fromZ":602,"toZ":0,"kind":"outdoors","outX":1707,"outY":1838,"key":6789},
-{"sessionId":"63f3c389","time":1792594148779,"fromZ":0,"toZ":602,"zoneName":"City of Westergarde","pvpMode":"none","atX":1708,"atY":1841,"key":6788},
-{"sessionId":"63f3c389","time":1792594144863,"fromZ":11001,"toZ":0,"kind":"outdoors","outX":1706,"outY":1819,"key":6787},
-{"sessionId":"0729d533","time":1792594122961,"fromZ":0,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":7,"atY":2,"key":6786}
+{"sessionId":"63f3c389","time":1792594281415,"fromZ":602,"toZ":0,"kind":"outdoors","outX":1707,"outY":1838,"key":6793}
 ]
