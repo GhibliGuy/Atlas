@@ -1,4 +1,8 @@
 [
+{"sessionId":"553dc37e","time":1793937510410,"fromZ":600,"toZ":0,"kind":"outdoors","outX":1688,"outY":1869,"key":11716},
+{"sessionId":"553dc37e","time":1793937490259,"fromZ":null,"toZ":600,"zoneName":"City of Westergarde","pvpMode":"none","atX":1690,"atY":1871,"key":11715},
+{"sessionId":"863bce87","time":1793935323577,"fromZ":-1,"toZ":0,"kind":"outdoors","outX":136,"outY":-74,"key":11714},
+{"sessionId":"863bce87","time":1793935311524,"fromZ":null,"toZ":-1,"zoneName":"Plymouth Wharf","pvpMode":"none","atX":134,"atY":-74,"key":11713},
 {"sessionId":"d52d63ee","time":1793933386851,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":11712},
 {"sessionId":"d52d63ee","time":1793933324433,"fromZ":11076,"toZ":0,"kind":"outdoors","outX":954,"outY":-719,"key":11711},
 {"sessionId":"d52d63ee","time":1793933306459,"fromZ":0,"toZ":11076,"zoneName":"GhibFish's home, Wispmeyer","pvpMode":"none","atX":11,"atY":5,"key":11710},
@@ -4994,9 +4998,5 @@
 {"sessionId":"d7d1a86a","time":1792587126869,"fromZ":0,"toZ":11001,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":8,"atY":17,"key":6720},
 {"sessionId":"d6cfdd2f","time":1792586249798,"fromZ":null,"toZ":11000,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":12,"atY":23,"key":6719},
 {"sessionId":"d7d1a86a","time":1792586205785,"fromZ":11001,"toZ":0,"kind":"outdoors","outX":1706,"outY":1819,"key":6718},
-{"sessionId":"d7d1a86a","time":1792586185954,"fromZ":0,"toZ":11001,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":8,"atY":17,"key":6717},
-{"sessionId":"d7d1a86a","time":1792586151564,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":-55,"outY":197,"key":6716},
-{"sessionId":"d7d1a86a","time":1792586077183,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":12.6,"atY":-13.2,"key":6715},
-{"sessionId":"ad325243","time":1792586072751,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":6714},
-{"sessionId":"ad325243","time":1792586059744,"fromZ":-45,"toZ":0,"kind":"outdoors","outX":-26,"outY":20,"key":6713}
+{"sessionId":"d7d1a86a","time":1792586185954,"fromZ":0,"toZ":11001,"zoneName":"GhibliGuy's home, Westergarde","pvpMode":"none","atX":8,"atY":17,"key":6717}
 ]
