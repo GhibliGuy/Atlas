@@ -5275,7 +5275,7 @@ function newsHtml(){
   // ---- Monster levels ---------------------------------------------------------------------------------------
   // One monster type spawns at several levels. The game works its stats out from the level (rules file): HP =
   // round(round(12 + 2*(L-1)) * (L<=9 ? 1 : min(3.5, 1.025^(L-9)))), damage = (5.05 + 0.55*(L-1)) x the family's
-  // archetype factor x a softening below level 8, XP = 50*L; elites x3 HP, x1.4 damage, x3 XP; bosses x3 HP.
+  // archetype factor x a softening below level 8, XP = 50*L; elites x3 HP, x1.4 damage, x5 XP (5 Nov 2026); bosses x3 HP.
   // The client only carries the "soft" archetype factor (1), so each monster's own factor is read back from its
   // known damage at its base level (werewolves come out at 1.9). Sightings by level come from what was recorded.
   const lvHp=L=>Math.round(Math.round(12+Math.max(0,L-1)*2)*(L<=9?1:Math.min(3.5,1.025**(L-9))));
@@ -5600,7 +5600,7 @@ function newsHtml(){
     return `<article class="wp"><div class="wp-main">${lockNote}<p class="wp-lede">${lede}</p>
       <h2>Fighting it</h2><div class="s">${tagChipsLine(m?.weakTo,m?.resists,m?.family)}</div>
       <p class="s muted">A weakness adds ${Math.round(((globalThis.BXC_GAME_DATA?.combat?.weakMult??1.15)-1)*100)}% damage (the game's own rule). Monsters have no resistances.</p>
-      ${m?.eliteObserved?`<p class="s good">⭐ Seen as an elite ${esc(m.eliteObserved)} times (${(m.eliteRate*100).toFixed(1)}% of sightings). Elites have 3× HP, hit 1.4× harder, give 3× XP and 2.5× loot.</p>`:''}
+      ${m?.eliteObserved?`<p class="s good">⭐ Seen as an elite ${esc(m.eliteObserved)} times (${(m.eliteRate*100).toFixed(1)}% of sightings). Elites have 3× HP, hit 1.4× harder, give 5× XP and 5× loot.</p>`:''}
       ${m?.mechanics?`<p class="s">Special: ${m.mechanics}</p>`:''}
       ${monsterLevelsHtml(id,pageNow&&pageNow.kind==='monster'&&pageNow.id===id?pageNow.lv:null)}
       ${looksHtml(id,pl)}
