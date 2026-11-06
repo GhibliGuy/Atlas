@@ -1,4 +1,8 @@
 [
+{"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"foundWhile":"shearing","time":1794002699607,"sessionId":"23f94c19","key":1165},
+{"type":"gem.found","typeId":"gem-emerald","carat":2,"dropped":false,"foundWhile":"shearing","time":1793999472612,"sessionId":"23f94c19","key":1164},
+{"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"npcName":"Yeti","time":1793998977274,"sessionId":"b6bb14b3","key":1163},
+{"type":"gem.found","typeId":"gem-diamond","carat":2,"dropped":false,"foundWhile":"shearing","time":1793998216229,"sessionId":"23f94c19","key":1162},
 {"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"foundWhile":"shearing","time":1793997968153,"sessionId":"8a8052a3","key":1161},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1793981460600,"sessionId":"d7146da6","key":1160},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1793978958230,"sessionId":"1b4cae4f","key":1159},
