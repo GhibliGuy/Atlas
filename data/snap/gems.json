@@ -1,4 +1,5 @@
 [
+{"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"foundWhile":"shearing","time":1793997968153,"sessionId":"8a8052a3","key":1161},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1793981460600,"sessionId":"d7146da6","key":1160},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1793978958230,"sessionId":"1b4cae4f","key":1159},
 {"type":"gem.found","typeId":"gem-iolite","carat":3,"dropped":false,"time":1793978340381,"sessionId":"1b4cae4f","key":1158},
