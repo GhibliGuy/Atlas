@@ -1,4 +1,13 @@
 [
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1793975091011,"sessionId":"1b4cae4f","key":1157},
+{"type":"gem.found","typeId":"gem-iolite","carat":2,"dropped":false,"time":1793974514974,"sessionId":"2ffb7a77","key":1156},
+{"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"time":1793974025124,"sessionId":"4d01815a","key":1155},
+{"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"time":1793973881898,"sessionId":"4d01815a","key":1154},
+{"type":"gem.found","typeId":"gem-pearl","carat":1.5,"dropped":false,"time":1793973193629,"sessionId":"4d01815a","key":1153},
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"time":1793972284774,"sessionId":"2ffb7a77","key":1152},
+{"type":"gem.found","typeId":"gem-pearl","carat":1.5,"dropped":false,"time":1793971469567,"sessionId":"4d01815a","key":1151},
+{"type":"gem.found","typeId":"gem-pearl","carat":3,"dropped":false,"time":1793970179436,"sessionId":"4d01815a","key":1150},
+{"type":"gem.found","typeId":"gem-amber","carat":1.5,"dropped":false,"time":1793970136638,"sessionId":"2ffb7a77","key":1149},
 {"type":"gem.found","typeId":"gem-pearl","carat":3,"dropped":false,"time":1793938507755,"sessionId":"863bce87","key":1148},
 {"type":"gem.found","typeId":"gem-amber","carat":0.5,"dropped":false,"time":1793937700051,"sessionId":"553dc37e","key":1147},
 {"type":"gem.found","typeId":"gem-amber","carat":2.5,"dropped":false,"time":1793937692095,"sessionId":"553dc37e","key":1146},
