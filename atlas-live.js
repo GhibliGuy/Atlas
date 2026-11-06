@@ -167,7 +167,7 @@ function dataFetch(u){return fetch(u,{cache:'no-cache'})}
   let catalogResist=new Map(); // monster typeId -> its resists string, rebuilt alongside catalogFamily
   let zoneOverlayDrag=null, zoneOverlayPan=null, suppressNextOverlayClick=false, lastRenderedZoneOverlayZ=null;
   // spawns that were not real game spawns (keep in step with BAD_SIGHTINGS in background.js, which also leaves them out of the publish)
-  const BAD_SIGHTINGS=new Set(['61a6db8e-5c8a-417c-9fc1-be5043d61196','39b5dc36-223b-453c-a63d-0f1dcaeba5f3','ad61a75e-e789-4703-b3d1-2f5d59b7afce','f1045b27-3b59-419b-b7b8-3644e80eb7ba','438fea02-9a93-4bbd-85d9-5158f602c021','7c858df2-1497-4cc9-b6f2-d0de6f43d4b9','d9c402d1-c657-44ae-9c5b-c1f2e16a6aad']);
+  const BAD_SIGHTINGS=new Set(['61a6db8e-5c8a-417c-9fc1-be5043d61196','39b5dc36-223b-453c-a63d-0f1dcaeba5f3','ad61a75e-e789-4703-b3d1-2f5d59b7afce','f1045b27-3b59-419b-b7b8-3644e80eb7ba','438fea02-9a93-4bbd-85d9-5158f602c021','7c858df2-1497-4cc9-b6f2-d0de6f43d4b9','d9c402d1-c657-44ae-9c5b-c1f2e16a6aad','1fc947d5-bc93-4042-aa4b-8e9bd009aa8b','541fa58e-ef2b-49cb-974f-27aed24d5072','6367fe72-76f3-48c7-8193-6b94ceff3280','85f3e5be-070d-4755-ba57-abd36d79bd1f','a0a8cdaa-87b7-4504-96b2-09b27e5bb4d7']);
   const withoutBadSightings=s=>{if(!s)return s;const clean=a=>Array.isArray(a)&&a.some(n=>n&&BAD_SIGHTINGS.has(n.id))?a.filter(n=>!(n&&BAD_SIGHTINGS.has(n.id))):a,npcs=clean(s.npcs),obs=clean(s.npcObservations);return npcs===s.npcs&&obs===s.npcObservations?s:{...s,npcs,npcObservations:obs}};
   let requestCounter=0, snapshot=null, rawSnapshot=null, syncing=false, lastSnapshotStats=null;   // rawSnapshot: as the collector sent it; snapshot: places split (splitPlaces)
   const pending=new Map();
