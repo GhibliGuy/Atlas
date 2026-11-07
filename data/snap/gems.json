@@ -1,4 +1,10 @@
 [
+{"type":"gem.found","typeId":"gem-topaz","carat":2,"dropped":false,"npcName":"Mountain Ogre","time":1794020285386,"sessionId":"67480ab8","key":1173},
+{"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"npcName":"Ogre Elder","time":1794019866857,"sessionId":"67480ab8","key":1172},
+{"type":"gem.found","typeId":"gem-sapphire","carat":0.5,"dropped":false,"foundWhile":"shearing","time":1794018661357,"sessionId":"293c6077","key":1171},
+{"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"npcName":"Ogre Elder","time":1794018362282,"sessionId":"67480ab8","key":1170},
+{"type":"gem.found","typeId":"gem-topaz","carat":0.5,"dropped":false,"foundWhile":"shearing","time":1794018295713,"sessionId":"293c6077","key":1169},
+{"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"npcName":"Ember Salamander","time":1794015786398,"sessionId":"67480ab8","key":1168},
 {"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"foundWhile":"shearing","time":1794008540256,"sessionId":"b2ba51fe","key":1167},
 {"type":"gem.found","typeId":"gem-iolite","carat":1,"dropped":false,"npcName":"Ember Salamander","time":1794007932933,"sessionId":"67480ab8","key":1166},
 {"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"foundWhile":"shearing","time":1794002699607,"sessionId":"23f94c19","key":1165},
