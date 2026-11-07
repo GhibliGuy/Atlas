@@ -1,4 +1,6 @@
 [
+{"type":"gem.found","typeId":"gem-iolite","carat":0.5,"dropped":false,"foundWhile":"shearing","time":1794008540256,"sessionId":"b2ba51fe","key":1167},
+{"type":"gem.found","typeId":"gem-iolite","carat":1,"dropped":false,"npcName":"Ember Salamander","time":1794007932933,"sessionId":"67480ab8","key":1166},
 {"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"foundWhile":"shearing","time":1794002699607,"sessionId":"23f94c19","key":1165},
 {"type":"gem.found","typeId":"gem-emerald","carat":2,"dropped":false,"foundWhile":"shearing","time":1793999472612,"sessionId":"23f94c19","key":1164},
 {"type":"gem.found","typeId":"gem-emerald","carat":0.5,"dropped":false,"npcName":"Yeti","time":1793998977274,"sessionId":"b6bb14b3","key":1163},
