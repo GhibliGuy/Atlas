@@ -1,4 +1,12 @@
 [
+{"sessionId":"10ae2dae","time":1794187267264,"fromZ":6705,"toZ":0,"kind":"outdoors","outX":2349,"outY":938,"key":12010},
+{"sessionId":"10ae2dae","time":1794187019508,"fromZ":6704,"toZ":6705,"zoneName":"Thak Fortress","pvpMode":"none","atX":2350,"atY":971,"key":12009},
+{"sessionId":"10ae2dae","time":1794186437016,"fromZ":6703,"toZ":6704,"zoneName":"Thak Fortress","pvpMode":"none","atX":2365.7,"atY":961.83,"key":12008},
+{"sessionId":"10ae2dae","time":1794186284887,"fromZ":6702,"toZ":6703,"zoneName":"Thak Fortress","pvpMode":"none","atX":2361.41,"atY":966.2,"key":12007},
+{"sessionId":"10ae2dae","time":1794186238886,"fromZ":6701,"toZ":6702,"zoneName":"Thak Fortress","pvpMode":"none","atX":2343.4,"atY":974.4,"key":12006},
+{"sessionId":"10ae2dae","time":1794186025778,"fromZ":0,"toZ":6701,"zoneName":"Thak Fortress","pvpMode":"none","atX":2335.2,"atY":969.76,"key":12005},
+{"sessionId":"10ae2dae","time":1794185902979,"fromZ":6700,"toZ":0,"kind":"outdoors","outX":2349,"outY":938,"key":12004},
+{"sessionId":"10ae2dae","time":1794185860832,"fromZ":null,"toZ":6700,"zoneName":"Thak Fortress","pvpMode":"none","atX":2351,"atY":965,"key":12003},
 {"sessionId":"b00e95ef","time":1794176793673,"fromZ":6705,"toZ":0,"kind":"outdoors","outX":2349,"outY":938,"key":12002},
 {"sessionId":"b00e95ef","time":1794176587438,"fromZ":6704,"toZ":6705,"zoneName":"Thak Fortress","pvpMode":"none","atX":2350,"atY":971,"key":12001},
 {"sessionId":"b00e95ef","time":1794176263892,"fromZ":6703,"toZ":6704,"zoneName":"Thak Fortress","pvpMode":"none","atX":2366,"atY":967,"key":12000},
@@ -4990,13 +4998,5 @@
 {"sessionId":"04c13347","time":1792680014229,"fromZ":5402,"toZ":5403,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":527,"atY":-461,"key":7014},
 {"sessionId":"04c13347","time":1792679911646,"fromZ":5401,"toZ":5402,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":511.09,"atY":-452.19,"key":7013},
 {"sessionId":"04c13347","time":1792679794339,"fromZ":5400,"toZ":5401,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":527,"atY":-470,"key":7012},
-{"sessionId":"04c13347","time":1792679711587,"fromZ":0,"toZ":5400,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":538,"atY":-478,"key":7011},
-{"sessionId":"04c13347","time":1792679507033,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":7010},
-{"sessionId":"04c13347","time":1792679497783,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":14.6,"atY":-11.7,"key":7009},
-{"sessionId":"13837f1f","time":1792679450837,"fromZ":null,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":7008},
-{"sessionId":"b4926fe6","time":1792679307720,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":7007},
-{"sessionId":"b4926fe6","time":1792679222018,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":7006},
-{"sessionId":"b4926fe6","time":1792679219333,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":7005},
-{"sessionId":"b4926fe6","time":1792679031008,"fromZ":-10,"toZ":0,"kind":"outdoors","outX":17,"outY":-11,"key":7004},
-{"sessionId":"b4926fe6","time":1792678981050,"fromZ":0,"toZ":-10,"zoneName":"Binxonia Bank","pvpMode":"none","atX":17,"atY":-11,"key":7003}
+{"sessionId":"04c13347","time":1792679711587,"fromZ":0,"toZ":5400,"zoneName":"The Ogre Longhouse","pvpMode":"none","atX":538,"atY":-478,"key":7011}
 ]
