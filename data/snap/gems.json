@@ -1,4 +1,5 @@
 [
+{"type":"gem.found","typeId":"gem-ruby","carat":0.5,"dropped":false,"npcName":"Thak Veteran","time":1794176298324,"sessionId":"b00e95ef","key":1176},
 {"type":"gem.found","typeId":"gem-pearl","carat":0.5,"dropped":false,"npcName":"Cinderling","time":1794027387448,"sessionId":"67480ab8","key":1175},
 {"type":"gem.found","typeId":"gem-topaz","carat":2.5,"dropped":false,"foundWhile":"shearing","time":1794023372598,"sessionId":"1e675f6d","key":1174},
 {"type":"gem.found","typeId":"gem-topaz","carat":2,"dropped":false,"npcName":"Mountain Ogre","time":1794020285386,"sessionId":"67480ab8","key":1173},
